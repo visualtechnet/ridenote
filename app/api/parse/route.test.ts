@@ -8,7 +8,7 @@ jest.mock("@anthropic-ai/sdk", () => ({
   },
 }));
 
-import { HTTP, LIMITS, UPSTREAM } from "@/lib/config";
+import { HTTP, LIMITS, OUTPUT_LIMITS, UPSTREAM } from "@/lib/config";
 import { MESSAGES } from "@/lib/messages";
 import { POST } from "./route";
 
@@ -97,10 +97,42 @@ describe("POST /api/parse", () => {
     expect(body.trip.missing_fields).toEqual(["pickup_time"]);
   });
 
-  it("rejects model output with absurdly long fields", async () => {
+  it("shortens an over-long notes line instead of failing a good note", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
       parsed_output: { ...goodTrip, notes: "a".repeat(5000) },
+    });
+    const res = await POST(request({ note: VALID_NOTE }));
+    expect(res.status).toBe(200);
+    const { trip } = await res.json();
+    expect(trip.notes.length).toBeLessThanOrEqual(OUTPUT_LIMITS.notes);
+    expect(trip.passenger_name).toBe("Mrs. Lee");
+  });
+
+  it("removes a repeated mobility aid instead of failing", async () => {
+    mockParse.mockResolvedValue({
+      stop_reason: "end_turn",
+      parsed_output: { ...goodTrip, mobility: ["cane", "cane", "walker"] },
+    });
+    const res = await POST(request({ note: VALID_NOTE }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).trip.mobility).toEqual(["cane", "walker"]);
+  });
+
+  it("still rejects model output with absurdly long names or locations", async () => {
+    for (const field of ["passenger_name", "pickup_location", "dropoff_location"]) {
+      mockParse.mockResolvedValue({
+        stop_reason: "end_turn",
+        parsed_output: { ...goodTrip, [field]: "a".repeat(5000) },
+      });
+      expect((await POST(request({ note: VALID_NOTE }))).status).toBe(502);
+    }
+  });
+
+  it("still rejects an impossible combination such as unaided plus an aid", async () => {
+    mockParse.mockResolvedValue({
+      stop_reason: "end_turn",
+      parsed_output: { ...goodTrip, mobility: ["ambulatory", "cane"] },
     });
     expect((await POST(request({ note: VALID_NOTE }))).status).toBe(502);
   });

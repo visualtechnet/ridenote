@@ -2,7 +2,7 @@
 import { validateNote } from "../lib/validation";
 import type { Trip } from "../lib/trip";
 import { CASES, PASS_RATE_FLOOR } from "./cases";
-import { RETRIES, judge, score, summarise } from "./score";
+import { RETRIES, attempt, judge, score, summarise } from "./score";
 
 const trip: Trip = {
   passenger_name: "Mrs. Lee",
@@ -160,5 +160,27 @@ describe("judge (a failing case is run again, and passes if it passes most runs)
 
   it("re-runs a failure exactly twice", () => {
     expect(RETRIES).toBe(2);
+  });
+});
+
+describe("attempt (one broken request must not sink the whole run)", () => {
+  it("passes a result through", async () => {
+    expect(await attempt(async () => ["a problem"])).toEqual(["a problem"]);
+    expect(await attempt(async () => [])).toEqual([]);
+  });
+
+  it("turns a thrown error into a failed attempt, keeping only its first line", async () => {
+    const result = await attempt(async () => {
+      throw new Error("Failed to parse structured output\nsecond line with details");
+    });
+    expect(result).toEqual(["request failed: Failed to parse structured output"]);
+  });
+
+  it("copes with something thrown that is not an Error", async () => {
+    expect(
+      await attempt(async () => {
+        throw "boom";
+      }),
+    ).toEqual(["request failed: unknown error"]);
   });
 });

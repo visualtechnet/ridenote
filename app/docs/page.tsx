@@ -367,7 +367,8 @@ export default function DocsPage() {
             </li>
             <li>
               <strong>When:</strong> a time such as 9:30am, 14:15 or 0930. The card shows it as{" "}
-              <strong>9:30 AM</strong>; the API returns it as 24-hour HH:MM (09:30).
+              <strong>9:30 AM</strong>; the API returns it as 24-hour HH:MM (09:30). The time is
+              kept as the note writes it: there is no time zone conversion.
             </li>
             <li>
               <strong>Mobility:</strong> every aid the passenger uses, for example a wheelchair, a
@@ -380,7 +381,8 @@ export default function DocsPage() {
           <p className={p}>
             The parser never guesses. If something is not in the note it comes back empty rather
             than invented. Dates like &ldquo;tomorrow&rdquo; are not converted because only the time
-            is stored.
+            is stored, and times are never converted between time zones: &ldquo;3pm EST&rdquo; is{" "}
+            <code className={code}>15:00</code>, with the zone repeated in the notes.
           </p>
         </section>
 
@@ -509,9 +511,11 @@ export default function DocsPage() {
           </div>
           <p className={p}>
             The reverse direction is guarded too. The AI is forced to answer in a fixed shape, and
-            the server re-checks that answer. If it breaks the shape (a time that is not HH:MM, a
-            mobility aid outside the list, a repeated aid, text over the length limits, extra or
-            missing fields) you get a 502, never malformed data.
+            the server re-checks that answer. Two harmless slips are repaired instead of failing a
+            good note: a notes line that runs too long is shortened, and a repeated mobility aid is
+            removed. If it breaks the shape in any other way (a time that is not HH:MM, an aid
+            outside the list, &ldquo;walks unaided&rdquo; mixed with an aid, a name over the length
+            limit, extra or missing fields) you get a 502, never malformed data.
           </p>
         </section>
 
@@ -565,7 +569,10 @@ export default function DocsPage() {
                     pickup_time
                   </th>
                   <td className={td}>&ldquo;HH:MM&rdquo; or null</td>
-                  <td className={td}>24-hour, 00:00 to 23:59.</td>
+                  <td className={td}>
+                    24-hour, 00:00 to 23:59, as written in the note: no AM/PM, no time zone, no
+                    conversion.
+                  </td>
                 </tr>
                 <tr>
                   <th scope="row" className={`${td} font-mono font-normal`}>

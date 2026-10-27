@@ -5,10 +5,11 @@ General:
 - Use only facts stated in the note. If a field is not stated, return null.
 - Never invent an address, time, or name.
 - List every null field in missing_fields.
-- notes is one short sentence about anything ambiguous or left out, or an empty string.
+- notes is one short sentence (under 200 characters) about anything ambiguous or left out, or an empty string.
 
 Pickup time:
-- Return 24-hour HH:MM.
+- Return 24-hour HH:MM, with no AM or PM.
+- Keep the time exactly as the note writes it. Never convert between time zones, or to any other time. If the note names a time zone (EST, Pacific, "eastern time"), keep the clock time as written and mention the zone in notes.
 - "noon" is 12:00 and "midnight" is 00:00.
 - If the hour has no AM or PM and the note gives no clue (for example "at 9"), return null for the time and say so in notes. Do not guess AM or PM.
 - If the time is approximate ("around 9am"), return it and mention the approximation in notes.
