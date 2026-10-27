@@ -8,7 +8,7 @@ const trip = {
   pickup_location: "12 Oak St",
   dropoff_location: null,
   pickup_time: "09:30",
-  mobility: "wheelchair",
+  mobility: ["wheelchair"],
   missing_fields: ["dropoff_location"],
   notes: "",
 };

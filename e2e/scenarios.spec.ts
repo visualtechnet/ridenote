@@ -26,12 +26,50 @@ async function submit(page: Page, text: string) {
 
 // ---------------------------------------------------------------------------------------------
 test.describe("positive: what a successful parse looks like", () => {
-  for (const mobility of ["ambulatory", "wheelchair", "stretcher", "unknown"]) {
-    test(`shows ${mobility} mobility on the card`, async ({ page }) => {
-      await mockParseApi(page, { trip: { ...trip, mobility } });
+  for (const [aids, shown] of [
+    [["ambulatory"], ["Walks unaided"]],
+    [["wheelchair"], ["Wheelchair"]],
+    [["stretcher"], ["Stretcher"]],
+    [
+      ["wheelchair", "cane", "walker"],
+      ["Wheelchair", "Cane", "Walker"],
+    ],
+    [
+      ["crutches", "scooter", "other"],
+      ["Crutches", "Scooter", "Other aid"],
+    ],
+  ] as const) {
+    test(`shows ${aids.join(", ")} as ${shown.join(", ")} on the card`, async ({ page }) => {
+      await mockParseApi(page, { trip: { ...trip, mobility: aids } });
       await page.goto(Routes.page("home"));
       await submit(page, NOTE);
-      await expect(card(page).getByText(mobility, { exact: true })).toBeVisible();
+      const list = card(page).getByRole("list", { name: "Mobility" });
+      await expect(list.getByRole("listitem")).toHaveText([...shown]);
+    });
+  }
+
+  test("an empty mobility list reads 'Not stated', never a blank", async ({ page }) => {
+    await mockParseApi(page, { trip: { ...trip, mobility: [] } });
+    await page.goto(Routes.page("home"));
+    await submit(page, NOTE);
+    await expect(card(page).getByRole("list", { name: "Mobility" })).toHaveCount(0);
+    await expect(card(page).getByText("Not stated")).toHaveCount(1);
+  });
+
+  for (const [time, shown] of [
+    ["09:30", "9:30 AM"],
+    ["00:00", "12:00 AM"],
+    ["12:00", "12:00 PM"],
+    ["16:15", "4:15 PM"],
+    ["23:59", "11:59 PM"],
+  ] as const) {
+    test(`shows pickup time ${time} as ${shown}`, async ({ page }) => {
+      await mockParseApi(page, { trip: { ...trip, pickup_time: time } });
+      await page.goto(Routes.page("home"));
+      await submit(page, NOTE);
+      const t = card(page).locator("time");
+      await expect(t).toHaveText(shown);
+      await expect(t).toHaveAttribute("datetime", time);
     });
   }
 
@@ -725,7 +763,7 @@ test.describe("out of scope: things the app does not do, and how it behaves anyw
     await page.goto(Routes.page("home"));
     await submit(page, "What is the weather like today? Also remember to buy milk.");
     await expect(page.getByRole("heading", { level: 2, name: "Unknown passenger" })).toBeVisible();
-    await expect(card(page).getByText("Not stated")).toHaveCount(3);
+    await expect(card(page).getByText("Not stated")).toHaveCount(4);
     await expect(
       card(page).getByRole("list", { name: "Missing fields" }).getByRole("listitem"),
     ).toHaveCount(4);

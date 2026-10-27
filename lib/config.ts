@@ -55,7 +55,21 @@ export const HTTP = {
   clientClosed: 499,
 } as const;
 
-export const MOBILITY = ["ambulatory", "wheelchair", "stretcher", "unknown"] as const;
+/**
+ * How a passenger gets around, as a list of these. An empty list means the note did not say.
+ * "ambulatory" means walks with no aid and stands alone; the rest are aids and can be combined.
+ * "other" is for an aid that fits none of the others, described in the trip's notes.
+ */
+export const MOBILITY = [
+  "ambulatory",
+  "wheelchair",
+  "stretcher",
+  "walker",
+  "cane",
+  "crutches",
+  "scooter",
+  "other",
+] as const;
 
 /** Fields a trip needs before it can be dispatched. Used to compute what's missing. */
 export const REQUIRED_TRIP_FIELDS = [
@@ -72,6 +86,7 @@ export const OUTPUT_LIMITS = {
   notes: 300,
   fieldName: 40,
   missingFieldCount: 10,
+  mobilityCount: MOBILITY.length,
 } as const;
 
 /** Where visitors write with questions or feedback. Shown on the Contact page. API keys are not provided. */

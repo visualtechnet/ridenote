@@ -16,7 +16,12 @@ export const TripSchema = z.object({
     .refine((v) => TIME_24H.test(v), "must be 24h HH:MM")
     .nullable()
     .describe("24h HH:MM, or null if not stated"),
-  mobility: z.enum(MOBILITY),
+  mobility: z
+    .array(z.enum(MOBILITY))
+    .max(OUTPUT_LIMITS.mobilityCount)
+    .refine((aids) => new Set(aids).size === aids.length, "no repeats")
+    .refine((aids) => !aids.includes("ambulatory") || aids.length === 1, "ambulatory stands alone")
+    .describe("Every mobility aid the note names; [] if the note does not say"),
   missing_fields: z.array(bounded(OUTPUT_LIMITS.fieldName)).max(OUTPUT_LIMITS.missingFieldCount),
   notes: bounded(OUTPUT_LIMITS.notes).describe("One short sentence on anything ambiguous"),
 });

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { TripCard } from "./TripCard";
 import type { Trip } from "@/lib/trip";
 
@@ -7,7 +7,7 @@ const full: Trip = {
   pickup_location: "12 Oak St",
   dropoff_location: "County Hospital",
   pickup_time: "09:30",
-  mobility: "wheelchair",
+  mobility: ["wheelchair"],
   missing_fields: [],
   notes: "Confirm ramp access.",
 };
@@ -16,11 +16,11 @@ describe("TripCard", () => {
   it("shows every field with its label", () => {
     render(<TripCard trip={full} />);
     expect(screen.getByRole("heading", { level: 2, name: "Mrs. Lee" })).toBeInTheDocument();
-    expect(screen.getByText("wheelchair")).toBeInTheDocument();
+    expect(screen.getByText("Wheelchair")).toBeInTheDocument();
     expect(screen.getByText("Pickup")).toBeInTheDocument();
     expect(screen.getByText("12 Oak St")).toBeInTheDocument();
     expect(screen.getByText("County Hospital")).toBeInTheDocument();
-    expect(screen.getByText("09:30")).toBeInTheDocument();
+    expect(screen.getByText("9:30 AM")).toBeInTheDocument();
     expect(screen.getByText("Confirm ramp access.")).toBeInTheDocument();
   });
 
@@ -40,6 +40,33 @@ describe("TripCard", () => {
       screen.getByRole("heading", { level: 2, name: "Unknown passenger" }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("Not stated")).toHaveLength(3);
+  });
+
+  it("shows the pickup time in 12-hour form, with the exact 24-hour value for machines", () => {
+    const { container } = render(<TripCard trip={{ ...full, pickup_time: "16:15" }} />);
+    const time = container.querySelector("time")!;
+    expect(time).toHaveTextContent("4:15 PM");
+    expect(time).toHaveAttribute("datetime", "16:15");
+  });
+
+  describe("mobility", () => {
+    it("lists every aid, in the order given", () => {
+      render(<TripCard trip={{ ...full, mobility: ["wheelchair", "cane", "walker"] }} />);
+      const list = screen.getByRole("list", { name: "Mobility" });
+      const items = within(list).getAllByRole("listitem");
+      expect(items.map((i) => i.textContent)).toEqual(["Wheelchair", "Cane", "Walker"]);
+    });
+
+    it("says 'Not stated' when the list is empty, rather than showing nothing", () => {
+      render(<TripCard trip={{ ...full, mobility: [] }} />);
+      expect(screen.queryByRole("list", { name: "Mobility" })).not.toBeInTheDocument();
+      expect(screen.getAllByText("Not stated")).toHaveLength(1);
+    });
+
+    it("shows an unaided walker plainly", () => {
+      render(<TripCard trip={{ ...full, mobility: ["ambulatory"] }} />);
+      expect(screen.getByText("Walks unaided")).toBeInTheDocument();
+    });
   });
 
   it("lists missing fields as text chips", () => {

@@ -1,7 +1,7 @@
 # RideNote
 
 Paste a dispatcher's free-text note, get a structured trip record: passenger, pickup, dropoff, pickup
-time and mobility, shown as a card. Anything the note does not say is marked **Missing**, never guessed.
+time and mobility aids, shown as a card. Anything the note does not say is marked **Missing**, never guessed.
 
 > "Pick up Mrs. Lee at 12 Oak St at 9:30am, taking her to County Hospital. She uses a wheelchair."
 
@@ -12,7 +12,7 @@ time and mobility, shown as a card. Anything the note does not say is marked **M
     "pickup_location": "12 Oak St",
     "dropoff_location": "County Hospital",
     "pickup_time": "09:30",
-    "mobility": "wheelchair",
+    "mobility": ["wheelchair"],
     "missing_fields": [],
     "notes": ""
   }
@@ -254,8 +254,9 @@ The site has five sections, reachable from the navigation on the left (a **Menu*
 | **Contact**      | `/contact`      | How to email the owner with questions or feedback (keys are not provided). |
 | **Tests**        | `/tests`        | Every automated test name, read from the real test files at build time.    |
 
-What to type, in short: who, where from, where to, when, and mobility (`ambulatory`, `wheelchair`,
-`stretcher`; otherwise `unknown`). A state or zip is optional. A note with none of these is still
+What to type, in short: who, where from, where to, when, and mobility: name every aid the passenger
+uses (a wheelchair, a cane, a walker, and so on) and all of them are returned as a list. The card shows
+the time as **9:30 AM**; the API returns it as 24-hour `09:30`. A state or zip is optional. A note with none of these is still
 accepted; it returns mostly empty fields. The Docs page has 13 accepted and 13 rejected example
 notes, each verified against the real validator by a test.
 
@@ -279,6 +280,11 @@ curl -X POST http://localhost:3000/api/parse \
 | 429    | Too many requests from this client. See the `Retry-After` header.                             |
 | 502    | The AI service failed, or its answer had the wrong shape.                                     |
 | 503    | Overloaded (see `Retry-After`), or the AI account is out of credit (`code`: `out_of_credit`). |
+
+`mobility` is a list of every aid the note names: any of `wheelchair`, `stretcher`, `walker`, `cane`,
+`crutches`, `scooter` or `other`, or `["ambulatory"]` for someone who walks unaided, or `[]` when the
+note does not say. The AI sorts plain words into these (a rollator is a `walker`, a gurney is a
+`stretcher`). `pickup_time` is 24-hour `HH:MM`; the card turns it into 12-hour for reading.
 
 Errors are JSON too: `{ "error": "human readable message", "code": "required" }`. The Docs page
 explains each status and each validation code.

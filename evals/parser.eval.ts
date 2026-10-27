@@ -7,7 +7,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { extractTrip } from "../lib/extract";
 import { UPSTREAM } from "../lib/config";
 import { CASES, PASS_RATE_FLOOR } from "./cases";
-import { score, summarise, type CaseResult } from "./score";
+import { RETRIES, judge, score, summarise, type Attempt, type CaseResult } from "./score";
 
 const BATCH = 5;
 const hasKey = Boolean(process.env.ANTHROPIC_API_KEY);
@@ -20,17 +20,25 @@ const results: CaseResult[] = [];
       const batch = CASES.slice(i, i + BATCH);
       const done = await Promise.all(
         batch.map(async (c): Promise<CaseResult> => {
-          const out = await extractTrip(client, c.note);
-          const problems = out.ok ? score(out.trip, c.expect) : [`request failed: ${out.error}`];
-          return { case: c, problems };
+          const run = async (): Promise<Attempt> => {
+            const out = await extractTrip(client, c.note);
+            return out.ok ? score(out.trip, c.expect) : [`request failed: ${out.error}`];
+          };
+          const attempts = [await run()];
+          // Only a failure is run again: a clean first answer needs no second opinion.
+          if (attempts[0].length > 0) {
+            for (let i = 0; i < RETRIES; i++) attempts.push(await run());
+          }
+          return { case: c, ...judge(attempts), attempts: attempts.length };
         }),
       );
       results.push(...done);
     }
     const model = process.env[UPSTREAM.modelEnvVar] ?? UPSTREAM.defaultModel;
     const { passRate, failed } = summarise(results, PASS_RATE_FLOOR);
+    const flaky = results.filter((r) => r.flaky && r.problems.length === 0);
     console.log(
-      `${failed.map((f) => `FAIL ${f.case.name}: ${f.problems.join("; ")}`).join("\n")}\nmodel ${model}: ${results.length - failed.length}/${results.length} passed (${Math.round(passRate * 100)}%)`,
+      `${flaky.map((f) => `FLAKY ${f.case.name}: passed, but not every run`).join("\n")}\n${failed.map((f) => `FAIL ${f.case.name}: ${f.problems.join("; ")}`).join("\n")}\nmodel ${model}: ${results.length - failed.length}/${results.length} passed (${Math.round(passRate * 100)}%)`,
     );
   }, 300_000);
 
