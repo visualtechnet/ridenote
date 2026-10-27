@@ -16,6 +16,12 @@ describe("Routes", () => {
     expect(all).toEqual(expect.arrayContaining([Routes.page("home"), Routes.api("parse")]));
   });
 
+  it("gives the documentation sections their own pages under /docs", () => {
+    expect(Routes.page("docsEval")).toBe("/docs/eval");
+    expect(Routes.page("docsFaq")).toBe("/docs/faq");
+    expect(Routes.all()).toEqual(expect.arrayContaining(["/docs/eval", "/docs/faq"]));
+  });
+
   it("only produces absolute paths", () => {
     for (const route of Routes.all()) expect(route.startsWith("/")).toBe(true);
   });

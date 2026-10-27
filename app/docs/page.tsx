@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { TryButton } from "@/components/TryButton";
 import { HTTP, LIMITS, MOBILITY, OUTPUT_LIMITS, RATE_LIMIT } from "@/lib/config";
 import { API_EXAMPLES, INVALID_EXAMPLES, VALID_EXAMPLES } from "@/lib/docs-examples";
@@ -112,6 +113,17 @@ export default function DocsPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
           Documentation
         </h1>
+        <p className={p}>
+          This section has three parts, in the menu on the left: <strong>Setup</strong> (this page),{" "}
+          <Link href={Routes.page("docsEval")} className="underline underline-offset-4">
+            Eval
+          </Link>{" "}
+          (how the AI&rsquo;s accuracy is measured) and{" "}
+          <Link href={Routes.page("docsFaq")} className="underline underline-offset-4">
+            FAQ
+          </Link>{" "}
+          (common questions, and the bugs found along the way).
+        </p>
         <p className={p}>
           How to set up RideNote, what to type into it, and what every error means. This page
           contains no keys or secrets, and every example below is checked against the real validator

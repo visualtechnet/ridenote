@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { SideNav } from "./SideNav";
@@ -89,6 +89,66 @@ describe("SideNav", () => {
     rerender(<SideNav />);
     expect(collapsed()).toBe(true);
     expect(button()).toHaveAttribute("aria-expanded", "false");
+  });
+
+  describe("documentation submenu", () => {
+    const sections = () => screen.queryByRole("list", { name: COPY.navDocsSections });
+
+    it("is hidden outside the documentation", () => {
+      for (const page of ["home", "requirements", "tests"] as const) {
+        pathname = Routes.page(page);
+        const { unmount } = render(<SideNav />);
+        expect(sections()).toBeNull();
+        unmount();
+      }
+    });
+
+    it("lists Setup, Eval and FAQ under Docs on every documentation page", () => {
+      for (const page of ["docs", "docsEval", "docsFaq"] as const) {
+        pathname = Routes.page(page);
+        const { unmount } = render(<SideNav />);
+        const links = within(sections()!).getAllByRole("link");
+        expect(links.map((l) => [l.textContent, l.getAttribute("href")])).toEqual([
+          [COPY.navDocsSetup, Routes.page("docs")],
+          [COPY.navDocsEval, Routes.page("docsEval")],
+          [COPY.navDocsFaq, Routes.page("docsFaq")],
+        ]);
+        unmount();
+      }
+    });
+
+    it("sits inside the Docs item, between Docs and Tests", () => {
+      pathname = Routes.page("docsEval");
+      render(<SideNav />);
+      const docsItem = screen.getByRole("link", { name: COPY.navDocs }).closest("li")!;
+      expect(docsItem).toContainElement(sections());
+      expect(docsItem.nextElementSibling).toHaveTextContent(COPY.navTests);
+    });
+
+    it("marks only the open section as current", () => {
+      pathname = Routes.page("docsFaq");
+      render(<SideNav />);
+      expect(screen.getByRole("link", { name: COPY.navDocsFaq })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      expect(screen.getByRole("link", { name: COPY.navDocsEval })).not.toHaveAttribute(
+        "aria-current",
+      );
+      expect(screen.getByRole("link", { name: COPY.navDocs })).not.toHaveAttribute("aria-current");
+    });
+
+    it("does not appear for a path that merely starts with the same letters", () => {
+      pathname = "/docsandmore";
+      render(<SideNav />);
+      expect(sections()).toBeNull();
+    });
+
+    it("has no accessibility violations", async () => {
+      pathname = Routes.page("docsEval");
+      const { container } = render(<SideNav />);
+      expect(await axe(container)).toHaveNoViolations();
+    });
   });
 
   it("has no accessibility violations, open or closed", async () => {

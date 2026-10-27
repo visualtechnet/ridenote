@@ -1,6 +1,8 @@
 const PAGES = {
   home: "/",
   docs: "/docs",
+  docsEval: "/docs/eval",
+  docsFaq: "/docs/faq",
   requirements: "/requirements",
   tests: "/tests",
 } as const;

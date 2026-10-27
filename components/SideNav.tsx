@@ -13,6 +13,16 @@ const LINKS = [
   { label: COPY.navTests, href: Routes.page("tests") },
 ] as const;
 
+/** Shown under "Docs" while any documentation page is open. */
+const DOC_SECTIONS = [
+  { label: COPY.navDocsSetup, href: Routes.page("docs") },
+  { label: COPY.navDocsEval, href: Routes.page("docsEval") },
+  { label: COPY.navDocsFaq, href: Routes.page("docsFaq") },
+] as const;
+
+const LINK_CLASS =
+  "block rounded-md px-3 py-2.5 text-zinc-700 hover:bg-zinc-100 aria-[current=page]:bg-zinc-100 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:aria-[current=page]:bg-zinc-900 dark:aria-[current=page]:text-zinc-50";
+
 const FOCUS =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-50";
 
@@ -28,6 +38,7 @@ export function SideNav() {
 
   // Following a link closes the menu: it is only "open" for the page it was opened on.
   const isOpen = open && openedAt === pathname;
+  const inDocs = pathname === Routes.page("docs") || pathname.startsWith(`${Routes.page("docs")}/`);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -80,10 +91,25 @@ export function SideNav() {
               <Link
                 href={href}
                 aria-current={pathname === href ? "page" : undefined}
-                className={`block rounded-md px-3 py-2.5 text-zinc-700 hover:bg-zinc-100 aria-[current=page]:bg-zinc-100 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:aria-[current=page]:bg-zinc-900 dark:aria-[current=page]:text-zinc-50 ${FOCUS}`}
+                className={`${LINK_CLASS} ${FOCUS}`}
               >
                 {label}
               </Link>
+              {href === Routes.page("docs") && inDocs && (
+                <ul aria-label={COPY.navDocsSections} className="mt-1 ml-4 flex flex-col gap-1">
+                  {DOC_SECTIONS.map((section) => (
+                    <li key={section.href}>
+                      <Link
+                        href={section.href}
+                        aria-current={pathname === section.href ? "page" : undefined}
+                        className={`${LINK_CLASS} py-2 text-sm ${FOCUS}`}
+                      >
+                        {section.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>
