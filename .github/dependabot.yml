@@ -1,0 +1,13 @@
+# Opens pull requests when a dependency or a CI action has a new version, so security fixes
+# are not missed. CI runs the full checks on each one.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

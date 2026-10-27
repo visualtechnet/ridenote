@@ -47,4 +47,15 @@ describe("Markdown", () => {
     render(<Markdown source={"[home](/docs)"} />);
     expect(screen.getByRole("link", { name: "home" })).toHaveAttribute("href", "/docs");
   });
+
+  it.each([
+    ["a javascript: link", "[x](javascript:alert(1))"],
+    ["a data: link", "[x](data:text/html,hi)"],
+    ["a protocol-relative link to another site", "[x](//evil.example/path)"],
+    ["a vbscript: link", "[x](vbscript:msgbox(1))"],
+  ])("never turns %s into a link", (_name, source) => {
+    const { container } = render(<Markdown source={source} />);
+    expect(container.querySelector("a")).toBeNull();
+    expect(screen.getByText("x")).toBeInTheDocument();
+  });
 });

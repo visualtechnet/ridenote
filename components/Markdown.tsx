@@ -34,7 +34,9 @@ function renderInline(nodes: Inline[]): ReactNode {
       case "link": {
         const href = SITE_PAGE[node.href] ?? node.href;
         // Links to other files in the repository (README.md, SCALING.md) have no page here.
-        if (!href.startsWith("#") && !href.startsWith("/") && !/^https?:/.test(href)) {
+        // "//host" is a link to another site that looks local, so only a single "/" counts.
+        const local = href.startsWith("#") || (href.startsWith("/") && !href.startsWith("//"));
+        if (!local && !/^https?:/.test(href)) {
           return <span key={i}>{renderInline(node.children)}</span>;
         }
         const external = href.startsWith("http");
