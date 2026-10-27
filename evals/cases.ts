@@ -74,6 +74,23 @@ export const CASES: EvalCase[] = [
     expect: { passenger_name: /patel/i, pickup_time: "00:00" },
   },
   {
+    name: "a named time zone is kept as written, never converted",
+    note: "Pick up Mr. Chen at 88 Lake Rd at 3pm EST, to Lakeside Dialysis.",
+    critical: true,
+    expect: { pickup_time: "15:00", notes: /EST|eastern/i },
+  },
+  {
+    name: "a different time zone is also left alone",
+    note: "Mrs. Diaz, 40 Bay St to Mercy Hospital at 9:30am Pacific time.",
+    critical: true,
+    expect: { pickup_time: "09:30", notes: /pacific|PST|PDT|PT\b/i },
+  },
+  {
+    name: "an evening time becomes 24-hour with no am or pm",
+    note: "Pick up Sam Ortiz at 3 Elm St at 9:30 pm, to the City Library.",
+    expect: { pickup_time: "21:30" },
+  },
+  {
     name: "time in words",
     note: "Pick up Mrs. Diaz at 40 Bay St, half past 2 in the afternoon, to Mercy Hospital.",
     expect: { passenger_name: /diaz/i, pickup_time: "14:30" },

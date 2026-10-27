@@ -17,6 +17,17 @@ describe("Requirements page", () => {
     }
   });
 
+  it("states the time rules: 24-hour in the data, 12-hour only on screen, no time zones", () => {
+    const { container } = render(<RequirementsPage />);
+    expect(screen.getByRole("heading", { name: "Time rules" })).toBeInTheDocument();
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/always 24-hour/);
+    expect(text).toMatch(/Only the display changes/);
+    expect(text).toMatch(/No time zones/);
+    expect(text).toMatch(/never\s+converted to the server/);
+    expect(text).toMatch(/Time zones\. Whatever time the note gives is kept as is/); // out of scope list
+  });
+
   it("lists every status the API can return for a parse", () => {
     const { container } = render(<RequirementsPage />);
     const text = container.textContent ?? "";

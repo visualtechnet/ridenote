@@ -131,6 +131,33 @@ export default function RequirementsPage() {
             <li>Provide an example note and a Clear action.</li>
             <li>Provide docs, requirements and a test list inside the site.</li>
           </ol>
+          <h3 className={h3}>Time rules</h3>
+          <ul className={ul}>
+            <li>
+              <strong>The JSON time is always 24-hour</strong> <code className={code}>HH:MM</code>{" "}
+              (00:00 to 23:59), with no AM or PM. Three in the afternoon is{" "}
+              <code className={code}>15:00</code>. It cannot be misread, sorts correctly, and suits
+              a database.
+            </li>
+            <li>
+              <strong>Only the display changes.</strong> The card shows 12-hour time (9:30 AM, 4:15
+              PM) for reading. The data underneath never changes.
+            </li>
+            <li>
+              <strong>No time zones.</strong> The time is exactly what the note says. It is never
+              converted to the server&rsquo;s time or any other zone. If the note names a zone (EST,
+              Pacific), the clock time is kept as written and the zone is only repeated in the
+              notes.
+            </li>
+            <li>
+              <strong>No date.</strong> Only the time of day is stored. A day or date is repeated in
+              the notes.
+            </li>
+            <li>
+              <strong>Never guessed.</strong> A time with no AM or PM and no clue (&ldquo;at
+              9&rdquo;) is <code className={code}>null</code>, with a note saying why.
+            </li>
+          </ul>
           <h3 className={h3}>Non-functional requirements</h3>
           <ul className={ul}>
             <li>
@@ -169,6 +196,10 @@ export default function RequirementsPage() {
             <li>
               A date field. Dates such as &ldquo;tomorrow&rdquo; or &ldquo;Friday&rdquo; are not
               converted; they are repeated in the notes so a person can see them.
+            </li>
+            <li>
+              Time zones. Whatever time the note gives is kept as is: nothing is converted to the
+              server&rsquo;s time or another zone.
             </li>
             <li>Splitting addresses into street, city, state and zip.</li>
             <li>Parsing several trips from one note.</li>
@@ -318,7 +349,8 @@ export default function RequirementsPage() {
                   </th>
                   <td className={td}>string | null</td>
                   <td className={td}>
-                    24-hour <code className={code}>HH:MM</code>, 00:00 to 23:59.
+                    24-hour <code className={code}>HH:MM</code>, 00:00 to 23:59, exactly as written
+                    in the note. No AM or PM, no time zone, no conversion.
                   </td>
                 </tr>
                 <tr>

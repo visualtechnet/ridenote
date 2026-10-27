@@ -256,7 +256,8 @@ The site has five sections, reachable from the navigation on the left (a **Menu*
 
 What to type, in short: who, where from, where to, when, and mobility: name every aid the passenger
 uses (a wheelchair, a cane, a walker, and so on) and all of them are returned as a list. The card shows
-the time as **9:30 AM**; the API returns it as 24-hour `09:30`. A state or zip is optional. A note with none of these is still
+the time as **9:30 AM**; the API returns it as 24-hour `09:30`, exactly as written (no time zone conversion). A state or zip is
+optional. A note with none of these is still
 accepted; it returns mostly empty fields. The Docs page has 13 accepted and 13 rejected example
 notes, each verified against the real validator by a test.
 
@@ -284,7 +285,10 @@ curl -X POST http://localhost:3000/api/parse \
 `mobility` is a list of every aid the note names: any of `wheelchair`, `stretcher`, `walker`, `cane`,
 `crutches`, `scooter` or `other`, or `["ambulatory"]` for someone who walks unaided, or `[]` when the
 note does not say. The AI sorts plain words into these (a rollator is a `walker`, a gurney is a
-`stretcher`). `pickup_time` is 24-hour `HH:MM`; the card turns it into 12-hour for reading.
+`stretcher`). `pickup_time` is 24-hour `HH:MM` with no AM or PM, so 3pm is `15:00`; the card turns it into 12-hour for
+reading, and the data underneath never changes. The time is **exactly what the note says**: there is no
+time zone handling, so nothing is converted to server time or any other zone, and a zone named in the
+note ("3pm EST") is only repeated in `notes`. There is no date field either.
 
 Errors are JSON too: `{ "error": "human readable message", "code": "required" }`. The Docs page
 explains each status and each validation code.

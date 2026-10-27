@@ -99,10 +99,24 @@ delete the saved key, use `npm run key:status`, `npm run key:set` and `npm run k
 
 ### Why does the card say 9:30 AM when the API returns 09:30?
 
-On purpose. The data stays 24-hour (`09:30`, `16:15`) because that form cannot be misread and is easy
-for other systems to use. The card converts it to 12-hour (9:30 AM, 4:15 PM) for people. The exact value
-is still on the page, in the `datetime` attribute of the `<time>` element. A plain function does the
-conversion, so there is nothing for the AI to get wrong.
+On purpose. The data stays 24-hour (`09:30`, `15:00`, `23:59`) with no AM or PM: that form cannot be
+misread, sorts correctly as text, and suits a database. The card converts it to 12-hour (9:30 AM,
+3:00 PM) only for people to read. The exact value is still on the page, in the `datetime` attribute of
+the `<time>` element. A plain function does the conversion, so there is nothing for the AI to get wrong.
+
+### Does it convert time zones?
+
+No. The time is exactly what the note says. It is never converted to the server's time or to any other
+zone. If the note says "3pm EST", the result is `15:00` and the zone is only repeated in `notes`, so a
+person can see it. There is no date field either; days and dates are repeated in `notes`.
+
+### What does "Not stated" mean for mobility? What happened to "Unknown"?
+
+Earlier versions showed "Unknown" for mobility. That one word meant two different things: the note said
+nothing about it, or the note said something the single value could not hold (for example three aids).
+Now `[]` means only "the note did not say", and the card shows "Not stated". If the note names aids,
+every one is listed. If the note is vague ("needs a hand") or unclear (it is not clear whether she uses
+all of them or one), the list holds what was named and the `notes` line explains the doubt.
 
 ### Why is mobility a list?
 
@@ -590,7 +604,8 @@ push instead of assuming it is green.
 **What happened.** The owner tried a note that named three aids. The card showed "Unknown" and said the
 note "conflicts". The data could hold only one mobility value, so the AI did what the instructions told
 it to when it could not choose: it gave up. The AI was not wrong. The shape of the data could not say
-what the note said.
+what the note said. "Unknown" had been standing in for two different things (not stated, and not
+possible to express), which is why it could not be described better; the list separates them.
 
 **Caught by.** The owner, trying it in the browser. None of the eval notes named more than one aid.
 
@@ -618,6 +633,29 @@ passes some runs and fails others is printed as FLAKY, so unreliable behaviour i
 **Lesson.** _A model gives different answers to the same question, so one sample proves little._ Measure a
 rate before changing anything, and do not tune a prompt to fix a single bad answer.
 
+### 36. A wordy answer turned a good note into an error, and hid every other result
+
+**What happened.** After adding rules that ask the AI to explain time zones and unclear aids, its `notes`
+line sometimes ran past 300 characters. The SDK throws when an answer breaks a length rule, so the API
+answered "We couldn't parse that note" for a perfectly good note. In the eval, the same exception
+rejected the whole batch, so every case looked failed and the real results were hidden. It also made
+the AI occasionally return no time for a plain "2pm" (2 of 12 runs).
+
+**Caught by.** Two eval runs where every critical case failed at once, which pointed at the run itself and
+not the answers. The error text named the rule ("notes: max 300 characters").
+
+**Fix.** The SDK now parses with a lenient copy of the schema that describes exactly the same JSON to the
+model (a test checks this). Two harmless slips are then repaired: a long notes line is cut to the limit
+with an ellipsis, and a repeated aid is removed. Everything else, such as a malformed time, a name over
+the limit, or "walks unaided" mixed with an aid, is still checked strictly and still returns an error.
+The prompt asks for notes under 200 characters. The eval harness now treats a request that throws as one
+failed attempt instead of letting it stop the run. After the change, 64 repeat runs of the four notes
+involved gave no null times and no errors, and two full live runs passed all 39 cases.
+
+**Lesson.** _A rule that rejects the whole answer is the wrong tool for a harmless slip._ Repair what is
+safe to repair, and keep strict checks for what could cause harm. And when everything fails at once,
+suspect the run, not the individual answers.
+
 ---
 
 # What these have in common
@@ -635,4 +673,6 @@ rate before changing anything, and do not tune a prompt to fix a single bad answ
   result after every push.
 - **The shape of the data steers the AI** (#34), and **one sample proves little** (#35). Design the
   schema from awkward real inputs, and measure how often something happens before changing anything.
+- **Repair harmless slips; reject harmful ones** (#36). A strict rule that fails the whole answer turns a
+  verbose reply into an outage.
 - **Say so when you are wrong.** Writing the mistake down is the fastest way to stop repeating it.

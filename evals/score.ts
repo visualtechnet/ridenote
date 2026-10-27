@@ -54,6 +54,20 @@ export type CaseResult = {
   attempts?: number;
 };
 
+/**
+ * Runs one attempt, and turns an exception (a request that failed, an answer the SDK could not parse)
+ * into a failed attempt. Without this, one broken request rejected the whole batch and every case
+ * looked like it had failed.
+ */
+export async function attempt(run: () => Promise<Attempt>): Promise<Attempt> {
+  try {
+    return await run();
+  } catch (err) {
+    const first = err instanceof Error ? err.message.split("\n")[0] : "unknown error";
+    return [`request failed: ${first}`];
+  }
+}
+
 /** A failing case is run again this many more times before it is called a failure. */
 export const RETRIES = 2;
 

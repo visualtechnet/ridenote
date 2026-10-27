@@ -70,7 +70,7 @@ email contain `Name <address>`, which the validator was refusing.
 A run passes only if **both** hold:
 
 1. Every **critical** case passes. These are the ones where a wrong answer is dangerous: inventing a
-   missing time, address or name; guessing AM or PM; losing a date; inventing a mobility aid the note does not name, or dropping one it does (for example, "a wheelchair, a cane or a walker" must give all three); following an
+   missing time, address or name; guessing AM or PM; converting a time between time zones; losing a date; inventing a mobility aid the note does not name, or dropping one it does (for example, "a wheelchair, a cane or a walker" must give all three); following an
    instruction hidden inside a note.
 2. At least 90% of all cases pass (`PASS_RATE_FLOOR` in `evals/cases.ts`).
 
@@ -80,7 +80,9 @@ should not stop a release. A pickup time the model keeps inventing should.
 **Re-runs.** A model does not answer the same way every time, so one unlucky answer should not fail a
 case. When a case fails, it is run twice more, and it passes if it passes at least two of its three runs.
 A case that passed some runs and failed others is printed as `FLAKY`, so unreliability is reported, not
-hidden. A case that fails most of its runs fails the eval.
+hidden. A case that fails most of its runs fails the eval. A request that throws (for example an answer the
+SDK cannot parse) counts as one failed attempt for that case, so one broken request cannot stop the run
+and hide every other result.
 
 ## Running it
 

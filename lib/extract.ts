@@ -3,7 +3,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { HTTP, UPSTREAM } from "./config";
 import { MESSAGES } from "./messages";
 import { SYSTEM, wrapNote } from "./prompt";
-import { TripSchema, missingFields, type Trip } from "./trip";
+import { ModelTripSchema, TripSchema, missingFields, normalizeModelTrip, type Trip } from "./trip";
 
 export type Extraction = { ok: true; trip: Trip } | { ok: false; status: number; error: string };
 
@@ -22,7 +22,7 @@ export async function extractTrip(
       max_tokens: UPSTREAM.maxTokens,
       system: SYSTEM,
       messages: [{ role: "user", content: wrapNote(note) }],
-      output_config: { format: zodOutputFormat(TripSchema) },
+      output_config: { format: zodOutputFormat(ModelTripSchema) },
     },
     // Don't let a hung upstream hold the request open, and stop paying if every caller leaves.
     { timeout: UPSTREAM.timeoutMs, maxRetries: UPSTREAM.maxRetries, signal: options.signal },
@@ -35,8 +35,11 @@ export async function extractTrip(
     return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed };
   }
 
-  // Model output is untrusted: re-validate before it reaches the client.
-  const trip = TripSchema.safeParse(res.parsed_output);
+  // Model output is untrusted: repair the two harmless slips, then re-validate strictly before it
+  // reaches the client.
+  const raw = ModelTripSchema.safeParse(res.parsed_output);
+  if (!raw.success) return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed };
+  const trip = TripSchema.safeParse(normalizeModelTrip(raw.data));
   if (!trip.success) return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed };
 
   return { ok: true, trip: { ...trip.data, missing_fields: missingFields(trip.data) } };

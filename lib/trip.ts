@@ -15,7 +15,9 @@ export const TripSchema = z.object({
     .string()
     .refine((v) => TIME_24H.test(v), "must be 24h HH:MM")
     .nullable()
-    .describe("24h HH:MM, or null if not stated"),
+    .describe(
+      "24h HH:MM exactly as written in the note, with no time zone conversion; null if not stated",
+    ),
   mobility: z
     .array(z.enum(MOBILITY))
     .max(OUTPUT_LIMITS.mobilityCount)
@@ -27,6 +29,38 @@ export const TripSchema = z.object({
 });
 
 export type Trip = z.infer<typeof TripSchema>;
+
+/**
+ * What the SDK parses the model's answer with. It describes exactly the same JSON to the model as
+ * TripSchema, but does not throw on two harmless slips: a notes line that runs long and a repeated
+ * aid. The SDK throws on any failed rule, which used to turn a good note into a 502. Those two
+ * are repaired by normalizeModelTrip; everything else is still checked by the strict TripSchema.
+ */
+export const ModelTripSchema = TripSchema.extend({
+  mobility: z
+    .array(z.enum(MOBILITY))
+    .max(OUTPUT_LIMITS.mobilityCount)
+    .describe(TripSchema.shape.mobility.description ?? ""),
+  notes: z.string().describe(TripSchema.shape.notes.description ?? ""),
+});
+
+/** Cuts text to at most `max` characters, ending in an ellipsis so a cut is visible. */
+export function clampText(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+}
+
+/**
+ * Repairs the two harmless slips (see ModelTripSchema). Nothing else is touched, so a real problem,
+ * such as a malformed time, a name over the limit, or "ambulatory" mixed with an aid, still fails
+ * the strict TripSchema afterwards.
+ */
+export function normalizeModelTrip(trip: z.infer<typeof ModelTripSchema>) {
+  return {
+    ...trip,
+    notes: clampText(trip.notes, OUTPUT_LIMITS.notes),
+    mobility: [...new Set(trip.mobility)],
+  };
+}
 
 /** Derived from the data itself, so a confused or manipulated model cannot misreport it. */
 export function missingFields(trip: Trip): string[] {
