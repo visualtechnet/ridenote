@@ -1,12 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { after } from "next/server";
 import { BUDGET, HTTP, LIMITS, RATE_LIMIT } from "@/lib/config";
 import { createCoalescer } from "@/lib/coalesce";
 import { createGate } from "@/lib/concurrency";
 import { extractTrip } from "@/lib/extract";
+import { saveEntry } from "@/lib/history";
 import { MESSAGES } from "@/lib/messages";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { isOutOfCredit } from "@/lib/upstream-errors";
 import { readLimitedText } from "@/lib/read-body";
+import type { Trip } from "@/lib/trip";
 import { validateRequestBody } from "@/lib/validation";
 
 // Layer 1: per client, counts every request (valid or not).
@@ -46,6 +49,25 @@ function clientKey(req: Request) {
   return req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() || "unknown";
 }
 
+/**
+ * Saves the parsed trip to History once the response is sent. Only the trip goes in, never the
+ * note. Nothing here may change the response: `after` can throw (no request scope) and the save
+ * itself never throws, but both are guarded so a broken History cannot break a parse.
+ */
+function saveAfterResponse(trip: Trip) {
+  try {
+    after(async () => {
+      try {
+        await saveEntry(trip);
+      } catch {
+        // Already logged by saveEntry (error name only); never rethrow.
+      }
+    });
+  } catch {
+    // History is a side effect; the parse result stands.
+  }
+}
+
 /** The one paid call. Never throws: failures come back as an Outcome so they can be shared. */
 async function callModel(note: string, signal: AbortSignal): Promise<Outcome> {
   // Concurrency first, so a request turned away at the gate does not spend the shared budget.
@@ -65,9 +87,9 @@ async function callModel(note: string, signal: AbortSignal): Promise<Outcome> {
   try {
     client ??= new Anthropic();
     const result = await extractTrip(client, note, { signal });
-    return result.ok
-      ? { status: HTTP.ok, body: { trip: result.trip } }
-      : { status: result.status, body: { error: result.error } };
+    if (!result.ok) return { status: result.status, body: { error: result.error } };
+    saveAfterResponse(result.trip);
+    return { status: HTTP.ok, body: { trip: result.trip } };
   } catch (err) {
     // The one failure a person can act on. It is logged as its own kind so the owner sees it.
     if (isOutOfCredit(err)) {
