@@ -311,6 +311,13 @@ export default function DocsPage() {
               creates their own key in their own account and runs the project themselves.
             </li>
             <li>
+              <strong>On Vercel:</strong> import the repository and add{" "}
+              <code className={code}>ANTHROPIC_API_KEY</code> under Environment Variables for{" "}
+              <strong>Production</strong> only, marked <strong>Sensitive</strong>. Deploy, then
+              click Use an example and Parse. After changing the variable later, redeploy. The
+              README has the full steps.
+            </li>
+            <li>
               <strong>Keep the demo&rsquo;s limit fixed.</strong> It is the most the demo can ever
               cost. When it is used up, the parser says &ldquo;This demo has used up its AI
               budget&rdquo; (the API answers {HTTP.unavailable} with code{" "}
