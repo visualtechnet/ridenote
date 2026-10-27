@@ -105,8 +105,15 @@ describe("SideNav", () => {
       }
     });
 
-    it("lists Setup, Eval and FAQ under Docs on every documentation page", () => {
-      for (const page of ["docs", "docsEval", "docsFaq"] as const) {
+    it("lists Setup, Eval, FAQ and Agents under Docs on every documentation page", () => {
+      for (const page of [
+        "docs",
+        "docsEval",
+        "docsFaq",
+        "docsAgents",
+        "docsAgentsDesign",
+        "docsAgentsPlan",
+      ] as const) {
         pathname = Routes.page(page);
         const { unmount } = render(<SideNav />);
         const links = within(sections()!).getAllByRole("link");
@@ -114,7 +121,20 @@ describe("SideNav", () => {
           [COPY.navDocsSetup, Routes.page("docs")],
           [COPY.navDocsEval, Routes.page("docsEval")],
           [COPY.navDocsFaq, Routes.page("docsFaq")],
+          [COPY.navDocsAgents, Routes.page("docsAgents")],
         ]);
+        unmount();
+      }
+    });
+
+    it("marks Agents current on its guide and on both sub-pages", () => {
+      for (const page of ["docsAgents", "docsAgentsDesign", "docsAgentsPlan"] as const) {
+        pathname = Routes.page(page);
+        const { unmount } = render(<SideNav />);
+        expect(screen.getByRole("link", { name: COPY.navDocsAgents })).toHaveAttribute(
+          "aria-current",
+          "page",
+        );
         unmount();
       }
     });

@@ -93,6 +93,7 @@ export const COPY = {
   navDocsSetup: "Setup",
   navDocsEval: "Eval",
   navDocsFaq: "FAQ",
+  navDocsAgents: "Agents",
   historyTitle: "History",
   historyDescription: "The most recent notes parsed on this site.",
   historyPrivacy:
