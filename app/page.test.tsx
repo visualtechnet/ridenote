@@ -11,7 +11,7 @@ const trip = {
   pickup_location: "12 Oak St",
   dropoff_location: null,
   pickup_time: "09:30",
-  mobility: "wheelchair",
+  mobility: ["wheelchair"],
   missing_fields: ["dropoff_location"],
   notes: "",
 };
@@ -119,7 +119,7 @@ describe("Home page", () => {
 
     expect(await screen.findByRole("heading", { level: 2, name: "Mrs. Lee" })).toBeInTheDocument();
     expect(screen.getByText("12 Oak St")).toBeInTheDocument();
-    expect(screen.getByText("wheelchair")).toBeInTheDocument();
+    expect(screen.getByText("Wheelchair")).toBeInTheDocument();
     expect(container.textContent).not.toContain('passenger_name"');
     expect(container.textContent).not.toContain("{");
 

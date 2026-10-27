@@ -366,12 +366,15 @@ export default function DocsPage() {
               optional.
             </li>
             <li>
-              <strong>When:</strong> a time such as 9:30am, 14:15 or 0930. It is returned as 24-hour
-              HH:MM.
+              <strong>When:</strong> a time such as 9:30am, 14:15 or 0930. The card shows it as{" "}
+              <strong>9:30 AM</strong>; the API returns it as 24-hour HH:MM (09:30).
             </li>
             <li>
-              <strong>Mobility:</strong> one of {MOBILITY.join(", ")}. If unsaid it is{" "}
-              <code className={code}>unknown</code>.
+              <strong>Mobility:</strong> every aid the passenger uses, for example a wheelchair, a
+              cane or a walker. All of them are listed, as a list. The AI sorts plain words into
+              these categories: {MOBILITY.join(", ")} (a rollator becomes a walker, a gurney a
+              stretcher). If the note says nothing, the list is empty (
+              <code className={code}>[]</code>) and the card says &ldquo;Not stated&rdquo;.
             </li>
           </ul>
           <p className={p}>
@@ -507,8 +510,8 @@ export default function DocsPage() {
           <p className={p}>
             The reverse direction is guarded too. The AI is forced to answer in a fixed shape, and
             the server re-checks that answer. If it breaks the shape (a time that is not HH:MM, a
-            mobility value outside the list, text over the length limits, extra or missing fields)
-            you get a 502, never malformed data.
+            mobility aid outside the list, a repeated aid, text over the length limits, extra or
+            missing fields) you get a 502, never malformed data.
           </p>
         </section>
 
@@ -568,9 +571,10 @@ export default function DocsPage() {
                   <th scope="row" className={`${td} font-mono font-normal`}>
                     mobility
                   </th>
-                  <td className={td}>{MOBILITY.join(" | ")}</td>
+                  <td className={td}>array of {MOBILITY.join(" | ")}</td>
                   <td className={td}>
-                    Never null; <code className={code}>unknown</code> when not stated.
+                    Every aid the note names, no repeats. <code className={code}>[]</code> when not
+                    stated. <code className={code}>ambulatory</code> (walks unaided) stands alone.
                   </td>
                 </tr>
                 <tr>

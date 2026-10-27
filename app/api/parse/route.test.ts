@@ -19,7 +19,7 @@ const goodTrip = {
   pickup_location: "12 Oak St",
   dropoff_location: "County Hospital",
   pickup_time: "09:30",
-  mobility: "wheelchair",
+  mobility: ["wheelchair"],
   missing_fields: [],
   notes: "",
 };
@@ -303,7 +303,7 @@ describe("POST /api/parse", () => {
   it("returns 502 when the model output fails schema validation", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
-      parsed_output: { ...goodTrip, mobility: "flying" },
+      parsed_output: { ...goodTrip, mobility: ["flying"] },
     });
     expect((await POST(request({ note: VALID_NOTE }))).status).toBe(502);
   });

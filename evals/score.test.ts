@@ -2,14 +2,14 @@
 import { validateNote } from "../lib/validation";
 import type { Trip } from "../lib/trip";
 import { CASES, PASS_RATE_FLOOR } from "./cases";
-import { score, summarise } from "./score";
+import { RETRIES, judge, score, summarise } from "./score";
 
 const trip: Trip = {
   passenger_name: "Mrs. Lee",
   pickup_location: "12 Oak St",
   dropoff_location: null,
   pickup_time: "09:30",
-  mobility: "unknown",
+  mobility: [],
   missing_fields: ["dropoff_location"],
   notes: "Tomorrow.",
 };
@@ -43,7 +43,7 @@ describe("score", () => {
         passenger_name: /lee/i,
         dropoff_location: null,
         pickup_time: "09:30",
-        mobility: "unknown",
+        mobility: [],
         missing: ["dropoff_location"],
         notes: /tomorrow/i,
       }),
@@ -56,7 +56,7 @@ describe("score", () => {
       pickup_location: null,
       dropoff_location: /hospital/,
       pickup_time: null,
-      mobility: "wheelchair",
+      mobility: ["wheelchair"],
       missing: ["pickup_time"],
       notes: /friday/i,
     });
@@ -73,8 +73,35 @@ describe("score", () => {
     ]);
   });
 
+  describe("mobility", () => {
+    const withAids = (mobility: Trip["mobility"]) => ({ ...trip, mobility });
+
+    it("ignores the order of the aids", () => {
+      expect(score(withAids(["cane", "wheelchair"]), { mobility: ["wheelchair", "cane"] })).toEqual(
+        [],
+      );
+    });
+
+    it("fails when an aid is missing, extra, or wrong", () => {
+      expect(score(withAids(["cane"]), { mobility: ["cane", "walker"] })).toHaveLength(1);
+      expect(score(withAids(["cane", "walker"]), { mobility: ["cane"] })).toHaveLength(1);
+      expect(score(withAids(["cane"]), { mobility: ["walker"] })).toHaveLength(1);
+    });
+
+    it("tells an empty list from an aid", () => {
+      expect(score(withAids([]), { mobility: ["wheelchair"] })).toHaveLength(1);
+      expect(score(withAids(["wheelchair"]), { mobility: [] })).toHaveLength(1);
+    });
+
+    it("does not change the answer it checks (sorting works on a copy)", () => {
+      const aids: Trip["mobility"] = ["walker", "cane"];
+      score(withAids(aids), { mobility: ["cane", "walker"] });
+      expect(aids).toEqual(["walker", "cane"]);
+    });
+  });
+
   it("does not check fields it was not asked about", () => {
-    expect(score(trip, { mobility: "unknown" })).toEqual([]);
+    expect(score(trip, { mobility: [] })).toEqual([]);
   });
 });
 
@@ -103,5 +130,35 @@ describe("summarise", () => {
 
   it("fails an empty run", () => {
     expect(summarise([], PASS_RATE_FLOOR).ok).toBe(false);
+  });
+});
+
+describe("judge (a failing case is run again, and passes if it passes most runs)", () => {
+  const ok: string[] = [];
+  const bad = ["pickup_time: expected 15:00, got null"];
+
+  it("passes a case that passed its only run", () => {
+    expect(judge([ok])).toEqual({ problems: [], flaky: false });
+  });
+
+  it("passes a case that failed once but passed the two re-runs, and marks it flaky", () => {
+    expect(judge([bad, ok, ok])).toEqual({ problems: [], flaky: true });
+  });
+
+  it("passes at 2 of 3 whichever runs were good", () => {
+    expect(judge([ok, bad, ok]).problems).toEqual([]);
+    expect(judge([bad, ok, ok]).problems).toEqual([]);
+  });
+
+  it("fails a case that passed only 1 of 3 runs, reporting the last failure, and marks it flaky", () => {
+    expect(judge([bad, bad, ok])).toEqual({ problems: bad, flaky: true });
+  });
+
+  it("fails a case that failed every run, and does not call it flaky", () => {
+    expect(judge([bad, bad, bad])).toEqual({ problems: bad, flaky: false });
+  });
+
+  it("re-runs a failure exactly twice", () => {
+    expect(RETRIES).toBe(2);
   });
 });

@@ -114,13 +114,18 @@ export default function RequirementsPage() {
           <h3 className={h3}>Functional requirements</h3>
           <ol className="mt-2 list-decimal space-y-1 pl-6 text-zinc-700 dark:text-zinc-300">
             <li>Accept a pasted note and parse it on request (button or Ctrl/⌘ + Enter).</li>
-            <li>Extract passenger, pickup, dropoff, pickup time and mobility.</li>
+            <li>
+              Extract passenger, pickup, dropoff, pickup time and every mobility aid named (a list).
+            </li>
             <li>Never invent facts. Anything not stated is null and listed as missing.</li>
             <li>
               Do not guess an ambiguous time (an hour with no AM or PM): leave it null and explain
               in the notes. Say so in the notes when a note holds several trips or no trip at all.
             </li>
-            <li>Show the result as a readable card, with missing fields called out.</li>
+            <li>
+              Show the result as a readable card, with the time in 12-hour form (9:30 AM) and
+              missing fields called out. The API keeps the 24-hour time.
+            </li>
             <li>Reject unusable input with a clear, specific message before calling the AI.</li>
             <li>Show a friendly message for every failure, and keep the typed note.</li>
             <li>Provide an example note and a Clear action.</li>
@@ -253,9 +258,10 @@ export default function RequirementsPage() {
           <h3 className={h3}>What the note should say</h3>
           <p className={p}>
             To avoid empty fields, a note should state:{" "}
-            <strong>{required.replaceAll("_", " ")}</strong>. Mobility is optional and defaults to{" "}
-            <code className={code}>unknown</code>. A note that states none of these is still
-            accepted; it just returns mostly null fields.
+            <strong>{required.replaceAll("_", " ")}</strong>. Mobility is optional: name every aid
+            the passenger uses (for example a wheelchair, a cane or a walker) and all of them are
+            listed; if the note says nothing the list is <code className={code}>[]</code>. A note
+            that states none of these is still accepted; it just returns mostly null fields.
           </p>
         </section>
 
@@ -319,8 +325,12 @@ export default function RequirementsPage() {
                   <th scope="row" className={`${td} font-mono font-normal`}>
                     mobility
                   </th>
-                  <td className={td}>string</td>
-                  <td className={td}>One of {MOBILITY.join(", ")}. Never null.</td>
+                  <td className={td}>array of strings</td>
+                  <td className={td}>
+                    Every aid the note names, each one of {MOBILITY.join(", ")}, no repeats, never
+                    null. <code className={code}>[]</code> when not stated.{" "}
+                    <code className={code}>ambulatory</code> (walks unaided) stands alone.
+                  </td>
                 </tr>
                 <tr>
                   <th scope="row" className={`${td} font-mono font-normal`}>

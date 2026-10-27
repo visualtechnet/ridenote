@@ -1,5 +1,6 @@
 /** @jest-environment node */
-import { TripSchema, missingFields } from "./trip";
+import { TripSchema, missingFields, type Trip } from "./trip";
+import { MOBILITY, OUTPUT_LIMITS } from "./config";
 import { wrapNote } from "./prompt";
 
 describe("TripSchema", () => {
@@ -8,7 +9,7 @@ describe("TripSchema", () => {
     pickup_location: null,
     dropoff_location: null,
     pickup_time: null,
-    mobility: "unknown",
+    mobility: [],
     missing_fields: [],
     notes: "",
   };
@@ -17,8 +18,43 @@ describe("TripSchema", () => {
     expect(TripSchema.safeParse(valid).success).toBe(true);
   });
 
-  it("rejects an unknown mobility value", () => {
-    expect(TripSchema.safeParse({ ...valid, mobility: "hoverboard" }).success).toBe(false);
+  describe("mobility is a list of aids", () => {
+    const ok = (mobility: unknown) => TripSchema.safeParse({ ...valid, mobility }).success;
+
+    it("accepts an empty list (nothing stated), one aid, or several", () => {
+      expect(ok([])).toBe(true);
+      expect(ok(["wheelchair"])).toBe(true);
+      expect(ok(["wheelchair", "cane", "walker"])).toBe(true);
+      expect(ok(["ambulatory"])).toBe(true);
+    });
+
+    it("accepts every aid in the vocabulary", () => {
+      for (const aid of MOBILITY) expect(ok([aid])).toBe(true);
+    });
+
+    it("rejects the old single-value shape", () => {
+      expect(ok("wheelchair")).toBe(false);
+      expect(ok("unknown")).toBe(false);
+      expect(ok(null)).toBe(false);
+    });
+
+    it("rejects a value outside the vocabulary", () => {
+      expect(ok(["hoverboard"])).toBe(false);
+      expect(ok(["wheelchair", "unknown"])).toBe(false);
+    });
+
+    it("rejects duplicates", () => {
+      expect(ok(["cane", "cane"])).toBe(false);
+    });
+
+    it("rejects more than the allowed number of entries", () => {
+      expect(ok(Array(OUTPUT_LIMITS.mobilityCount + 1).fill("cane"))).toBe(false);
+    });
+
+    it("ambulatory means no aid, so it cannot be combined with one", () => {
+      expect(ok(["ambulatory", "wheelchair"])).toBe(false);
+      expect(ok(["cane", "ambulatory"])).toBe(false);
+    });
   });
 
   it("rejects a malformed pickup_time", () => {
@@ -34,7 +70,7 @@ describe("missingFields", () => {
     pickup_location: "B",
     dropoff_location: "C",
     pickup_time: "09:00",
-    mobility: "unknown" as const,
+    mobility: [] as Trip["mobility"],
     missing_fields: [],
     notes: "",
   };

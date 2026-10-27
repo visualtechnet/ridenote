@@ -54,7 +54,7 @@ accident; the eval tells you whether the model obeys it. Change the prompt, then
 
 **The schema.** `lib/trip.ts` defines the shape of a trip. `extractTrip` sends it to the model as a
 structured-output format, which constrains the answer to the right keys and types, with
-`mobility` limited to four values. Some rules cannot be expressed that way (the `HH:MM` pattern and
+`mobility` a list limited to the known aids (wheelchair, cane, walker and so on). Some rules cannot be expressed that way (the `HH:MM` pattern and
 the length limits), so the answer is checked again with the same schema after it arrives. The server
 also recomputes `missing_fields` from the data rather than trusting the model's list. The eval scores
 the result _after_ all of this, so it sees what a user would see. An answer that breaks a rule shows
@@ -70,12 +70,17 @@ email contain `Name <address>`, which the validator was refusing.
 A run passes only if **both** hold:
 
 1. Every **critical** case passes. These are the ones where a wrong answer is dangerous: inventing a
-   missing time, address or name; guessing AM or PM; losing a date; guessing mobility; following an
+   missing time, address or name; guessing AM or PM; losing a date; inventing a mobility aid the note does not name, or dropping one it does (for example, "a wheelchair, a cane or a walker" must give all three); following an
    instruction hidden inside a note.
 2. At least 90% of all cases pass (`PASS_RATE_FLOOR` in `evals/cases.ts`).
 
 The two rules exist because a model is not perfectly repeatable. A single flaky formatting case
-should not stop a release. A single invented pickup time should.
+should not stop a release. A pickup time the model keeps inventing should.
+
+**Re-runs.** A model does not answer the same way every time, so one unlucky answer should not fail a
+case. When a case fails, it is run twice more, and it passes if it passes at least two of its three runs.
+A case that passed some runs and failed others is printed as `FLAKY`, so unreliability is reported, not
+hidden. A case that fails most of its runs fails the eval.
 
 ## Running it
 

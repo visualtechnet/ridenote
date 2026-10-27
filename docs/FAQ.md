@@ -97,6 +97,20 @@ the key. Plain `npm run dev` reads the key from a `.env.local` file instead, whi
 Windows and Linux. If `dev:key` says it only works on a Mac, use `.env.local`. To check, replace or
 delete the saved key, use `npm run key:status`, `npm run key:set` and `npm run key:remove`.
 
+### Why does the card say 9:30 AM when the API returns 09:30?
+
+On purpose. The data stays 24-hour (`09:30`, `16:15`) because that form cannot be misread and is easy
+for other systems to use. The card converts it to 12-hour (9:30 AM, 4:15 PM) for people. The exact value
+is still on the page, in the `datetime` attribute of the `<time>` element. A plain function does the
+conversion, so there is nothing for the AI to get wrong.
+
+### Why is mobility a list?
+
+A passenger can use more than one aid, and a note can name several ("a wheelchair, a cane or a walker").
+`mobility` is a list of every aid the note names: `wheelchair`, `stretcher`, `walker`, `cane`,
+`crutches`, `scooter` or `other`. `["ambulatory"]` means walks unaided, and `[]` means the note did not
+say. The AI sorts plain words into these categories (a rollator is a walker, a gurney is a stretcher).
+
 ### What is the eval, and when do I run it?
 
 A live accuracy check: about thirty realistic notes are sent to the real AI and the answers are
@@ -486,7 +500,8 @@ non-deterministic, you need a different kind of test for it, and it will not be 
 
 **What happened.** The instructions said "use only stated facts" but nothing about an hour with no
 AM or PM, a date like "tomorrow" (there is no date field, so it was silently dropped), several trips
-in one note, a note with no trip, or unclear mobility such as a walker.
+in one note, a note with no trip, or unclear mobility such as a walker (mobility has since become a
+list of aids, see #34).
 
 **Fix.** Each case now has an explicit rule: unsure means `null` plus a reason in `notes`. Each rule
 is pinned by a prompt test and covered by eval cases.
@@ -570,6 +585,39 @@ cached locally (build output, generated types, installed tools, environment vari
 missing step. Before trusting CI, run it from a fresh clone, and look at the real CI result after every
 push instead of assuming it is green.
 
+### 34. Mobility was one value, so "a wheelchair, a cane or a walker" came back "unknown"
+
+**What happened.** The owner tried a note that named three aids. The card showed "Unknown" and said the
+note "conflicts". The data could hold only one mobility value, so the AI did what the instructions told
+it to when it could not choose: it gave up. The AI was not wrong. The shape of the data could not say
+what the note said.
+
+**Caught by.** The owner, trying it in the browser. None of the eval notes named more than one aid.
+
+**Fix.** `mobility` became a list of aids (`wheelchair`, `stretcher`, `walker`, `cane`, `crutches`,
+`scooter`, `other`, or `ambulatory` alone), validated with no repeats. The prompt now tells the AI to
+translate plain words into those categories and to list every aid, even when the note joins them with
+"or". New eval cases cover the exact note, aids for different places, and categorising (a rollator is a
+walker, a power chair is a wheelchair, a white cane is a cane).
+
+**Lesson.** _If the shape of your data cannot say what the input said, the AI will pick the nearest wrong
+answer._ Design the schema from real inputs, including awkward ones, and when the AI "refuses" or says
+"unknown", ask whether the schema left it no good option.
+
+### 35. One unlucky answer failed a critical eval case
+
+**What happened.** A live run failed a critical case: "Friday 3pm" came back with a null time. The same
+note had passed an earlier run.
+
+**Caught by.** The live eval. Before touching the prompt, the note was sent 16 times: it gave `15:00`
+every time. So the failure was one unlucky answer, not a regression.
+
+**Fix.** A failing case is now run twice more and passes if it passes two of its three runs. A case that
+passes some runs and fails others is printed as FLAKY, so unreliable behaviour is still reported.
+
+**Lesson.** _A model gives different answers to the same question, so one sample proves little._ Measure a
+rate before changing anything, and do not tune a prompt to fix a single bad answer.
+
 ---
 
 # What these have in common
@@ -585,4 +633,6 @@ push instead of assuming it is green.
   and make "did not run" loud.
 - **Green locally is not green in CI** (#33). Run the checks from a fresh clone, and read the real CI
   result after every push.
+- **The shape of the data steers the AI** (#34), and **one sample proves little** (#35). Design the
+  schema from awkward real inputs, and measure how often something happens before changing anything.
 - **Say so when you are wrong.** Writing the mistake down is the fastest way to stop repeating it.

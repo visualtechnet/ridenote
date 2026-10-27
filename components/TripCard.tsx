@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
+import { formatTime12h, mobilityLabel } from "@/lib/format";
 import { COPY } from "@/lib/messages";
 import type { Trip } from "@/lib/trip";
 
-function Field({ label, value }: { label: string; value: string | null }) {
+function Field({ label, value }: { label: string; value: ReactNode | null }) {
   return (
     <div className="min-w-0">
       <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
@@ -26,19 +28,44 @@ export function TripCard({ trip }: { trip: Trip }) {
       aria-label={COPY.resultLabel}
       className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
     >
-      <div className="flex items-start justify-between gap-4">
-        <h2 className="min-w-0 text-xl font-semibold break-words text-zinc-900 dark:text-zinc-50">
-          {trip.passenger_name ?? COPY.unknownPassenger}
-        </h2>
-        <span className="shrink-0 rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700 capitalize dark:bg-zinc-800 dark:text-zinc-300">
-          {trip.mobility}
-        </span>
-      </div>
+      <h2 className="text-xl font-semibold break-words text-zinc-900 dark:text-zinc-50">
+        {trip.passenger_name ?? COPY.unknownPassenger}
+      </h2>
 
       <dl className="mt-5 grid gap-4 sm:grid-cols-2">
         <Field label={COPY.fieldPickup} value={trip.pickup_location} />
         <Field label={COPY.fieldDropoff} value={trip.dropoff_location} />
-        <Field label={COPY.fieldPickupTime} value={trip.pickup_time} />
+        <Field
+          label={COPY.fieldPickupTime}
+          value={
+            trip.pickup_time && (
+              <time dateTime={trip.pickup_time}>{formatTime12h(trip.pickup_time)}</time>
+            )
+          }
+        />
+        <div className="min-w-0">
+          <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            {COPY.fieldMobility}
+          </dt>
+          <dd className="mt-1">
+            {trip.mobility.length > 0 ? (
+              <ul aria-label={COPY.mobilityListLabel} className="flex flex-wrap gap-2">
+                {trip.mobility.map((aid) => (
+                  <li
+                    key={aid}
+                    className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                  >
+                    {mobilityLabel(aid)}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span className="text-base text-zinc-500 italic dark:text-zinc-400">
+                {COPY.notStated}
+              </span>
+            )}
+          </dd>
+        </div>
       </dl>
 
       {trip.notes && (

@@ -7,7 +7,7 @@ export const trip = {
   pickup_location: "12 Oak St",
   dropoff_location: "County Hospital",
   pickup_time: "09:30",
-  mobility: "wheelchair",
+  mobility: ["wheelchair"],
   missing_fields: [],
   notes: "Confirm ramp access.",
 };
@@ -60,7 +60,7 @@ export const emptyTrip = {
   pickup_location: null,
   dropoff_location: null,
   pickup_time: null,
-  mobility: "unknown",
+  mobility: [],
   missing_fields: ["passenger_name", "pickup_location", "dropoff_location", "pickup_time"],
   notes: "",
 };

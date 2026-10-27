@@ -21,8 +21,8 @@ test.describe("happy path", () => {
     const card = page.getByRole("region", { name: "Parsed trip" });
     await expect(card.getByText("12 Oak St")).toBeVisible();
     await expect(card.getByText("County Hospital")).toBeVisible();
-    await expect(card.getByText("09:30")).toBeVisible();
-    await expect(card.getByText("wheelchair")).toBeVisible();
+    await expect(card.getByText("9:30 AM")).toBeVisible();
+    await expect(card.getByText("Wheelchair")).toBeVisible();
     await expect(card.getByText(/verify before dispatching/i)).toBeVisible();
     // A card, not raw JSON:
     await expect(page.locator("body")).not.toContainText('"passenger_name"');

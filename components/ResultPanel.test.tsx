@@ -7,7 +7,7 @@ const trip: Trip = {
   pickup_location: "12 Oak St",
   dropoff_location: "County Hospital",
   pickup_time: "09:30",
-  mobility: "wheelchair",
+  mobility: ["wheelchair"],
   missing_fields: [],
   notes: "",
 };
