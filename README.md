@@ -26,11 +26,13 @@ Built with Next.js 16, the Claude API (Anthropic), Zod, React Query and Zustand.
 - [Quick start](#quick-start)
 - [Getting an API key](#getting-an-api-key)
 - [Sharing or deploying a demo](#sharing-or-deploying-a-demo)
+- [Deploying to Vercel](#deploying-to-vercel-step-by-step)
 - [Configuration](#configuration)
 - [Using it](#using-it)
 - [The API](#the-api)
 - [Limits](#limits)
 - [Project layout](#project-layout)
+- [Security](#security)
 - [Testing](#testing)
 - [Scripts](#scripts)
 - [Documentation map](#documentation-map)
@@ -205,6 +207,26 @@ one.
   renews, and visitors are pointed to running it with their own key.
 - **Watch it.** Check usage in the Console now and then, and delete the key if anything looks wrong.
 
+### Deploying to Vercel, step by step
+
+1. Push the repository to GitHub.
+2. In Vercel choose **Add New, Project**, import the repository, and keep the detected **Next.js**
+   settings.
+3. Before the first deploy, open **Environment Variables** and add one:
+   - **Name:** `ANTHROPIC_API_KEY` (exactly this, with underscores).
+   - **Value:** the demo key, created in the workspace with the small monthly spend limit.
+   - **Environments:** tick **Production** only, and mark it **Sensitive**.
+4. Click **Deploy**. Every later push to `main` deploys automatically.
+5. Check it: open the site, click **Use an example**, then **Parse**. Opening `/api/parse` in the browser
+   should show a blank 405 page (the API only accepts POST). In Terminal, `curl -sI <your-url>` should
+   show a `content-security-policy` header and **no** `x-powered-by` header.
+6. Changing a variable later only affects **new** deployments, so redeploy after changing the key.
+7. Keep an eye on usage in the Anthropic Console. If the demo budget runs out, visitors see a clear
+   message and the demo stays off until the limit renews.
+
+If a deploy complains that `maxDuration` is above your plan's limit, lower the `maxDuration` line in
+`app/api/parse/route.ts` to the limit your plan allows.
+
 ## Configuration
 
 Secrets live in environment variables, never in code. `.env.local` is git-ignored; `.env.example` is
@@ -296,6 +318,26 @@ docs/                   Guides (see below)
 
 Tests sit next to the code they test (`foo.ts` and `foo.test.ts`).
 
+## Security
+
+The project is built so that the one secret it holds (the API key) stays on the server, and so that a
+visitor can only do a small, bounded thing: send one short note and get one structured trip back.
+
+- **The key** is read only on the server and is never in the repository or the browser. A test scans every
+  tracked file, and a pre-commit hook refuses env files.
+- **Input** is validated first (length, hidden characters, HTML and script links) and the request body is
+  size-capped while it is read.
+- **The AI** gets the note escaped inside its own tags. Its answer is checked against a strict schema,
+  and the live eval includes notes that try to give it instructions.
+- **The browser** gets a Content-Security-Policy, HSTS in production, no framing, a strict referrer
+  policy, and camera, microphone, location, payment and USB turned off. Text is always escaped.
+- **Cost** is capped by per-client and shared limits, a short answer cap and, most importantly, a small
+  fixed spend limit on the demo's API key.
+- **Dependencies** are installed from a lockfile with scripts disabled, audited in CI, and kept current
+  by Dependabot.
+
+Found a problem? See [SECURITY.md](SECURITY.md) for how to report it and for the known limits.
+
 ## Testing
 
 ```bash
@@ -346,6 +388,7 @@ A pre-commit hook runs `npm run check`. CI runs everything on every push.
 | [docs/EVAL.md](docs/EVAL.md)                     | Learn how the live accuracy eval works and how it ties into prompt and schema |
 | [docs/FAQ.md](docs/FAQ.md)                       | See common questions and **the bugs we hit and what they taught us**          |
 | [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md) | Learn the habits this code is built on                                        |
+| [SECURITY.md](SECURITY.md)                       | Report a problem, and see what is protected and the known limits              |
 | [docs/SCALING.md](docs/SCALING.md)               | Understand cost, limits and abuse protection, and what to add for production  |
 
 This repository uses Next.js 16, which differs from older versions. See `AGENTS.md`: read the guides in
