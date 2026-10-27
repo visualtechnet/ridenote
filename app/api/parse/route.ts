@@ -3,6 +3,7 @@ import { after } from "next/server";
 import { BUDGET, HTTP, LIMITS, RATE_LIMIT } from "@/lib/config";
 import { createCoalescer } from "@/lib/coalesce";
 import { createGate } from "@/lib/concurrency";
+import { createStubClient, stubActive } from "@/lib/e2e-stub-client";
 import { extractTrip } from "@/lib/extract";
 import { saveEntry } from "@/lib/history";
 import { MESSAGES } from "@/lib/messages";
@@ -35,7 +36,7 @@ const gate = createGate(BUDGET.maxConcurrent);
 // Identical notes submitted at the same moment share one upstream call.
 const coalescer = createCoalescer<Outcome>();
 
-let client: Anthropic | undefined;
+let client: Pick<Anthropic, "messages"> | undefined;
 
 /** Upstream timeout plus one retry can take about a minute; give the platform room for it. */
 export const maxDuration = 90;
@@ -97,7 +98,7 @@ async function callModel(note: string, signal: AbortSignal): Promise<Outcome> {
   }
 
   try {
-    client ??= new Anthropic();
+    client ??= stubActive() ? createStubClient() : new Anthropic();
     const result = await extractTrip(client, note, { signal });
     if (!result.ok) return { status: result.status, body: { error: result.error } };
     saveAfterResponse(result.trip);
