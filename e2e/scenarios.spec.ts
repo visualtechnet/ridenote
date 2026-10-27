@@ -483,7 +483,13 @@ test.describe("navigation, docs and the menu", () => {
     const nav = page.getByRole("navigation", { name: "Main" });
     await expect(nav).toBeVisible();
     await expect(page.getByRole("button", { name: "Menu" })).toBeHidden();
-    await expect(nav.getByRole("link")).toHaveText(["Parser", "Requirements", "Docs", "Tests"]);
+    await expect(nav.getByRole("link")).toHaveText([
+      "Parser",
+      "Requirements",
+      "Docs",
+      "Tests",
+      "Contact",
+    ]);
     await expect(nav.getByRole("link", { name: "Parser" })).toHaveAttribute("aria-current", "page");
 
     const boxes = await nav.getByRole("link").evaluateAll((links) =>
@@ -518,6 +524,7 @@ test.describe("navigation, docs and the menu", () => {
       ["Docs", Routes.page("docs")],
       ["Requirements", Routes.page("requirements")],
       ["Tests", Routes.page("tests")],
+      ["Contact", Routes.page("contact")],
       ["Parser", Routes.page("home")],
     ] as const) {
       await goTo(page, label);
@@ -531,7 +538,7 @@ test.describe("navigation, docs and the menu", () => {
     await page.goto(Routes.page("home"));
     await page.keyboard.press("Tab"); // skip link
     await page.keyboard.press("Tab"); // brand
-    for (const name of ["Parser", "Requirements", "Docs", "Tests"]) {
+    for (const name of ["Parser", "Requirements", "Docs", "Tests", "Contact"]) {
       await page.keyboard.press("Tab");
       await expect(
         page.getByRole("navigation", { name: "Main" }).getByRole("link", { name }),
@@ -555,7 +562,13 @@ test.describe("navigation on a phone", () => {
 
     await menu.click();
     await expect(menu).toHaveAttribute("aria-expanded", "true");
-    await expect(nav.getByRole("link")).toHaveText(["Parser", "Requirements", "Docs", "Tests"]);
+    await expect(nav.getByRole("link")).toHaveText([
+      "Parser",
+      "Requirements",
+      "Docs",
+      "Tests",
+      "Contact",
+    ]);
     await expect(nav.getByRole("link", { name: "Parser" })).toHaveAttribute("aria-current", "page");
 
     await page.keyboard.press("Escape");
@@ -567,6 +580,7 @@ test.describe("navigation on a phone", () => {
     ["Docs", Routes.page("docs"), "Documentation"],
     ["Requirements", Routes.page("requirements"), "Requirements"],
     ["Tests", Routes.page("tests"), "Tests"],
+    ["Contact", Routes.page("contact"), "Contact"],
   ] as const) {
     test(`the menu opens the ${label} page and closes itself`, async ({ page }) => {
       await page.goto(Routes.page("home"));
@@ -661,7 +675,12 @@ test.describe("docs pages", () => {
     await expect(page).toHaveURL(/#main$/);
   });
 
-  for (const route of [Routes.page("docs"), Routes.page("requirements"), Routes.page("tests")]) {
+  for (const route of [
+    Routes.page("docs"),
+    Routes.page("requirements"),
+    Routes.page("tests"),
+    Routes.page("contact"),
+  ]) {
     test(`${route} has no accessibility violations in light and dark mode`, async ({ page }) => {
       for (const scheme of ["light", "dark"] as const) {
         await page.emulateMedia({ colorScheme: scheme });
@@ -820,6 +839,7 @@ test.describe("the home page explains itself", () => {
       Routes.page("docs"),
       Routes.page("requirements"),
       Routes.page("tests"),
+      Routes.page("contact"),
     ]) {
       await page.goto(route);
       await expect(page.locator("body")).not.toContainText("Trip Parser");

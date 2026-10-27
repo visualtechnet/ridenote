@@ -15,7 +15,7 @@ export const MESSAGES = {
   unsupportedMediaType: "Requests must be sent as JSON (Content-Type: application/json).",
   busy: "We're handling a lot of requests right now. Please try again in a moment.",
   outOfCredit:
-    "This demo has used up its AI budget. Please try again later, or run RideNote with your own API key (see Docs, Setup).",
+    "This demo has used up its AI budget. Please try again later, or run RideNote yourself with your own API key (see Docs, Setup).",
   tooManyRequests: "You're going a bit fast. Please wait a moment and try again.",
   parseFailed: "We couldn't parse that note. Please try again.",
   modelDeclined: "The assistant couldn't process that note. Please rephrase it and try again.",
@@ -70,6 +70,7 @@ export const COPY = {
   navRequirements: "Requirements",
   navDocs: "Docs",
   navTests: "Tests",
+  navContact: "Contact",
   navDocsSections: "Documentation sections",
   navDocsSetup: "Setup",
   navDocsEval: "Eval",
