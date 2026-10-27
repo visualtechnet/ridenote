@@ -6,16 +6,23 @@ import { createGate } from "@/lib/concurrency";
 import { extractTrip } from "@/lib/extract";
 import { saveEntry } from "@/lib/history";
 import { MESSAGES } from "@/lib/messages";
-import { createRateLimiter } from "@/lib/rate-limit";
+import { createRateLimiter, maxRequestsFor } from "@/lib/rate-limit";
 import { isOutOfCredit } from "@/lib/upstream-errors";
 import { readLimitedText } from "@/lib/read-body";
 import type { Trip } from "@/lib/trip";
 import { validateRequestBody } from "@/lib/validation";
 
 // Layer 1: per client, counts every request (valid or not).
-const checkRate = createRateLimiter({
+const checkRateByClient = createRateLimiter({
+  limit: maxRequestsFor(process.env),
+  windowMs: RATE_LIMIT.windowMs,
+});
+// Requests with no usable client IP all share one key. A strict per-client limit would lock the
+// whole site out, so that shared bucket always gets the looser limit, even in production.
+const checkRateUnknownClient = createRateLimiter({
   limit: RATE_LIMIT.maxRequests,
   windowMs: RATE_LIMIT.windowMs,
+  maxKeys: 1,
 });
 // Layer 2: everyone together, counts only requests that reach the paid upstream call.
 const checkBudget = createRateLimiter({
@@ -43,10 +50,15 @@ function json(body: unknown, status: number = HTTP.ok, headers?: Record<string, 
 // "unknown" bucket. Hosts like Vercel always set x-real-ip, so deploy behind one.
 // Never key on the first x-forwarded-for entry: the client writes it. x-real-ip is set by the
 // hosting platform (e.g. Vercel); otherwise take the last hop, which our own proxy appended.
+const UNKNOWN_CLIENT = "unknown";
 function clientKey(req: Request) {
   const real = req.headers.get("x-real-ip")?.trim();
   if (real) return real;
-  return req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() || "unknown";
+  return req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() || UNKNOWN_CLIENT;
+}
+
+function checkRate(key: string) {
+  return key === UNKNOWN_CLIENT ? checkRateUnknownClient(key) : checkRateByClient(key);
 }
 
 /**
