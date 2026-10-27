@@ -113,6 +113,17 @@ Read the `FAIL` line first. If a **critical** case failed, treat it as a real pr
 guessed something it should have left empty. If a non-critical case failed, check whether the
 expectation was too strict (a correct answer worded differently) before changing the prompt.
 
+### I am a manager and just want to see it. Do I need an API key?
+
+Not if someone hosts it for you: open the link and click Parse. To run it on your own computer you
+need a key; the README and the Setup page have step-by-step instructions, and the owner may send you a
+temporary low-limit key privately instead.
+
+### It says "This demo has used up its AI budget". What now?
+
+The key behind the demo has no credit left. Either come back after the owner tops it up, or create
+your own key (Docs, Setup) and run it locally. Owners: add credit or raise the spend limit.
+
 ### Is this safe for the AI part? What about prompt injection?
 
 Several layers: notes with markup or hidden characters are refused; angle brackets are escaped
@@ -490,6 +501,31 @@ it because the project targets an older JavaScript level.
 
 **Lesson.** _Run the type check, not only the tests._ Jest passed while `tsc` failed, because Jest does
 not check types.
+
+### 31. The 503 explanation said "hourly", but the budget is per minute
+
+**What happened.** The Docs page described the shared budget as "hourly". The limit is 300 calls per
+60 seconds. Nothing failed, but a reader would plan around the wrong number.
+
+**Caught by.** Re-reading the page while writing the out-of-credit message.
+
+**Fix.** The text now says "per-minute", and the page's other numbers still come from `lib/config.ts`.
+
+**Lesson.** _A number written in words is not tied to the setting it describes._ Prefer printing the
+value from the config, or leave the unit out of the prose.
+
+### 32. Every upstream failure looked the same
+
+**What happened.** The route turned any failure from the AI service into "We couldn't parse that note.
+Please try again." That is right for a hiccup and wrong when the account has run out of credit: the
+person keeps retrying a demo that cannot work, and the owner sees nothing different in the log.
+
+**Fix.** A small check (`lib/upstream-errors.ts`) recognises the out-of-credit error from its status
+and error type, never by `instanceof`. It answers 503 with a clear message and logs
+`out of credit`. Everything else stays a generic 502.
+
+**Lesson.** _Give each failure a message that matches what the person can do about it._ "Try again" is
+only honest when trying again can help.
 
 ---
 

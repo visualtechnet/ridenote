@@ -8,7 +8,8 @@ jest.mock("@anthropic-ai/sdk", () => ({
   },
 }));
 
-import { LIMITS, UPSTREAM } from "@/lib/config";
+import { HTTP, LIMITS, UPSTREAM } from "@/lib/config";
+import { MESSAGES } from "@/lib/messages";
 import { POST } from "./route";
 
 const VALID_NOTE = "Pick up Mrs. Lee at 12 Oak St";
@@ -245,6 +246,34 @@ describe("POST /api/parse", () => {
     const text = await res.text();
     expect(text).not.toContain("sk-ant");
     expect(text).not.toContain("x-api-key");
+  });
+
+  describe("when the AI account is out of credit", () => {
+    const outOfCredit = () =>
+      Object.assign(new Error("400 Your credit balance is too low. Mrs. Lee 12 Oak St"), {
+        status: 400,
+        type: "invalid_request_error",
+      });
+
+    it("answers 503 with a clear message and a code, not the generic 502", async () => {
+      mockParse.mockRejectedValue(outOfCredit());
+      const res = await POST(request({ note: VALID_NOTE }));
+      expect(res.status).toBe(HTTP.unavailable);
+      expect(await res.json()).toEqual({ error: MESSAGES.outOfCredit, code: "out_of_credit" });
+    });
+
+    it("tells the owner in the log, without echoing the note or the SDK text", async () => {
+      mockParse.mockRejectedValue(outOfCredit());
+      await POST(request({ note: "Mrs. Lee 12 Oak St wheelchair" }));
+      expect(loggedText()).toContain("out of credit");
+      expect(loggedText()).not.toContain("Oak St");
+    });
+
+    it("leaves other upstream errors as the generic 502", async () => {
+      mockParse.mockRejectedValue(Object.assign(new Error("bad key"), { status: 401 }));
+      const res = await POST(request({ note: VALID_NOTE }));
+      expect(res.status).toBe(HTTP.badGateway);
+    });
   });
 
   it("never logs the dispatcher note (passenger PII)", async () => {

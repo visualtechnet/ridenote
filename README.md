@@ -24,6 +24,8 @@ Built with Next.js 16, the Claude API (Anthropic), Zod, React Query and Zustand.
 ## Contents
 
 - [Quick start](#quick-start)
+- [Getting an API key](#getting-an-api-key)
+- [Sharing or deploying a demo](#sharing-or-deploying-a-demo)
 - [Configuration](#configuration)
 - [Using it](#using-it)
 - [The API](#the-api)
@@ -36,7 +38,9 @@ Built with Next.js 16, the Claude API (Anthropic), Zod, React Query and Zustand.
 
 ## Quick start
 
-You need **Node.js 20.9 or newer** (`.nvmrc` pins 22; `package.json` enforces the minimum) and an [Anthropic API key](https://console.anthropic.com/).
+You need **Node.js 20.9 or newer** (`.nvmrc` pins 22; `package.json` enforces the minimum) and an
+[Anthropic API key](https://console.anthropic.com/). No key yet? See
+[Getting an API key](#getting-an-api-key) below; it takes about five minutes.
 
 ```bash
 git clone <this repository>
@@ -54,6 +58,49 @@ To run the production build locally:
 npm run build
 npm start
 ```
+
+## Getting an API key
+
+RideNote calls the Claude API, so it needs a key from your own Anthropic account. Each person who
+runs it locally uses **their own key**; the repository contains none.
+
+1. Sign in (or create an account) at [console.anthropic.com](https://console.anthropic.com/).
+2. Add a small amount of credit under billing, for example **$5**, and leave auto-reload **off**. When
+   the balance is used up, calls stop instead of charging more. One parse costs a fraction of a cent.
+3. Open **API keys** and create a key. Name it after the project (for example `ridenote-local`). If you
+   can, create it inside its own workspace with a low monthly spend limit.
+4. Copy the key straight away. The Console shows it only once.
+5. Run `cp .env.example .env.local`, open `.env.local`, and paste the key after `ANTHROPIC_API_KEY=`.
+6. Start (or restart) the app with `npm run dev`, click **Use an example**, then **Parse**.
+
+Menu names in the Console change from time to time; look for "API keys" and "Billing".
+
+Keep the key safe:
+
+- Never commit it, paste it into an issue, a chat or a screenshot, or put it in code. `.env.local` is
+  git-ignored and the pre-commit hook refuses env files.
+- Never give it a `NEXT_PUBLIC_` prefix. Next.js would send it to every visitor's browser.
+- If it leaks, delete it in the Console and make a new one. That is the only real fix.
+- Use a different key for each person and each environment, so one can be revoked on its own.
+
+## Sharing or deploying a demo
+
+Someone who only wants to _see_ RideNote should not have to create a key.
+
+- **Best: host it.** Deploy the app (for example on Vercel) and store the key as a **server-only**
+  environment variable, using a key made for the demo with a low spend limit ($2 to $5 is plenty).
+  Visitors open a URL and click Parse. They never see the key. The app's per-client limit
+  (10 requests a minute), shared budget, 1,000 character note limit and 600 token answer cap keep
+  what anyone can do through it small.
+- **Next best: hand out a temporary key privately.** Send it directly to the person (never in the
+  repository, README or a pull request) and make it a capped key you can revoke. Someone holding a key
+  can call the API directly, up to its cap, not just through this app, so keep the cap low and do not
+  reuse that key anywhere else.
+- **When the demo's credit runs out,** the parser shows "This demo has used up its AI budget" (the API
+  answers 503 with code `out_of_credit`) and the server log says `parse failed: out of credit`. The
+  person can then follow Getting an API key above and use their own key. To bring a demo back, add
+  credit or raise its spend limit.
+- **Watch it.** Check usage in the Console now and then, and delete the key if anything looks wrong.
 
 ## Configuration
 
@@ -96,16 +143,16 @@ curl -X POST http://localhost:3000/api/parse \
   -d '{"note": "Pick up Mrs. Lee at 12 Oak St at 9:30am to County Hospital, wheelchair"}'
 ```
 
-| Status | Meaning                                                                   |
-| ------ | ------------------------------------------------------------------------- |
-| 200    | Success. Body is `{ "trip": { ... } }`.                                   |
-| 400    | Bad input: invalid JSON, or a note that fails validation (with a `code`). |
-| 413    | Request body too large.                                                   |
-| 415    | Not sent as `application/json`.                                           |
-| 422    | The AI declined to process the note.                                      |
-| 429    | Too many requests from this client. See the `Retry-After` header.         |
-| 502    | The AI service failed, or its answer had the wrong shape.                 |
-| 503    | The server is protecting itself from overload. See `Retry-After`.         |
+| Status | Meaning                                                                                       |
+| ------ | --------------------------------------------------------------------------------------------- |
+| 200    | Success. Body is `{ "trip": { ... } }`.                                                       |
+| 400    | Bad input: invalid JSON, or a note that fails validation (with a `code`).                     |
+| 413    | Request body too large.                                                                       |
+| 415    | Not sent as `application/json`.                                                               |
+| 422    | The AI declined to process the note.                                                          |
+| 429    | Too many requests from this client. See the `Retry-After` header.                             |
+| 502    | The AI service failed, or its answer had the wrong shape.                                     |
+| 503    | Overloaded (see `Retry-After`), or the AI account is out of credit (`code`: `out_of_credit`). |
 
 Errors are JSON too: `{ "error": "human readable message", "code": "required" }`. The Docs page
 explains each status and each validation code.
@@ -199,10 +246,11 @@ This repository uses Next.js 16, which differs from older versions. See `AGENTS.
 
 ## Troubleshooting
 
-| Symptom                                    | Likely cause and fix                                                                  |
-| ------------------------------------------ | ------------------------------------------------------------------------------------- |
-| "We couldn't parse that note" every time   | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`. |
-| 429 while testing by hand                  | You passed 10 requests in a minute. Wait for `Retry-After` seconds.                   |
-| Everyone shares one rate limit locally     | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.           |
-| `npm run test:e2e` cannot launch a browser | Run `npx playwright install chromium` once.                                           |
-| Tests page says it found no test files     | The build must run where the source files exist. See the FAQ.                         |
+| Symptom                                    | Likely cause and fix                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| "This demo has used up its AI budget"      | The key's credit or spend limit is used up. Add credit, raise the limit, or use a new key. |
+| "We couldn't parse that note" every time   | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`.      |
+| 429 while testing by hand                  | You passed 10 requests in a minute. Wait for `Retry-After` seconds.                        |
+| Everyone shares one rate limit locally     | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.                |
+| `npm run test:e2e` cannot launch a browser | Run `npx playwright install chromium` once.                                                |
+| Tests page says it found no test files     | The build must run where the source files exist. See the FAQ.                              |

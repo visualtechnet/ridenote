@@ -5,6 +5,7 @@ import { createGate } from "@/lib/concurrency";
 import { extractTrip } from "@/lib/extract";
 import { MESSAGES } from "@/lib/messages";
 import { createRateLimiter } from "@/lib/rate-limit";
+import { isOutOfCredit } from "@/lib/upstream-errors";
 import { readLimitedText } from "@/lib/read-body";
 import { validateRequestBody } from "@/lib/validation";
 
@@ -68,6 +69,14 @@ async function callModel(note: string, signal: AbortSignal): Promise<Outcome> {
       ? { status: HTTP.ok, body: { trip: result.trip } }
       : { status: result.status, body: { error: result.error } };
   } catch (err) {
+    // The one failure a person can act on. It is logged as its own kind so the owner sees it.
+    if (isOutOfCredit(err)) {
+      return {
+        status: HTTP.unavailable,
+        body: { error: MESSAGES.outOfCredit, code: "out_of_credit" },
+        failure: "out of credit",
+      };
+    }
     return {
       status: HTTP.badGateway,
       body: { error: MESSAGES.parseFailed },

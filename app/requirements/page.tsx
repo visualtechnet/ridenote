@@ -145,7 +145,9 @@ export default function RequirementsPage() {
               {LIMITS.bodyMaxBytes.toLocaleString("en-US")} bytes are refused. Across all clients,
               at most {BUDGET.maxCallsPerWindow} AI calls per {BUDGET.windowMs / 1000} seconds and{" "}
               {BUDGET.maxConcurrent} at once; beyond that the API answers 503 instead of running up
-              cost.
+              cost. If the AI account itself runs out of credit, the API also answers 503 with a
+              clear &ldquo;demo budget used up&rdquo; message (code{" "}
+              <code className={code}>out_of_credit</code>).
             </li>
             <li>
               <strong>Accessibility:</strong> keyboard operable, labelled controls, screen-reader

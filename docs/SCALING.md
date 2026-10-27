@@ -61,6 +61,15 @@ separately. For production, add:
 5. **Alerts** on the rate of 429 and 503 responses. A rising 503 rate means the shared budget is
    being hit, either by growth or by an attack.
 
+## Running a public demo cheaply
+
+The strongest cost control is outside the code: a **separate key with a small prepaid balance or a
+workspace spend limit** ($2 to $5), with auto-reload off. Whatever happens, the bill cannot pass that
+cap. Inside the code, the per-client limit, shared budget, concurrency gate, 1,000 character note limit
+and 600 token answer cap keep each parse small. When the account runs out of credit the API answers
+503 with `code: "out_of_credit"`, the page shows a clear message, and the log says
+`parse failed: out of credit`, so the owner knows to top up or switch the key off.
+
 ## Known limits
 
 - Without a proxy header (local dev, bare `next start`) all clients share one bucket.

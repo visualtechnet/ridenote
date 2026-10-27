@@ -59,7 +59,7 @@ const errors = [
   [
     HTTP.unavailable,
     "Service unavailable",
-    "The server is protecting itself from overload (too many parses at once, or the shared hourly budget is used up). Nothing is wrong with your note. Wait for the Retry-After seconds and try again.",
+    'The server is protecting itself from overload (too many parses at once, or the shared per-minute budget is used up), or the AI account has run out of credit. Nothing is wrong with your note. For overload, wait for the Retry-After seconds and try again. For "used up its AI budget", the owner needs to add credit, or you can run it with your own key.',
     MESSAGES.busy,
   ],
   [
@@ -133,6 +133,8 @@ export default function DocsPage() {
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-900 underline underline-offset-4 dark:text-zinc-50">
             {[
               ["setup", "Setup"],
+              ["api-key", "Getting an API key"],
+              ["demo", "Sharing a demo"],
               ["first-parse", "First parse"],
               ["writing-notes", "Writing a good note"],
               ["valid", "Accepted inputs"],
@@ -160,8 +162,12 @@ export default function DocsPage() {
             <li>
               Copy <code className={code}>.env.example</code> to{" "}
               <code className={code}>.env.local</code> and set{" "}
-              <code className={code}>ANTHROPIC_API_KEY</code> to your own key. The file is
-              git-ignored; the key is only read on the server and never sent to the browser.
+              <code className={code}>ANTHROPIC_API_KEY</code> to your own key (see{" "}
+              <a href="#api-key" className="underline underline-offset-4">
+                Getting an API key
+              </a>
+              ). The file is git-ignored; the key is only read on the server and never sent to the
+              browser.
             </li>
             <li>
               Optional: set <code className={code}>MODEL</code> to use a different Claude model.
@@ -176,6 +182,98 @@ export default function DocsPage() {
               format, unit tests) and <code className={code}>npm run test:e2e</code> (real browser).
             </li>
           </ol>
+        </section>
+
+        <section aria-labelledby="api-key">
+          <h2 id="api-key" className={h2}>
+            Getting an API key
+          </h2>
+          <p className={p}>
+            RideNote calls the Claude API, so it needs a key from your own Anthropic account. Each
+            person who runs it locally uses their own key; the project contains none.
+          </p>
+          <ol className="mt-2 list-decimal space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+            <li>
+              Sign in or create an account at{" "}
+              <a
+                href="https://console.anthropic.com/"
+                rel="noopener noreferrer"
+                className="underline underline-offset-4"
+              >
+                console.anthropic.com
+              </a>
+              .
+            </li>
+            <li>
+              Add a small amount of credit under billing, for example <strong>$5</strong>, and leave
+              auto-reload <strong>off</strong>. When the balance is used up, calls stop instead of
+              charging more. One parse costs a fraction of a cent.
+            </li>
+            <li>
+              Open <strong>API keys</strong> and create a key named after the project (for example{" "}
+              <code className={code}>ridenote-local</code>). If you can, create it in its own
+              workspace with a low monthly spend limit.
+            </li>
+            <li>Copy the key straight away. The Console shows it only once.</li>
+            <li>
+              Run <code className={code}>cp .env.example .env.local</code> and paste the key after{" "}
+              <code className={code}>ANTHROPIC_API_KEY=</code>.
+            </li>
+            <li>
+              Restart <code className={code}>npm run dev</code>, click{" "}
+              <strong>Use an example</strong>, then <strong>Parse</strong>.
+            </li>
+          </ol>
+          <p className={p}>Menu names in the Console change from time to time.</p>
+          <h3 className="mt-6 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            Keeping the key safe
+          </h3>
+          <ul className="mt-2 list-disc space-y-1 pl-6 text-zinc-700 dark:text-zinc-300">
+            <li>
+              Never commit it or paste it into an issue, chat or screenshot. The{" "}
+              <code className={code}>.env.local</code> file is git-ignored and the pre-commit hook
+              refuses env files.
+            </li>
+            <li>
+              Never name it with a <code className={code}>NEXT_PUBLIC_</code> prefix: Next.js would
+              send it to every visitor&rsquo;s browser.
+            </li>
+            <li>If it leaks, delete it in the Console and create a new one.</li>
+            <li>Use a different key for each person and each environment.</li>
+          </ul>
+        </section>
+
+        <section aria-labelledby="demo">
+          <h2 id="demo" className={h2}>
+            Sharing or deploying a demo
+          </h2>
+          <p className={p}>
+            Someone who only wants to see RideNote should not have to create a key.
+          </p>
+          <ul className="mt-2 list-disc space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+            <li>
+              <strong>Best: host it.</strong> Deploy the app (for example on Vercel) with the key
+              stored as a <em>server-only</em> environment variable, using a key made for the demo
+              with a low spend limit ($2 to $5 is plenty). Visitors open a link and click Parse and
+              never see the key. The per-client limit ({RATE_LIMIT.maxRequests} requests a minute),
+              the shared budget, the {LIMITS.noteMax.toLocaleString("en-US")} character note limit
+              and the answer-size cap keep what anyone can do through it small.
+            </li>
+            <li>
+              <strong>Next best: send a temporary key privately.</strong> Never put it in the
+              repository, README or a pull request. A key can be used directly against the API, up
+              to its cap, not only through this app, so keep the cap low, use it nowhere else, and
+              revoke it when done.
+            </li>
+            <li>
+              <strong>When the credit runs out,</strong> the parser says &ldquo;This demo has used
+              up its AI budget&rdquo; (the API answers {HTTP.unavailable} with code{" "}
+              <code className={code}>out_of_credit</code>) and the server log says{" "}
+              <code className={code}>parse failed: out of credit</code>. Visitors can follow the
+              steps above to use their own key. The owner brings the demo back by adding credit or
+              raising the limit.
+            </li>
+          </ul>
         </section>
 
         <section aria-labelledby="first-parse">
