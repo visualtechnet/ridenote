@@ -56,7 +56,7 @@ accident; the eval tells you whether the model obeys it. Change the prompt, then
 structured-output format, which constrains the answer to the right keys and types, with
 `mobility` a list limited to the known aids (wheelchair, cane, walker and so on). Some rules cannot be expressed that way (the `HH:MM` pattern and
 the length limits), so the answer is checked again with the same schema after it arrives. The server
-also recomputes `missing_fields` from the data rather than trusting the model's list. The eval scores
+also computes `missing_fields` itself (the model is not even asked for it), including the mobility flag, which unit tests cover rather than the eval. The eval scores
 the result _after_ all of this, so it sees what a user would see. An answer that breaks a rule shows
 up as a failed case.
 
@@ -70,7 +70,7 @@ email contain `Name <address>`, which the validator was refusing.
 A run passes only if **both** hold:
 
 1. Every **critical** case passes. These are the ones where a wrong answer is dangerous: inventing a
-   missing time, address or name; guessing AM or PM; converting a time between time zones; losing a date; inventing a mobility aid the note does not name, or dropping one it does, or failing to flag mobility as missing when none is named (for example, "a wheelchair, a cane or a walker" must give all three); following an
+   missing time, address or name; guessing AM or PM; converting a time between time zones; losing a date; inventing a mobility aid the note does not name, or dropping one it does (for example, "a wheelchair, a cane or a walker" must give all three); following an
    instruction hidden inside a note.
 2. At least 90% of all cases pass (`PASS_RATE_FLOOR` in `evals/cases.ts`).
 

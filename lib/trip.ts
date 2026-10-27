@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { MOBILITY, OUTPUT_LIMITS, REQUIRED_TRIP_FIELDS } from "./config";
+import {
+  MISSING_MOBILITY,
+  MOBILITY,
+  OUTPUT_LIMITS,
+  REQUIRED_TRIP_FIELDS,
+  type MissingField,
+} from "./config";
 
 const TIME_24H = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -32,11 +38,12 @@ export type Trip = z.infer<typeof TripSchema>;
 
 /**
  * What the SDK parses the model's answer with. It describes exactly the same JSON to the model as
- * TripSchema, but does not throw on two harmless slips: a notes line that runs long and a repeated
+ * TripSchema, minus missing_fields (the server computes that, so the model is not asked for it and a
+ * bad list from it cannot fail a note), and does not throw on two harmless slips: a notes line that runs long and a repeated
  * aid. The SDK throws on any failed rule, which used to turn a good note into a 502. Those two
  * are repaired by normalizeModelTrip; everything else is still checked by the strict TripSchema.
  */
-export const ModelTripSchema = TripSchema.extend({
+export const ModelTripSchema = TripSchema.omit({ missing_fields: true }).extend({
   mobility: z
     .array(z.enum(MOBILITY))
     .max(OUTPUT_LIMITS.mobilityCount)
@@ -67,8 +74,10 @@ export function normalizeModelTrip(trip: z.infer<typeof ModelTripSchema>) {
  * included when the note named no aid: "not stated" is not the same as "needs none", and a wrong
  * guess means sending a vehicle that cannot carry the passenger. Walking unaided has to be stated.
  */
-export function missingFields(trip: Trip): string[] {
-  const missing: string[] = REQUIRED_TRIP_FIELDS.filter((f) => trip[f] === null);
-  if (trip.mobility.length === 0) missing.push("mobility");
+export function missingFields(
+  trip: Pick<Trip, (typeof REQUIRED_TRIP_FIELDS)[number] | "mobility">,
+) {
+  const missing: MissingField[] = REQUIRED_TRIP_FIELDS.filter((f) => trip[f] === null);
+  if (trip.mobility.length === 0) missing.push(MISSING_MOBILITY);
   return missing;
 }

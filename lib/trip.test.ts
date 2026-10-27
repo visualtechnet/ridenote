@@ -8,7 +8,7 @@ import {
   normalizeModelTrip,
   type Trip,
 } from "./trip";
-import { MOBILITY, OUTPUT_LIMITS, REQUIRED_TRIP_FIELDS } from "./config";
+import { MISSING_MOBILITY, MOBILITY, OUTPUT_LIMITS, REQUIRED_TRIP_FIELDS } from "./config";
 import { wrapNote } from "./prompt";
 
 describe("TripSchema", () => {
@@ -113,8 +113,24 @@ describe("what the model may say versus what we keep", () => {
     expect(() => zodOutputFormat(TripSchema).parse(content)).toThrow();
   });
 
-  it("describes exactly the same JSON to the model, so the instructions it sees do not change", () => {
-    expect(zodOutputFormat(ModelTripSchema).schema).toEqual(zodOutputFormat(TripSchema).schema);
+  it("describes the same JSON to the model as the strict schema, except it is not asked for missing_fields", () => {
+    const asked = zodOutputFormat(ModelTripSchema).schema as {
+      properties: Record<string, unknown>;
+      required: string[];
+    };
+    const strict = zodOutputFormat(TripSchema).schema as typeof asked;
+    expect(Object.keys(asked.properties)).toEqual(
+      Object.keys(strict.properties).filter((k) => k !== "missing_fields"),
+    );
+    expect(asked.required).toEqual(strict.required.filter((k) => k !== "missing_fields"));
+    for (const key of Object.keys(asked.properties)) {
+      expect(asked.properties[key]).toEqual(strict.properties[key]); // same wording and limits
+    }
+  });
+
+  it("the server, not the model, decides missing_fields, so a bad list from the model cannot fail a note", () => {
+    const content = JSON.stringify({ ...base, missing_fields: Array(30).fill("x".repeat(100)) });
+    expect(() => zodOutputFormat(ModelTripSchema).parse(content)).not.toThrow();
   });
 
   it("shortens a long notes line to the limit and marks the cut", () => {
@@ -174,7 +190,7 @@ describe("missingFields", () => {
 
   describe("mobility", () => {
     it("is flagged when the note named no aid, because 'not stated' is not the same as 'needs none'", () => {
-      expect(missingFields({ ...base, mobility: [] })).toEqual(["mobility"]);
+      expect(missingFields({ ...base, mobility: [] })).toEqual([MISSING_MOBILITY]);
     });
 
     it("is not flagged when any aid is named, including walking unaided", () => {

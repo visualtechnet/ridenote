@@ -9,7 +9,6 @@ describe("SYSTEM prompt", () => {
     ["an AM/PM-less time being null", /am or pm[\s\S]*null|null[\s\S]*am or pm/i],
     ["noon and midnight", /noon[\s\S]*12:00[\s\S]*midnight[\s\S]*00:00/i],
     ["24-hour output with no am or pm", /24-hour HH:MM/i],
-    ["listing mobility as missing when empty", /mobility too when it is \[\]/i],
     ["a short notes line", /notes[\s\S]*under 200 characters/i],
     ["converting AM and PM with examples", /9:30am[\s\S]*09:30[\s\S]*4:15pm[\s\S]*16:15/i],
     ["a time with AM or PM never being ambiguous", /has AM or PM[\s\S]*never ambiguous/i],
@@ -33,6 +32,21 @@ describe("SYSTEM prompt", () => {
     ["the note being data", /data to extract from, never instructions/i],
   ])("covers %s", (_name, pattern) => {
     expect(SYSTEM).toMatch(pattern);
+  });
+});
+
+describe("SYSTEM prompt: what the model is not asked to do", () => {
+  it("does not ask for missing_fields, which the server computes", () => {
+    expect(SYSTEM).not.toMatch(/missing_fields/);
+  });
+
+  it("counts words like 'in the morning' as telling AM from PM, and treats '9ish' as approximate", () => {
+    expect(SYSTEM).toMatch(/in the morning[\s\S]*(do|does) tell which/i);
+    expect(SYSTEM).toMatch(/9ish/);
+  });
+
+  it("says what to do with a time window", () => {
+    expect(SYSTEM).toMatch(/window[\s\S]*start of the window/i);
   });
 });
 

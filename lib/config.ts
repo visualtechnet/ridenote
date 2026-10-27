@@ -39,6 +39,7 @@ export const UPSTREAM = {
   // Extraction needs no hidden reasoning. With it on, the model spent most of its tokens thinking, a
   // tricky note could run out of tokens before the JSON was written (a cut-off answer became a 502),
   // and it cost about 3.5 times as much. With it off, 30 of 30 runs of a hostile note resisted it.
+  // If you set MODEL to a model that rejects this setting, every parse fails with an upstream 400: remove it.
   thinking: { type: "disabled" } as const,
   timeoutMs: 30_000,
   maxRetries: 1,
@@ -84,6 +85,13 @@ export const REQUIRED_TRIP_FIELDS = [
   "dropoff_location",
   "pickup_time",
 ] as const;
+
+/**
+ * The one extra entry the server can add to missing_fields. It is derived, not a required field: it is
+ * added when the note named no mobility aid. Everything that checks or shows it uses this name.
+ */
+export const MISSING_MOBILITY = "mobility" as const;
+export type MissingField = (typeof REQUIRED_TRIP_FIELDS)[number] | typeof MISSING_MOBILITY;
 
 /** Maximum lengths for text the model returns (we never trust model output blindly). */
 export const OUTPUT_LIMITS = {

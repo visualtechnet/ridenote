@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { formatTime12h, mobilityLabel } from "@/lib/format";
+import { MISSING_MOBILITY } from "@/lib/config";
 import { COPY } from "@/lib/messages";
 import type { Trip } from "@/lib/trip";
 
@@ -23,6 +24,11 @@ function Field({ label, value }: { label: string; value: ReactNode | null }) {
 }
 
 export function TripCard({ trip }: { trip: Trip }) {
+  // Mobility is flagged by the server (see missingFields), but as a quiet line beside the mobility
+  // field rather than a chip: most notes name no aid, and a warning on nearly every card would be
+  // ignored, including the ones that matter.
+  const flagMobility = trip.missing_fields.includes(MISSING_MOBILITY);
+  const chips = trip.missing_fields.filter((f) => f !== MISSING_MOBILITY);
   return (
     <section
       aria-label={COPY.resultLabel}
@@ -60,9 +66,16 @@ export function TripCard({ trip }: { trip: Trip }) {
                 ))}
               </ul>
             ) : (
-              <span className="text-base text-zinc-500 italic dark:text-zinc-400">
-                {COPY.notStated}
-              </span>
+              <>
+                <span className="text-base text-zinc-500 italic dark:text-zinc-400">
+                  {COPY.notStated}
+                </span>
+                {flagMobility && (
+                  <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+                    {COPY.confirmMobility}
+                  </p>
+                )}
+              </>
             )}
           </dd>
         </div>
@@ -74,13 +87,13 @@ export function TripCard({ trip }: { trip: Trip }) {
 
       <p className="mt-5 text-xs text-zinc-600 dark:text-zinc-400">{COPY.verifyReminder}</p>
 
-      {trip.missing_fields.length > 0 && (
+      {chips.length > 0 && (
         <div className="mt-5 flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
             {COPY.missingHeading}
           </span>
           <ul aria-label={COPY.missingListLabel} className="flex flex-wrap gap-2">
-            {trip.missing_fields.map((f) => (
+            {chips.map((f) => (
               <li
                 key={f}
                 className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"

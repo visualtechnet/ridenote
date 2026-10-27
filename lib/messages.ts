@@ -70,6 +70,7 @@ export const COPY = {
     other: "Other aid",
   },
   missingHeading: "Missing",
+  confirmMobility: "Mobility not stated. Confirm before dispatching.",
   missingListLabel: "Missing fields",
   staleResult: "The note has changed since this was parsed. Parse again to update it.",
   verifyReminder: "AI-extracted from the note. Verify before dispatching.",

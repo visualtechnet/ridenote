@@ -232,10 +232,10 @@ If a deploy complains that `maxDuration` is above your plan's limit, lower the `
 Secrets live in environment variables, never in code. `.env.local` is git-ignored; `.env.example` is
 the committed template.
 
-| Variable            | Required | What it does                                                  |
-| ------------------- | -------- | ------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY` | yes      | Your key. Read only on the server, never sent to the browser. |
-| `MODEL`             | no       | Claude model to use. Defaults to `UPSTREAM.defaultModel`.     |
+| Variable            | Required | What it does                                                                                                                                   |
+| ------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY` | yes      | Your key. Read only on the server, never sent to the browser.                                                                                  |
+| `MODEL`             | no       | Claude model to use. Defaults to `UPSTREAM.defaultModel`. If another model rejects the request, see the `thinking` setting in `lib/config.ts`. |
 
 Every other tunable number (limits, timeouts, status codes) lives in **`lib/config.ts`**, and every
 piece of user-facing text in **`lib/messages.ts`**. Change them there, not in the code that uses them.
@@ -285,9 +285,11 @@ curl -X POST http://localhost:3000/api/parse \
 `mobility` is a list of every aid the note names: any of `wheelchair`, `stretcher`, `walker`, `cane`,
 `crutches`, `scooter` or `other`, or `["ambulatory"]` for someone who walks unaided, or `[]` when the
 note does not say. The AI sorts plain words into these (a rollator is a `walker`, a gurney is a
-`stretcher`). If no aid is named, `mobility` is `[]` and `missing_fields` includes `"mobility"`, so the
-card flags it in amber like any other missing item: not stated is not the same as needs none, so say
-"walks unaided" when that is what you mean. `pickup_time` is 24-hour `HH:MM` with no AM or PM, so 3pm is `15:00`; the card turns it into 12-hour for
+`stretcher`). If no aid is named, `mobility` is `[]` and the server adds `"mobility"` to `missing_fields`.
+The card does not show that as an amber chip (most notes name no aid, and a warning on nearly every card
+would be ignored). It shows a quiet line beside Mobility instead: "Mobility not stated. Confirm before
+dispatching." Not stated is not the same as needs none, so say "walks unaided" when that is what you
+mean. `pickup_time` is 24-hour `HH:MM` with no AM or PM, so 3pm is `15:00`; the card turns it into 12-hour for
 reading, and the data underneath never changes. The time is **exactly what the note says**: there is no
 time zone handling, so nothing is converted to server time or any other zone, and a zone named in the
 note ("3pm EST") is only repeated in `notes`. There is no date field either.
