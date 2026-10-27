@@ -22,6 +22,10 @@ describe("Routes", () => {
     expect(Routes.all()).toEqual(expect.arrayContaining(["/docs/eval", "/docs/faq"]));
   });
 
+  it("has a history page", () => {
+    expect(Routes.page("history")).toBe("/history");
+  });
+
   it("has a contact page", () => {
     expect(Routes.page("contact")).toBe("/contact");
   });

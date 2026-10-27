@@ -11,6 +11,7 @@ const LINKS = [
   { label: COPY.navRequirements, href: Routes.page("requirements") },
   { label: COPY.navDocs, href: Routes.page("docs") },
   { label: COPY.navTests, href: Routes.page("tests") },
+  { label: COPY.navHistory, href: Routes.page("history") },
   { label: COPY.navContact, href: Routes.page("contact") },
 ] as const;
 

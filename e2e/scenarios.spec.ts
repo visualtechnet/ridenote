@@ -540,6 +540,7 @@ test.describe("navigation, docs and the menu", () => {
       "Requirements",
       "Docs",
       "Tests",
+      "History",
       "Contact",
     ]);
     await expect(nav.getByRole("link", { name: "Parser" })).toHaveAttribute("aria-current", "page");
@@ -576,6 +577,7 @@ test.describe("navigation, docs and the menu", () => {
       ["Docs", Routes.page("docs")],
       ["Requirements", Routes.page("requirements")],
       ["Tests", Routes.page("tests")],
+      ["History", Routes.page("history")],
       ["Contact", Routes.page("contact")],
       ["Parser", Routes.page("home")],
     ] as const) {
@@ -590,7 +592,7 @@ test.describe("navigation, docs and the menu", () => {
     await page.goto(Routes.page("home"));
     await page.keyboard.press("Tab"); // skip link
     await page.keyboard.press("Tab"); // brand
-    for (const name of ["Parser", "Requirements", "Docs", "Tests", "Contact"]) {
+    for (const name of ["Parser", "Requirements", "Docs", "Tests", "History", "Contact"]) {
       await page.keyboard.press("Tab");
       await expect(
         page.getByRole("navigation", { name: "Main" }).getByRole("link", { name }),
@@ -619,6 +621,7 @@ test.describe("navigation on a phone", () => {
       "Requirements",
       "Docs",
       "Tests",
+      "History",
       "Contact",
     ]);
     await expect(nav.getByRole("link", { name: "Parser" })).toHaveAttribute("aria-current", "page");
@@ -632,6 +635,7 @@ test.describe("navigation on a phone", () => {
     ["Docs", Routes.page("docs"), "Documentation"],
     ["Requirements", Routes.page("requirements"), "Requirements"],
     ["Tests", Routes.page("tests"), "Tests"],
+    ["History", Routes.page("history"), "History"],
     ["Contact", Routes.page("contact"), "Contact"],
   ] as const) {
     test(`the menu opens the ${label} page and closes itself`, async ({ page }) => {
