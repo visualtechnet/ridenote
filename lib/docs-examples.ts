@@ -65,7 +65,12 @@ export const VALID_EXAMPLES: ValidExample[] = [
   {
     title: "Less-than sign in plain text",
     note: "Mr. Chen at 9 Lake Rd, pickup in < 10 minutes, to the airport.",
-    why: "A < followed by a space and a digit is not markup. Only < followed by a letter, / ! or ? is blocked.",
+    why: "A < followed by a space and a digit is not markup. Only < followed by a letter, / ! or ? is blocked (an email address in angle brackets is the one exception).",
+  },
+  {
+    title: "Email address in angle brackets",
+    note: "From: Dana <dana@clinic.example.org>. Pick up Mrs. Lee at 12 Oak St at 9:30am, to County Hospital.",
+    why: "Name <address> as pasted from an email is allowed. Any other < followed by a letter is still treated as a tag.",
   },
   {
     title: "Padded with spaces",

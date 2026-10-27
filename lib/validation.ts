@@ -17,6 +17,10 @@ const HIDDEN_CHARACTERS =
 // An HTML tag, comment, doctype or processing instruction: "<" followed by a letter, "/", "!" or "?".
 const HTML_MARKUP = /<\s*[a-z/!?]/i;
 
+// "Name <name@example.com>", as pasted from an email client. A strict address shape only: no spaces
+// or quotes, so it cannot carry attributes. Removed before the tag check, never before the script check.
+const ANGLE_EMAIL = /<[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}>/g;
+
 // Script-capable URL schemes, with optional whitespace tricks like "java script:".
 const SCRIPT_SCHEME = /\b(?:java\s*script|vbscript)\s*:/i;
 
@@ -51,7 +55,11 @@ const rules = [
     (s) => MESSAGES.noteTooLong(s.length),
   ),
   rule("hidden_characters", (s) => !HIDDEN_CHARACTERS.test(s), MESSAGES.noteHiddenCharacters),
-  rule("markup", (s) => !HTML_MARKUP.test(s) && !SCRIPT_SCHEME.test(s), MESSAGES.noteMarkup),
+  rule(
+    "markup",
+    (s) => !HTML_MARKUP.test(s.replace(ANGLE_EMAIL, " ")) && !SCRIPT_SCHEME.test(s),
+    MESSAGES.noteMarkup,
+  ),
 ];
 
 /** The one definition of "a valid note", shared by the form and the API. */

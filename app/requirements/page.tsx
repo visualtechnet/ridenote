@@ -116,6 +116,10 @@ export default function RequirementsPage() {
             <li>Accept a pasted note and parse it on request (button or Ctrl/⌘ + Enter).</li>
             <li>Extract passenger, pickup, dropoff, pickup time and mobility.</li>
             <li>Never invent facts. Anything not stated is null and listed as missing.</li>
+            <li>
+              Do not guess an ambiguous time (an hour with no AM or PM): leave it null and explain
+              in the notes. Say so in the notes when a note holds several trips or no trip at all.
+            </li>
             <li>Show the result as a readable card, with missing fields called out.</li>
             <li>Reject unusable input with a clear, specific message before calling the AI.</li>
             <li>Show a friendly message for every failure, and keep the typed note.</li>
@@ -156,7 +160,8 @@ export default function RequirementsPage() {
           <ul className={ul}>
             <li>Saving trips, accounts or sign-in, and sending trips to a dispatch system.</li>
             <li>
-              Converting relative dates such as &ldquo;tomorrow&rdquo; (only the time is captured).
+              A date field. Dates such as &ldquo;tomorrow&rdquo; or &ldquo;Friday&rdquo; are not
+              converted; they are repeated in the notes so a person can see them.
             </li>
             <li>Splitting addresses into street, city, state and zip.</li>
             <li>Parsing several trips from one note.</li>
@@ -354,8 +359,9 @@ export default function RequirementsPage() {
           >{`{ "error": "Please enter a dispatcher note before parsing.", "code": "required" }`}</pre>
           <p className={p}>
             Statuses: {HTTP.badRequest} bad input, {HTTP.payloadTooLarge} too large,{" "}
-            {HTTP.unprocessable} declined, {HTTP.tooManyRequests} slow down, {HTTP.badGateway} AI or
-            format failure. See the Docs page for details.
+            {HTTP.unsupportedMediaType} not sent as JSON, {HTTP.unprocessable} declined,{" "}
+            {HTTP.tooManyRequests} slow down, {HTTP.badGateway} AI or format failure,{" "}
+            {HTTP.unavailable} server overloaded. See the Docs page for details.
           </p>
         </section>
 

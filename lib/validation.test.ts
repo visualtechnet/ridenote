@@ -116,6 +116,21 @@ describe("validateNote: blocks script injection", () => {
     expect(validateNote(input).ok).toBe(true);
   });
 
+  it.each([
+    ["an email address in angle brackets", "Pick up Lee <lee@example.com> at 12 Oak St at 9am"],
+    ["two of them", "From: Ann <ann@x.org>, Cc: Bo <bo.k+d@mail.example.co.uk>. Lee, 12 Oak, 9am"],
+  ])("accepts %s (pasted from email)", (_name, input) => {
+    expect(validateNote(input).ok).toBe(true);
+  });
+
+  it.each([
+    ["a tag that only looks like an email", '<img@x.co onerror="alert(1)">'],
+    ["a tag next to an email", "<lee@example.com><script>alert(1)</script>"],
+    ["a script link inside brackets", "<javascript:alert(1)@x.com>"],
+  ])("still rejects %s", (_name, input) => {
+    expect(validateNote(input)).toMatchObject({ ok: false, code: "markup" });
+  });
+
   it("returns the note in normalised (NFC) form", () => {
     const decomposed = "Café pickup at 9"; // "e" + combining accent
     const result = validateNote(decomposed);

@@ -4,11 +4,11 @@ import path from "node:path";
 export type CatalogGroup = { name: string; tests: string[] };
 export type CatalogFile = {
   file: string;
-  kind: "Unit" | "Component" | "Accessibility" | "Config";
+  kind: "Unit" | "Component" | "Accessibility" | "Config" | "Eval";
   groups: CatalogGroup[];
 };
 
-const ROOTS = ["app", "components", "lib", "tests"];
+const ROOTS = ["app", "components", "lib", "tests", "evals"];
 const TITLE = /^\s*(describe|it|test)(?:\.each\([^)]*\))?\(\s*(["'`])((?:\\.|(?!\2).)*)\2/;
 
 function findTestFiles(dir: string): string[] {
@@ -23,6 +23,7 @@ function kindOf(file: string): CatalogFile["kind"] {
   if (file.startsWith("tests/a11y")) return "Accessibility";
   if (file.startsWith("tests/")) return "Config";
   if (file.startsWith("lib/")) return "Unit";
+  if (file.startsWith("evals/")) return "Eval";
   return "Component";
 }
 

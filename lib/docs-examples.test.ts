@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { API_EXAMPLES, INVALID_EXAMPLES, VALID_EXAMPLES } from "./docs-examples";
+import { readFileSync } from "node:fs";
 import { validateNote } from "./validation";
 
 describe("docs examples stay true to the validator", () => {
@@ -28,5 +29,12 @@ describe("docs examples stay true to the validator", () => {
       (e) => e.status === 400 && e.result.includes("invalid JSON"),
     );
     for (const ex of notJson) expect(() => JSON.parse(ex.body)).toThrow();
+  });
+
+  it.each(["README.md", "docs/FAQ.md"])("keeps the example counts in %s current", (file) => {
+    const text = readFileSync(file, "utf8").replace(/\s+/g, " ");
+    expect(text).toContain(
+      `${VALID_EXAMPLES.length} ${file === "README.md" ? "accepted and" : "notes that work and"} ${INVALID_EXAMPLES.length}`,
+    );
   });
 });

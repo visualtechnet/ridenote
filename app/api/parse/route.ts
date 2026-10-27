@@ -1,13 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { BUDGET, HTTP, LIMITS, RATE_LIMIT, UPSTREAM } from "@/lib/config";
+import { BUDGET, HTTP, LIMITS, RATE_LIMIT } from "@/lib/config";
 import { createCoalescer } from "@/lib/coalesce";
 import { createGate } from "@/lib/concurrency";
+import { extractTrip } from "@/lib/extract";
 import { MESSAGES } from "@/lib/messages";
-import { SYSTEM, wrapNote } from "@/lib/prompt";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { readLimitedText } from "@/lib/read-body";
-import { TripSchema, missingFields } from "@/lib/trip";
 import { validateRequestBody } from "@/lib/validation";
 
 // Layer 1: per client, counts every request (valid or not).
@@ -65,33 +63,10 @@ async function callModel(note: string, signal: AbortSignal): Promise<Outcome> {
 
   try {
     client ??= new Anthropic();
-    const res = await client.messages.parse(
-      {
-        model: process.env[UPSTREAM.modelEnvVar] ?? UPSTREAM.defaultModel,
-        max_tokens: UPSTREAM.maxTokens,
-        system: SYSTEM,
-        messages: [{ role: "user", content: wrapNote(note) }],
-        output_config: { format: zodOutputFormat(TripSchema) },
-      },
-      // Don't let a hung upstream hold the request open, and stop paying if every caller leaves.
-      { timeout: UPSTREAM.timeoutMs, maxRetries: UPSTREAM.maxRetries, signal },
-    );
-
-    if (res.stop_reason === "refusal") {
-      return { status: HTTP.unprocessable, body: { error: MESSAGES.modelDeclined } };
-    }
-    if (res.stop_reason !== "end_turn") {
-      return { status: HTTP.badGateway, body: { error: MESSAGES.parseFailed } };
-    }
-
-    // Model output is untrusted: re-validate before it reaches the client.
-    const trip = TripSchema.safeParse(res.parsed_output);
-    if (!trip.success) return { status: HTTP.badGateway, body: { error: MESSAGES.parseFailed } };
-
-    return {
-      status: HTTP.ok,
-      body: { trip: { ...trip.data, missing_fields: missingFields(trip.data) } },
-    };
+    const result = await extractTrip(client, note, { signal });
+    return result.ok
+      ? { status: HTTP.ok, body: { trip: result.trip } }
+      : { status: result.status, body: { error: result.error } };
   } catch (err) {
     return {
       status: HTTP.badGateway,

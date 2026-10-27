@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { axe } from "jest-axe";
+import { HTTP } from "@/lib/config";
 import RequirementsPage from "./page";
 
 describe("Requirements page", () => {
@@ -13,6 +14,22 @@ describe("Requirements page", () => {
       /what makes a parse succeed/i,
     ]) {
       expect(screen.getByRole("heading", { level: 2, name })).toBeInTheDocument();
+    }
+  });
+
+  it("lists every status the API can return for a parse", () => {
+    const { container } = render(<RequirementsPage />);
+    const text = container.textContent ?? "";
+    for (const status of [
+      HTTP.badRequest,
+      HTTP.payloadTooLarge,
+      HTTP.unsupportedMediaType,
+      HTTP.unprocessable,
+      HTTP.tooManyRequests,
+      HTTP.badGateway,
+      HTTP.unavailable,
+    ]) {
+      expect(text).toContain(`${status} `);
     }
   });
 

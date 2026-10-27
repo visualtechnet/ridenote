@@ -12,6 +12,7 @@ const KIND_HELP = {
     "Screens and widgets rendered in a simulated browser, including the API route with a stand-in AI.",
   Accessibility: "Automated accessibility checks (axe) on each screen state.",
   Config: "Settings such as security headers.",
+  Eval: "The scoring code and case list behind the live accuracy eval (the eval itself calls the real AI and is run separately).",
 } as const;
 
 export default function TestsPage() {

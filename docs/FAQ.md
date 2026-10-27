@@ -20,7 +20,7 @@ Full steps are in the [README](../README.md).
 ### What should I type into the parser?
 
 Write it the way a dispatcher naturally would: who, where from, where to, when, and mobility. The
-**Docs** page in the site lists 12 notes that work and 13 that are refused, with the reason for each.
+**Docs** page in the site lists 13 notes that work and 13 that are refused, with the reason for each.
 
 ### Why did my note come back with "Missing" fields?
 
@@ -34,7 +34,7 @@ No. Locations are free text, not city/state/zip columns. Whatever you wrote is k
 ### Why is `<` sometimes refused?
 
 The validator blocks HTML and script text. The rule is "`<` followed by a letter, `/`, `!` or `?`"
-(plus whitespace before those). So `<b>Lee</b>` is refused, but `ETA < 10 minutes` and `5 <3` are fine.
+(plus whitespace before those). So `<b>Lee</b>` is refused, but `ETA < 10 minutes` and `5 <3` are fine, and so is an email address in angle brackets such as `Dana <dana@clinic.org>`.
 
 ### What is the difference between a 400 and a 502?
 
@@ -88,6 +88,30 @@ they follow the change.
 The build is running somewhere the source files are not present (for example a stripped container).
 The failure is deliberate: better to refuse to build than to publish "0 tests". Build where the
 source tree exists.
+
+### What is the eval, and when do I run it?
+
+A live accuracy check: about thirty realistic notes are sent to the real AI and the answers are
+scored. Run `npm run eval` after changing `lib/prompt.ts`, `lib/trip.ts` or the `MODEL` setting, and
+once now to record a baseline. It needs your API key and costs a few cents. The Eval page explains
+how it works.
+
+### Why is the eval not part of `npm test` or CI?
+
+Because it spends money and its answers vary slightly between runs. Tests that run on every commit
+must be free and repeatable, so they use a stand-in AI. The eval is the opposite trade: real answers,
+run on purpose.
+
+### The eval fails with "ANTHROPIC_API_KEY is not set".
+
+That is intended. A skipped eval looks the same as a passing one, so with no key it fails loudly.
+Add the key to `.env.local` and run it again.
+
+### The eval failed on one case. Is the app broken?
+
+Read the `FAIL` line first. If a **critical** case failed, treat it as a real problem: the model
+guessed something it should have left empty. If a non-critical case failed, check whether the
+expectation was too strict (a correct answer worded differently) before changing the prompt.
 
 ### Is this safe for the AI part? What about prompt injection?
 
@@ -372,6 +396,101 @@ the timeout message never appeared.
 **Lesson.** _`instanceof` can lie when code crosses realms_ (iframes, test sandboxes, workers). For
 errors, checking `.name` is more robust.
 
+## Mistakes found while hardening the parser
+
+These came from a deliberate review of the requirements, and from building the eval.
+
+### 23. Pasted emails were refused as "markup"
+
+**What happened.** The "no HTML" rule refused any `<` followed by a letter. Dispatchers paste from
+email, where a sender looks like `Dana <dana@clinic.org>`. That note was rejected with a message about
+scripts. The rule protected nothing here: the note is escaped before the AI sees it, and the page
+shows everything as text.
+
+**Caught by.** Running real-looking notes through the validator during the review, not by any
+existing test (they only contained attacks).
+
+**Fix.** A strict email-in-brackets shape (no spaces, no quotes, so it cannot carry attributes) is
+set aside before the tag check. Real tags and `javascript:` links are still refused, and tests prove
+both directions.
+
+**Lesson.** _A security rule needs tests for who it wrongly blocks, not only who it stops._ Write the
+"this normal input must pass" case next to every "this attack must fail" case.
+
+### 24. The Requirements page listed fewer statuses than the API returns
+
+**What happened.** The page named 400, 413, 422, 429 and 502 but not 415 or 503, while the API
+returns both and the README listed them.
+
+**Fix.** The list now includes them, and a test checks every status constant against the page.
+
+**Lesson.** _Anything written twice will drift._ Where a fact lives in code, make the document check
+it against the code.
+
+### 25. A count in the docs was out of date within hours
+
+**What happened.** Adding one example made "12 accepted examples" wrong in the README, and the FAQ
+still said 12 after the README was fixed.
+
+**Fix.** A test reads the README and the FAQ and compares their counts with the real example lists.
+
+**Lesson.** _A hardcoded number in prose is a future bug._ Either generate it or test it.
+
+### 26. Every test used a stand-in AI, so nothing checked the answers
+
+**What happened.** The project had hundreds of passing tests and 100% coverage, yet no test ever
+asked whether "at 9" produces a sensible time. The stand-in AI returns whatever the test tells it to,
+so those tests cover the code around the AI and not the AI.
+
+**Fix.** The eval: realistic notes, the real model, scored answers, with a pass rate and a list of
+cases that must never fail.
+
+**Lesson.** _Coverage measures lines run, not questions answered._ When a component is
+non-deterministic, you need a different kind of test for it, and it will not be free.
+
+### 27. The prompt left risky cases to chance
+
+**What happened.** The instructions said "use only stated facts" but nothing about an hour with no
+AM or PM, a date like "tomorrow" (there is no date field, so it was silently dropped), several trips
+in one note, a note with no trip, or unclear mobility such as a walker.
+
+**Fix.** Each case now has an explicit rule: unsure means `null` plus a reason in `notes`. Each rule
+is pinned by a prompt test and covered by eval cases.
+
+**Lesson.** _A rule you did not write down is a rule the model will guess._ List every situation where
+a wrong guess is costly, say what to do in each, then test it.
+
+### 28. A skipped check looks exactly like a passing one
+
+**What happened.** The obvious way to write the eval is to skip it when no API key is set, so
+`npm test` never breaks for someone without one. But a skipped suite reports green.
+
+**Fix.** The eval is its own command, and with no key it fails with a message saying so.
+
+**Lesson.** _An optional check that can quietly do nothing will, eventually, and no one will notice._
+Make "did not run" loud (the same lesson as #15).
+
+### 29. Testing a copy of the code tests the copy
+
+**What happened.** The model call lived inside the API route. An eval written beside it would have
+needed its own copy of the call, and the two could drift apart, so the eval would pass while production
+did something else.
+
+**Fix.** The call moved into `lib/extract.ts`. The route and the eval both use it.
+
+**Lesson.** _Share the code under test; do not rebuild it for the test._ If it is hard to call from a
+test, that is a sign it is in the wrong place.
+
+### 30. A regular expression flag the project's TypeScript target rejects
+
+**What happened.** The prompt tests used the `s` flag (so `.` matches line breaks). TypeScript refused
+it because the project targets an older JavaScript level.
+
+**Fix.** `[\s\S]*` instead of `.*`, which means the same thing without the flag.
+
+**Lesson.** _Run the type check, not only the tests._ Jest passed while `tsc` failed, because Jest does
+not check types.
+
 ---
 
 # What these have in common
@@ -381,4 +500,8 @@ errors, checking `.name` is more robust.
 - **The browser finds what simulations cannot** (#4, #5, #6, #16).
 - **Limits need testing at their boundaries**, including the strange settings (#2, #3, #14).
 - **Order matters** for cleanup versus validation (#1) and for stacked limits (#13).
+- **Passing tests can say nothing about the thing you care about** (#26). If the AI is the product,
+  test the AI, with real answers and a pass rate.
+- **Unwritten rules get guessed** (#27), and **unwritten checks get skipped** (#28). Write them down,
+  and make "did not run" loud.
 - **Say so when you are wrong.** Writing the mistake down is the fastest way to stop repeating it.

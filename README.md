@@ -36,7 +36,7 @@ Built with Next.js 16, the Claude API (Anthropic), Zod, React Query and Zustand.
 
 ## Quick start
 
-You need **Node.js 20.9 or newer** and an [Anthropic API key](https://console.anthropic.com/).
+You need **Node.js 20.9 or newer** (`.nvmrc` pins 22; `package.json` enforces the minimum) and an [Anthropic API key](https://console.anthropic.com/).
 
 ```bash
 git clone <this repository>
@@ -70,18 +70,20 @@ piece of user-facing text in **`lib/messages.ts`**. Change them there, not in th
 
 ## Using it
 
-The site has four pages, reachable from the navigation on the left (a **Menu** button on phones):
+The site has four sections, reachable from the navigation on the left (a **Menu** button on phones):
 
 | Page             | Path            | What it is                                                                 |
 | ---------------- | --------------- | -------------------------------------------------------------------------- |
 | **Parser**       | `/`             | The tool itself.                                                           |
 | **Requirements** | `/requirements` | The PRD, required input, expected JSON output and what valid JSON is.      |
 | **Docs**         | `/docs`         | Setup, accepted and rejected inputs, JSON pitfalls, every error explained. |
+| Docs: **Eval**   | `/docs/eval`    | How the live accuracy eval works, with every case listed.                  |
+| Docs: **FAQ**    | `/docs/faq`     | Common questions, and the bugs found along the way with their lessons.     |
 | **Tests**        | `/tests`        | Every automated test name, read from the real test files at build time.    |
 
 What to type, in short: who, where from, where to, when, and mobility (`ambulatory`, `wheelchair`,
 `stretcher`; otherwise `unknown`). A state or zip is optional. A note with none of these is still
-accepted; it returns mostly empty fields. The Docs page has 12 accepted and 13 rejected example
+accepted; it returns mostly empty fields. The Docs page has 13 accepted and 13 rejected example
 notes, each verified against the real validator by a test.
 
 ## The API
@@ -134,8 +136,10 @@ lib/                    Logic with no visual parts
   routes.ts             Every URL
   validation.ts         The rules for a valid note
   trip.ts               The shape of a parsed trip
+  extract.ts prompt.ts  The model call and its instructions
   rate-limit.ts concurrency.ts coalesce.ts read-body.ts   Abuse and cost protection
 e2e/                    Browser tests (Playwright)
+evals/                  Live accuracy check of the parser against the real model
 docs/                   Guides (see below)
 ```
 
@@ -147,6 +151,7 @@ Tests sit next to the code they test (`foo.ts` and `foo.test.ts`).
 npm test                # unit and component tests (Jest)
 npm run test:coverage   # same, with a coverage report and an enforced floor
 npm run test:e2e        # real-browser tests (first run: npx playwright install chromium)
+npm run eval            # live accuracy check against the real model (needs a key, costs cents)
 npm run check           # types + lint + formatting + unit tests
 npm run test:all        # everything
 ```
@@ -159,6 +164,13 @@ npm run test:all        # everything
   failure, every server and network failure, the real API's refusals (400, 413, 415, 405, 429),
   navigation, accessibility in light and dark mode, phone-width layout, and things that are out of
   scope.
+
+- **The accuracy eval** (`evals/`) sends a few dozen realistic notes to the real model through the same
+  code the API uses and scores the answers. It covers complete notes, 12/24-hour and spoken times,
+  fields that must stay null, an hour with no AM/PM, dates that must reach `notes`, mobility,
+  several trips in one note, text that is not a trip, and instructions hidden in a note. Every
+  _critical_ case must pass and at least 90% overall. Run it after changing `lib/prompt.ts`, the
+  schema or `MODEL`. It is not part of `npm test` because it costs money.
 
 A pre-commit hook runs `npm run check`. CI runs everything on every push.
 
@@ -174,12 +186,13 @@ A pre-commit hook runs `npm run check`. CI runs everything on every push.
 
 ## Documentation map
 
-| Read this                                        | When you want to                                                             |
-| ------------------------------------------------ | ---------------------------------------------------------------------------- |
-| [docs/GUIDE.md](docs/GUIDE.md)                   | Understand the whole project from scratch                                    |
-| [docs/FAQ.md](docs/FAQ.md)                       | See common questions and **the bugs we hit and what they taught us**         |
-| [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md) | Learn the habits this code is built on                                       |
-| [docs/SCALING.md](docs/SCALING.md)               | Understand cost, limits and abuse protection, and what to add for production |
+| Read this                                        | When you want to                                                              |
+| ------------------------------------------------ | ----------------------------------------------------------------------------- |
+| [docs/GUIDE.md](docs/GUIDE.md)                   | Understand the whole project from scratch                                     |
+| [docs/EVAL.md](docs/EVAL.md)                     | Learn how the live accuracy eval works and how it ties into prompt and schema |
+| [docs/FAQ.md](docs/FAQ.md)                       | See common questions and **the bugs we hit and what they taught us**          |
+| [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md) | Learn the habits this code is built on                                        |
+| [docs/SCALING.md](docs/SCALING.md)               | Understand cost, limits and abuse protection, and what to add for production  |
 
 This repository uses Next.js 16, which differs from older versions. See `AGENTS.md`: read the guides in
 `node_modules/next/dist/docs/` before changing framework-level code.
