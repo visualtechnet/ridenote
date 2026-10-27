@@ -365,7 +365,9 @@ npm run test:all        # everything
   _critical_ case must pass and at least 90% overall. Run it after changing `lib/prompt.ts`, the
   schema or `MODEL`. It is not part of `npm test` because it costs money.
 
-A pre-commit hook runs `npm run check`. CI runs everything on every push.
+A pre-commit hook runs `npm run check`. CI runs everything on every push, from a clean checkout: the
+`typecheck` script runs `next typegen` first because Next.js generates some types into `.next/`, which
+is not in git.
 
 ## Scripts
 

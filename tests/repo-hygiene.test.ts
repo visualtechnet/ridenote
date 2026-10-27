@@ -90,6 +90,21 @@ describe("repository automation", () => {
   });
 });
 
+describe("a clean checkout (what CI sees)", () => {
+  it("generates Next's route types before type-checking, because .next/ is not in git", () => {
+    // LayoutProps and PageProps only exist once Next has generated them. On a machine that has
+    // run the app they are already there, so a missing step shows up only in CI (it once did).
+    const { scripts } = JSON.parse(text("package.json")) as { scripts: Record<string, string> };
+    expect(scripts.typecheck).toMatch(/next typegen\s*&&\s*tsc/);
+  });
+
+  it("the generated types folder is git-ignored", () => {
+    expect(execFileSync("git", ["check-ignore", ".next/types"], { encoding: "utf8" })).toContain(
+      ".next",
+    );
+  });
+});
+
 describe("security policy", () => {
   it("SECURITY.md says how to report a problem and what not to include", () => {
     const policy = text("SECURITY.md");
