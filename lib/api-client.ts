@@ -41,6 +41,8 @@ export async function parseNote(note: string): Promise<Trip> {
     if (Number.isInteger(wait) && wait > 0) {
       throw new ParseError(MESSAGES.tooManyRequestsIn(wait), res.status);
     }
+    // The edge can refuse with no body and no Retry-After; any 429 means "slow down".
+    throw new ParseError(MESSAGES.tooManyRequests, res.status);
   }
 
   if (!res.ok) {
