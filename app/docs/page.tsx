@@ -59,7 +59,7 @@ const errors = [
   [
     HTTP.unavailable,
     "Service unavailable",
-    'The server is protecting itself from overload (too many parses at once, or the shared per-minute budget is used up), or the AI account has run out of credit. Nothing is wrong with your note. For overload, wait for the Retry-After seconds and try again. For "used up its AI budget", the owner needs to add credit, or you can run it with your own key.',
+    'The server is protecting itself from overload (too many parses at once, or the shared per-minute budget is used up), or the demo\'s fixed monthly AI budget is spent. Nothing is wrong with your note. For overload, wait for the Retry-After seconds and try again. For "used up its AI budget", try again when the monthly limit renews, or run it with your own key.',
     MESSAGES.busy,
   ],
   [
@@ -132,6 +132,7 @@ export default function DocsPage() {
         <nav aria-label="On this page" className="mt-4">
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-900 underline underline-offset-4 dark:text-zinc-50">
             {[
+              ["need", "What you need"],
               ["setup", "Setup"],
               ["api-key", "Getting an API key"],
               ["demo", "Sharing a demo"],
@@ -151,6 +152,34 @@ export default function DocsPage() {
           </ul>
         </nav>
 
+        <section aria-labelledby="need">
+          <h2 id="need" className={h2}>
+            What you need to try it
+          </h2>
+          <ul className="mt-2 list-disc space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+            <li>
+              <strong>To run it on your own computer, you need your own Anthropic API key.</strong>{" "}
+              This project does not include one, and the AI cannot run without it. You create it in
+              your own Anthropic account (steps below, about five minutes) and pay only for what you
+              use, a fraction of a cent per parse. API keys are not provided or shared.
+            </li>
+            <li>
+              <strong>To try it with no setup,</strong> use the public demo if you were given a
+              link. It runs on a small, fixed budget of about $5 a month for everyone together, and
+              that limit is not raised. When it is used up, the page says &ldquo;This demo has used
+              up its AI budget&rdquo; and it stays unavailable until the monthly limit renews.
+              Nothing is wrong with your note. To keep going, run it yourself with your own key.
+            </li>
+            <li>
+              <strong>Questions or feedback?</strong> See the{" "}
+              <Link href={Routes.page("contact")} className="underline underline-offset-4">
+                Contact
+              </Link>{" "}
+              page.
+            </li>
+          </ul>
+        </section>
+
         <section aria-labelledby="setup">
           <h2 id="setup" className={h2}>
             Setup
@@ -160,13 +189,17 @@ export default function DocsPage() {
               Install Node.js 20 or newer, then run <code className={code}>npm install</code>.
             </li>
             <li>
-              Copy <code className={code}>.env.example</code> to{" "}
-              <code className={code}>.env.local</code> and set{" "}
-              <code className={code}>ANTHROPIC_API_KEY</code> to your own key (see{" "}
+              Create your own Anthropic API key (see{" "}
               <a href="#api-key" className="underline underline-offset-4">
                 Getting an API key
               </a>
-              ). The file is git-ignored; the key is only read on the server and never sent to the
+              ) and copy it. The Console shows it only once.
+            </li>
+            <li>
+              Copy <code className={code}>.env.example</code> to{" "}
+              <code className={code}>.env.local</code>, open it, and paste your key after{" "}
+              <code className={code}>ANTHROPIC_API_KEY=</code> (no quotes, no spaces). Save the
+              file. It is git-ignored, and the key is only read on the server and never sent to the
               browser.
             </li>
             <li>
@@ -175,13 +208,23 @@ export default function DocsPage() {
             </li>
             <li>
               Run <code className={code}>npm run dev</code> and open{" "}
-              <code className={code}>http://localhost:3000</code>.
+              <code className={code}>http://localhost:3000</code>. Stop it with Ctrl + C.
             </li>
             <li>
               Check everything with <code className={code}>npm run check</code> (types, lint,
               format, unit tests) and <code className={code}>npm run test:e2e</code> (real browser).
             </li>
           </ol>
+          <p className={p}>
+            <strong>On a Mac and prefer not to keep the key in a file?</strong> Skip the{" "}
+            <code className={code}>.env.local</code> step and run{" "}
+            <code className={code}>npm run dev:key</code> instead of{" "}
+            <code className={code}>npm run dev</code>. The first time it asks for your key and saves
+            it in your Mac&rsquo;s Keychain, so you are never asked again. Manage the saved key with{" "}
+            <code className={code}>npm run key:status</code>,{" "}
+            <code className={code}>npm run key:set</code> and{" "}
+            <code className={code}>npm run key:remove</code>.
+          </p>
         </section>
 
         <section aria-labelledby="api-key">
@@ -216,11 +259,14 @@ export default function DocsPage() {
             </li>
             <li>Copy the key straight away. The Console shows it only once.</li>
             <li>
-              Run <code className={code}>cp .env.example .env.local</code> and paste the key after{" "}
-              <code className={code}>ANTHROPIC_API_KEY=</code>.
+              Run <code className={code}>cp .env.example .env.local</code>, open{" "}
+              <code className={code}>.env.local</code>, and paste the key after{" "}
+              <code className={code}>ANTHROPIC_API_KEY=</code>. Then run{" "}
+              <code className={code}>npm run dev</code>. (On a Mac you can run{" "}
+              <code className={code}>npm run dev:key</code> instead and paste the key when it asks.)
             </li>
             <li>
-              Restart <code className={code}>npm run dev</code>, click{" "}
+              Open <code className={code}>http://localhost:3000</code>, click{" "}
               <strong>Use an example</strong>, then <strong>Parse</strong>.
             </li>
           </ol>
@@ -260,18 +306,18 @@ export default function DocsPage() {
               and the answer-size cap keep what anyone can do through it small.
             </li>
             <li>
-              <strong>Next best: send a temporary key privately.</strong> Never put it in the
-              repository, README or a pull request. A key can be used directly against the API, up
-              to its cap, not only through this app, so keep the cap low, use it nowhere else, and
-              revoke it when done.
+              <strong>Don&rsquo;t hand out keys.</strong> A key can be used directly against the
+              API, up to its cap, not only through this app. Anyone who wants to go beyond the demo
+              creates their own key in their own account and runs the project themselves.
             </li>
             <li>
-              <strong>When the credit runs out,</strong> the parser says &ldquo;This demo has used
-              up its AI budget&rdquo; (the API answers {HTTP.unavailable} with code{" "}
+              <strong>Keep the demo&rsquo;s limit fixed.</strong> It is the most the demo can ever
+              cost. When it is used up, the parser says &ldquo;This demo has used up its AI
+              budget&rdquo; (the API answers {HTTP.unavailable} with code{" "}
               <code className={code}>out_of_credit</code>) and the server log says{" "}
-              <code className={code}>parse failed: out of credit</code>. Visitors can follow the
-              steps above to use their own key. The owner brings the demo back by adding credit or
-              raising the limit.
+              <code className={code}>parse failed: out of credit</code>. The demo stays unavailable
+              until the monthly limit renews, and visitors are pointed to running it with their own
+              key.
             </li>
           </ul>
         </section>

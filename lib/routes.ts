@@ -5,6 +5,7 @@ const PAGES = {
   docsFaq: "/docs/faq",
   requirements: "/requirements",
   tests: "/tests",
+  contact: "/contact",
 } as const;
 
 const API = {

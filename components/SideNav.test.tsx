@@ -27,6 +27,7 @@ describe("SideNav", () => {
       [COPY.navRequirements, Routes.page("requirements")],
       [COPY.navDocs, Routes.page("docs")],
       [COPY.navTests, Routes.page("tests")],
+      [COPY.navContact, Routes.page("contact")],
     ]);
   });
 
