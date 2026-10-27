@@ -103,6 +103,15 @@ export const OUTPUT_LIMITS = {
   mobilityCount: MOBILITY.length,
 } as const;
 
+/** The public History page and the database behind it. */
+export const HISTORY = {
+  retentionDays: 7,
+  pageRowCap: 200,
+  /** Saves per rolling 24 hours; beyond this nothing more is stored until older rows age out. */
+  dailySaveCap: 2000,
+  revalidateSec: 60,
+} as const;
+
 /** Where visitors write with questions or feedback. Shown on the Contact page. API keys are not provided. */
 export const CONTACT = {
   email: "mark2579@gmail.com",
