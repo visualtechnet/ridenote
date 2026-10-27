@@ -29,10 +29,12 @@ describe("Contact page", () => {
     expect(text).not.toMatch(/request a (temporary )?key|ask for a (temporary )?key/i);
   });
 
-  it("states the demo's fixed monthly limit and that it is not raised", () => {
+  it("says the demo's budget is small, shared and not raised, without printing a dollar amount", () => {
     const { container } = render(<ContactPage />);
-    expect(container.textContent).toMatch(/\$5 a month/);
-    expect(container.textContent).toMatch(/not raised/);
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/small, fixed budget shared by everyone/);
+    expect(text).toMatch(/not raised/);
+    expect(text).not.toMatch(/\$\s?\d/);
   });
 
   it("tells visitors to run it with their own key, with the .env.local steps", () => {
