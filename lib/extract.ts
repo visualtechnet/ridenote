@@ -20,6 +20,7 @@ export async function extractTrip(
     {
       model: process.env[UPSTREAM.modelEnvVar] ?? UPSTREAM.defaultModel,
       max_tokens: UPSTREAM.maxTokens,
+      thinking: UPSTREAM.thinking,
       system: SYSTEM,
       messages: [{ role: "user", content: wrapNote(note) }],
       output_config: { format: zodOutputFormat(ModelTripSchema) },

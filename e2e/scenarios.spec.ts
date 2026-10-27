@@ -48,12 +48,24 @@ test.describe("positive: what a successful parse looks like", () => {
     });
   }
 
-  test("an empty mobility list reads 'Not stated', never a blank", async ({ page }) => {
-    await mockParseApi(page, { trip: { ...trip, mobility: [] } });
+  test("an empty mobility list reads 'Not stated' and is called out in the Missing list", async ({
+    page,
+  }) => {
+    await mockParseApi(page, { trip: { ...trip, mobility: [], missing_fields: ["mobility"] } });
     await page.goto(Routes.page("home"));
     await submit(page, NOTE);
     await expect(card(page).getByRole("list", { name: "Mobility" })).toHaveCount(0);
     await expect(card(page).getByText("Not stated")).toHaveCount(1);
+    await expect(
+      card(page).getByRole("list", { name: "Missing fields" }).getByRole("listitem"),
+    ).toHaveText(["mobility"]);
+  });
+
+  test("a named aid is not flagged as missing", async ({ page }) => {
+    await mockParseApi(page, { trip: { ...trip, mobility: ["walker"], missing_fields: [] } });
+    await page.goto(Routes.page("home"));
+    await submit(page, NOTE);
+    await expect(card(page).getByRole("list", { name: "Missing fields" })).toHaveCount(0);
   });
 
   for (const [time, shown] of [
@@ -766,7 +778,7 @@ test.describe("out of scope: things the app does not do, and how it behaves anyw
     await expect(card(page).getByText("Not stated")).toHaveCount(4);
     await expect(
       card(page).getByRole("list", { name: "Missing fields" }).getByRole("listitem"),
-    ).toHaveCount(4);
+    ).toHaveCount(5); // the four required fields, and mobility
     await expect(alert(page)).toHaveCount(0);
   });
 

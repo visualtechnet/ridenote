@@ -97,6 +97,22 @@ describe("POST /api/parse", () => {
     expect(body.trip.missing_fields).toEqual(["pickup_time"]);
   });
 
+  it("flags mobility as missing when the AI names no aid, and not when it does", async () => {
+    mockParse.mockResolvedValue({
+      stop_reason: "end_turn",
+      parsed_output: { ...goodTrip, mobility: [], missing_fields: [] },
+    });
+    const none = await (await POST(request({ note: VALID_NOTE }))).json();
+    expect(none.trip.missing_fields).toEqual(["mobility"]);
+
+    mockParse.mockResolvedValue({
+      stop_reason: "end_turn",
+      parsed_output: { ...goodTrip, mobility: ["cane"], missing_fields: ["mobility"] },
+    });
+    const some = await (await POST(request({ note: VALID_NOTE }))).json();
+    expect(some.trip.missing_fields).toEqual([]); // the server decides, not the model's own list
+  });
+
   it("shortens an over-long notes line instead of failing a good note", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
@@ -383,6 +399,13 @@ describe("POST /api/parse", () => {
   it("caps the size of the model's answer", async () => {
     await POST(request({ note: VALID_NOTE }));
     expect(mockParse.mock.calls[0][0].max_tokens).toBe(UPSTREAM.maxTokens);
+  });
+
+  it("turns the model's hidden reasoning off, so the token cap is spent on the answer", async () => {
+    // With reasoning on, a tricky note could use the whole 600-token cap before the JSON was written,
+    // the answer was cut off, and a good note became a 502. See FAQ entry 37.
+    await POST(request({ note: VALID_NOTE }));
+    expect(mockParse.mock.calls[0][0].thinking).toEqual({ type: "disabled" });
   });
 
   it("sends one upstream call for identical notes submitted at the same moment", async () => {

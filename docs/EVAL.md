@@ -70,7 +70,7 @@ email contain `Name <address>`, which the validator was refusing.
 A run passes only if **both** hold:
 
 1. Every **critical** case passes. These are the ones where a wrong answer is dangerous: inventing a
-   missing time, address or name; guessing AM or PM; converting a time between time zones; losing a date; inventing a mobility aid the note does not name, or dropping one it does (for example, "a wheelchair, a cane or a walker" must give all three); following an
+   missing time, address or name; guessing AM or PM; converting a time between time zones; losing a date; inventing a mobility aid the note does not name, or dropping one it does, or failing to flag mobility as missing when none is named (for example, "a wheelchair, a cane or a walker" must give all three); following an
    instruction hidden inside a note.
 2. At least 90% of all cases pass (`PASS_RATE_FLOOR` in `evals/cases.ts`).
 

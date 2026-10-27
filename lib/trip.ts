@@ -62,7 +62,13 @@ export function normalizeModelTrip(trip: z.infer<typeof ModelTripSchema>) {
   };
 }
 
-/** Derived from the data itself, so a confused or manipulated model cannot misreport it. */
+/**
+ * Derived from the data itself, so a confused or manipulated model cannot misreport it. Mobility is
+ * included when the note named no aid: "not stated" is not the same as "needs none", and a wrong
+ * guess means sending a vehicle that cannot carry the passenger. Walking unaided has to be stated.
+ */
 export function missingFields(trip: Trip): string[] {
-  return REQUIRED_TRIP_FIELDS.filter((f) => trip[f] === null);
+  const missing: string[] = REQUIRED_TRIP_FIELDS.filter((f) => trip[f] === null);
+  if (trip.mobility.length === 0) missing.push("mobility");
+  return missing;
 }

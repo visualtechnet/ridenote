@@ -70,6 +70,14 @@ and 600 token answer cap keep each parse small. When the account runs out of cre
 503 with `code: "out_of_credit"`, the page shows a clear message, and the log says
 `parse failed: out of credit`, so the owner knows the demo's fixed budget is spent. It stays unavailable until the monthly limit renews; the limit is not raised on request.
 
+## What one parse costs
+
+The AI call has its hidden reasoning turned off, because extraction does not need it. A parse is about
+160 output tokens on average, against about 550 with reasoning on, so it is roughly a third of the
+cost and faster. The 600-token cap leaves room for the worst case. If you ever turn reasoning back on,
+raise `UPSTREAM.maxTokens` too: reasoning counts against the cap, and a tricky note can use all of it
+and cut the answer off.
+
 ## Known limits
 
 - Without a proxy header (local dev, bare `next start`) all clients share one bucket.

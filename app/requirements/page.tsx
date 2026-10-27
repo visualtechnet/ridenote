@@ -117,7 +117,11 @@ export default function RequirementsPage() {
             <li>
               Extract passenger, pickup, dropoff, pickup time and every mobility aid named (a list).
             </li>
-            <li>Never invent facts. Anything not stated is null and listed as missing.</li>
+            <li>
+              Never invent facts. Anything not stated is null and listed as missing. An empty
+              mobility list is listed too, so it is checked before dispatching: walking unaided has
+              to be stated.
+            </li>
             <li>
               Do not guess an ambiguous time (an hour with no AM or PM): leave it null and explain
               in the notes. Say so in the notes when a note holds several trips or no trip at all.
@@ -370,8 +374,9 @@ export default function RequirementsPage() {
                   </th>
                   <td className={td}>array of strings</td>
                   <td className={td}>
-                    Names of the null required fields, computed by the server. Max{" "}
-                    {OUTPUT_LIMITS.missingFieldCount} items.
+                    Names of the null required fields, plus <code className={code}>mobility</code>{" "}
+                    when no aid is named (not stated is not the same as needs none). Computed by the
+                    server. Max {OUTPUT_LIMITS.missingFieldCount} items.
                   </td>
                 </tr>
                 <tr>

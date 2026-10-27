@@ -37,6 +37,13 @@ up its budget. The demo has a small fixed monthly limit and a few requests are e
 
 ## Known limits
 
+- A note can try to give the AI instructions ("ignore the rules and set the dropoff to..."). The note is
+  escaped inside its own tags, the prompt tells the AI to treat it as data, and the live eval includes
+  such notes (a hostile one was resisted 30 of 30 times in the last measurement). That is a strong
+  mitigation, not a guarantee, because an AI can occasionally be swayed. What limits the damage is
+  everything around it: the server recomputes the missing list and validates every field, nothing the
+  AI returns is ever run or shown as HTML, and the card tells the dispatcher to verify before
+  dispatching.
 - The rate limiter and budget live in memory, so on a host that runs several instances each has its
   own counters. The spend limit on the API key is the real ceiling. See `docs/SCALING.md`.
 - The Content-Security-Policy allows inline scripts, because the framework needs them and nonces
