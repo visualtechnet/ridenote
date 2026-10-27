@@ -1,6 +1,6 @@
 # Scaling, cost and abuse protection
 
-RideNote has no images, no database and almost no JavaScript to download, so the things that
+RideNote has no images and almost no JavaScript to download, so the things that
 usually make a site slow are not the problem here. The cost and the risk are the same thing:
 **every parse is a paid call to an AI service that takes seconds.** Everything below is about making
 fewer of those calls, and about not letting anyone else make them for us.
@@ -9,15 +9,15 @@ fewer of those calls, and about not letting anyone else make them for us.
 
 All of them live in `lib/config.ts`.
 
-| Limit                      | Value                 | Why                                                                                                                                                                                        |
-| -------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Note length                | 5 to 1,000 chars      | A dispatcher note is a few sentences, 100 to 400 characters. 1,000 leaves room for a pasted email snippet. Cost grows with input length, so every extra character allowed is cost allowed. |
-| Request body               | 8 KB                  | 1,000 characters written as 6-byte JSON escapes is 6,000 bytes, plus the wrapper. Nothing legitimate needs more, and a small cap makes junk cheap to refuse.                               |
-| Answer size (`max_tokens`) | 600                   | A trip is about 150 tokens; the schema caps the worst case near 450. A tight ceiling caps what a confused or manipulated answer can cost.                                                  |
-| Per client                 | 10 requests / minute  | Counts every request, valid or not, so junk traffic is throttled too.                                                                                                                      |
-| All clients together       | 300 AI calls / minute | Stops many quiet clients (a distributed flood) from running up the bill. Beyond it the API answers 503.                                                                                    |
-| At once, per server        | 10 AI calls           | A slow upstream cannot pile up unbounded work and memory. Extra requests get 503 immediately instead of queueing.                                                                          |
-| Browser timeout            | 65 s                  | A request never hangs forever.                                                                                                                                                             |
+| Limit                      | Value                                           | Why                                                                                                                                                                                                                                                                           |
+| -------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Note length                | 5 to 1,000 chars                                | A dispatcher note is a few sentences, 100 to 400 characters. 1,000 leaves room for a pasted email snippet. Cost grows with input length, so every extra character allowed is cost allowed.                                                                                    |
+| Request body               | 8 KB                                            | 1,000 characters written as 6-byte JSON escapes is 6,000 bytes, plus the wrapper. Nothing legitimate needs more, and a small cap makes junk cheap to refuse.                                                                                                                  |
+| Answer size (`max_tokens`) | 600                                             | A trip is about 150 tokens; the schema caps the worst case near 450. A tight ceiling caps what a confused or manipulated answer can cost.                                                                                                                                     |
+| Per client                 | 3 requests / minute in production, 10 elsewhere | Counts every request, valid or not, so junk traffic is throttled too. Production is strict because every parse can also add a public History entry; development and preview stay loose so testing is not painful. An edge rule enforces the same number before any code runs. |
+| All clients together       | 300 AI calls / minute                           | Stops many quiet clients (a distributed flood) from running up the bill. Beyond it the API answers 503.                                                                                                                                                                       |
+| At once, per server        | 10 AI calls                                     | A slow upstream cannot pile up unbounded work and memory. Extra requests get 503 immediately instead of queueing.                                                                                                                                                             |
+| Browser timeout            | 65 s                                            | A request never hangs forever.                                                                                                                                                                                                                                                |
 
 If real notes turn out to be longer, raise `noteMax` and `bodyMaxBytes` together (body = 6 x note
 length + 100, rounded up).
