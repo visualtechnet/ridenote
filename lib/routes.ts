@@ -5,6 +5,7 @@ const PAGES = {
   docsFaq: "/docs/faq",
   requirements: "/requirements",
   tests: "/tests",
+  history: "/history",
   contact: "/contact",
 } as const;
 
