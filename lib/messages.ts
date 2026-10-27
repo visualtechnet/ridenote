@@ -34,6 +34,8 @@ export const COPY = {
   appName: "RideNote",
   tagline: "Dispatcher notes, turned into trips.",
   appDescription: "Turn a dispatcher note into a structured trip record.",
+  historyNotice:
+    "Results are saved and shown publicly on the History page for 7 days on the live site. Please use made-up names and addresses.",
   intro:
     "RideNote turns a dispatcher's free-text message into a structured ride record: who is travelling, where from and to, when, and what mobility help they need. Paste the note, press Parse, and get a clean card instead of retyping it.",
   howItWorksLabel: "How it works",

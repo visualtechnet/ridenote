@@ -306,4 +306,14 @@ describe("Home page", () => {
     const steps = screen.getByRole("list", { name: COPY.howItWorksLabel });
     expect(within(steps).getAllByRole("listitem")).toHaveLength(COPY.howItWorksSteps.length);
   });
+
+  it("tells visitors that results are saved publicly, in the main region after the form", () => {
+    renderWithProviders(<Home />);
+    const notice = screen.getByText(COPY.historyNotice);
+    expect(notice).toBeVisible();
+    expect(screen.getByRole("main")).toContainElement(notice);
+    const form = parseBtn().closest("form")!;
+    expect(form.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(form).not.toContainElement(notice);
+  });
 });
