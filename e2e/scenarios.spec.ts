@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { LIMITS } from "../lib/config";
+import { LIMITS, RATE_LIMIT } from "../lib/config";
 import { INVALID_EXAMPLES, VALID_EXAMPLES } from "../lib/docs-examples";
 import { MESSAGES } from "../lib/messages";
 import { Routes } from "../lib/routes";
@@ -489,16 +489,18 @@ test.describe("the real API: refuses bad requests before any paid call", () => {
   test("429: one client is slowed down, another is not, and the reply says when to retry", async ({
     request,
   }) => {
+    // The e2e server runs in production mode, so the strict per-client limit applies.
+    const max = RATE_LIMIT.maxRequestsProduction;
     const greedy = freshClient();
     const statuses: number[] = [];
     let last = await request.post(url, { data: { note: "" }, headers: greedy });
     statuses.push(last.status());
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < max + 1; i++) {
       last = await request.post(url, { data: { note: "" }, headers: greedy });
       statuses.push(last.status());
     }
-    expect(statuses.slice(0, 10).every((s) => s === 400)).toBe(true);
-    expect(statuses.slice(10)).toEqual([429, 429]);
+    expect(statuses.slice(0, max).every((s) => s === 400)).toBe(true);
+    expect(statuses.slice(max)).toEqual([429, 429]);
     expect(Number(last.headers()["retry-after"])).toBeGreaterThan(0);
     expect((await last.json()).error).toBe(MESSAGES.tooManyRequests);
 
