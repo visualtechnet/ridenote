@@ -52,6 +52,7 @@ export default function Home() {
           }}
           onClear={() => parse.reset()}
         />
+        <p className="text-sm text-zinc-700 dark:text-zinc-300">{COPY.historyNotice}</p>
         <ResultPanel
           pending={parse.isPending}
           error={parse.error?.message ?? null}
