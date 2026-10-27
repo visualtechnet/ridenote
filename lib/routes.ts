@@ -10,6 +10,7 @@ const PAGES = {
 
 const API = {
   parse: "/api/parse",
+  historyPurge: "/api/history/purge",
 } as const;
 
 /**

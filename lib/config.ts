@@ -55,10 +55,12 @@ export const CLIENT = {
 export const HTTP = {
   ok: 200,
   badRequest: 400,
+  unauthorized: 401,
   payloadTooLarge: 413,
   unsupportedMediaType: 415,
   unprocessable: 422,
   tooManyRequests: 429,
+  serverError: 500,
   badGateway: 502,
   unavailable: 503,
   clientClosed: 499,

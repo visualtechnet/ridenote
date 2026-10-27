@@ -17,6 +17,8 @@ export const MESSAGES = {
   outOfCredit:
     "This demo has used up its AI budget. Please try again later, or run RideNote yourself with your own API key (see Docs, Setup).",
   tooManyRequests: "You're going a bit fast. Please wait a moment and try again.",
+  unauthorized: "Unauthorized.",
+  purgeFailed: "The clean-up could not be completed.",
   parseFailed: "We couldn't parse that note. Please try again.",
   modelDeclined: "The assistant couldn't process that note. Please rephrase it and try again.",
   tooManyRequestsIn: (seconds: number) =>
