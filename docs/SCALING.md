@@ -68,7 +68,7 @@ workspace spend limit** ($2 to $5), with auto-reload off. Whatever happens, the 
 cap. Inside the code, the per-client limit, shared budget, concurrency gate, 1,000 character note limit
 and 600 token answer cap keep each parse small. When the account runs out of credit the API answers
 503 with `code: "out_of_credit"`, the page shows a clear message, and the log says
-`parse failed: out of credit`, so the owner knows to top up or switch the key off.
+`parse failed: out of credit`, so the owner knows the demo's fixed budget is spent. It stays unavailable until the monthly limit renews; the limit is not raised on request.
 
 ## Known limits
 

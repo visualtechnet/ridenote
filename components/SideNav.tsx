@@ -11,6 +11,7 @@ const LINKS = [
   { label: COPY.navRequirements, href: Routes.page("requirements") },
   { label: COPY.navDocs, href: Routes.page("docs") },
   { label: COPY.navTests, href: Routes.page("tests") },
+  { label: COPY.navContact, href: Routes.page("contact") },
 ] as const;
 
 /** Shown under "Docs" while any documentation page is open. */

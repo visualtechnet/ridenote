@@ -38,19 +38,54 @@ Built with Next.js 16, the Claude API (Anthropic), Zod, React Query and Zustand.
 
 ## Quick start
 
-You need **Node.js 20.9 or newer** (`.nvmrc` pins 22; `package.json` enforces the minimum) and an
-[Anthropic API key](https://console.anthropic.com/). No key yet? See
-[Getting an API key](#getting-an-api-key) below; it takes about five minutes.
+> **To run RideNote on your own computer you need your own Anthropic API key.** The project does not
+> include one, and API keys are not provided or shared. You create one in your own Anthropic account
+> (about five minutes, see [Getting an API key](#getting-an-api-key)) and pay only for what you use, a
+> fraction of a cent per parse.
+>
+> **Just want to look?** Use the public demo if you were given a link. It runs on a small, fixed
+> budget of about **$5 a month for everyone together**, and that limit is not raised. When it is spent
+> the page says so and the demo stays unavailable until the monthly limit renews. To keep going, run it
+> yourself as below.
+
+You need **Node.js 20.9 or newer** (`node -v` shows your version; get it from
+[nodejs.org](https://nodejs.org/) if not). `.nvmrc` pins 22.
+
+**1. Download the project and install it.** Open a terminal (on a Mac: press Cmd + Space, type
+`Terminal`, press Enter) and run these one at a time:
 
 ```bash
 git clone <this repository>
 cd ridenote
 npm install
-cp .env.example .env.local     # then open .env.local and paste your key
-npm run dev                    # http://localhost:3000
 ```
 
-Check that it works: click **Use an example**, then **Parse**. A card for "Mrs. Lee" should appear.
+**2. Create your own API key** in your Anthropic account. See
+[Getting an API key](#getting-an-api-key). Copy the key; the Console shows it only once.
+
+**3. Put your key in a local file.** `.env.local` is git-ignored, so it is never committed:
+
+```bash
+cp .env.example .env.local
+```
+
+Open `.env.local` in any editor and paste your key after `ANTHROPIC_API_KEY=`, so the line looks like
+`ANTHROPIC_API_KEY=sk-ant-...`. No quotes, no spaces. Save the file.
+
+**4. Start it.**
+
+```bash
+npm run dev
+```
+
+When the terminal says `Ready`, open **http://localhost:3000**, click **Use an example**, then
+**Parse**. A card for "Mrs. Lee" should appear. To stop the app, press Ctrl + C in the terminal.
+Next time, only `cd ridenote` and `npm run dev` are needed.
+
+**On a Mac and prefer not to keep the key in a file?** Skip step 3 and run `npm run dev:key` instead of
+`npm run dev`. The first time it asks for your key (paste it; nothing is shown) and saves it in your Mac's
+Keychain, so you are never asked again. See
+[Storing the local key on a Mac](#storing-the-local-key-on-a-mac-no-password-manager).
 
 To run the production build locally:
 
@@ -70,10 +105,78 @@ runs it locally uses **their own key**; the repository contains none.
 3. Open **API keys** and create a key. Name it after the project (for example `ridenote-local`). If you
    can, create it inside its own workspace with a low monthly spend limit.
 4. Copy the key straight away. The Console shows it only once.
-5. Run `cp .env.example .env.local`, open `.env.local`, and paste the key after `ANTHROPIC_API_KEY=`.
-6. Start (or restart) the app with `npm run dev`, click **Use an example**, then **Parse**.
+5. Run `cp .env.example .env.local`, open `.env.local`, and paste the key after
+   `ANTHROPIC_API_KEY=`. Then run `npm run dev`. (On a Mac you can run `npm run dev:key` instead and
+   paste the key when it asks; it is saved in your Keychain.)
+6. Open http://localhost:3000, click **Use an example**, then **Parse**.
 
 Menu names in the Console change from time to time; look for "API keys" and "Billing".
+
+### Which workspace and key to use
+
+Workspaces are part of the Anthropic Console. They hold API keys and let you set a monthly spend limit
+on each group of keys. Keep **two** for your own projects, with different limits:
+
+| Workspace               | Used for                                                 | Suggested cap      |
+| ----------------------- | -------------------------------------------------------- | ------------------ |
+| `MarkG-Portfolio`       | Public demos: anything a stranger or manager can trigger | about $5 a month   |
+| `MarkG-Portfolio-Local` | Your own development, `.env.local`, `npm run eval`       | $10 to $20 a month |
+
+- Create each key **inside** the right workspace, one per repo and environment (for example
+  `ridenote-demo-prod` and `ridenote-local`). Put the demo key only in the host's server-only environment
+  variables, and the local key only in `.env.local`.
+- Set the workspace spend limit before creating its keys.
+- Credit balance is shared by the whole account. Load only what you are willing to lose (about $20 to
+  $25 in total) and leave auto-reload off. Leave the Console's "Default" workspace unused.
+- Workspaces and Claude _Projects_ (a folder of chats in the Claude app) are unrelated; only workspaces
+  affect API keys and spend.
+
+### Storing the local key on a Mac (no password manager)
+
+You do not have to do anything special. `npm run dev:key` looks for your key in the macOS **Keychain**,
+the encrypted store built into every Mac, which stays on your computer unless you turned on iCloud
+Keychain sync. If it is not there yet, the command asks for it once and saves it. The key is never
+written to a file or shown on screen. The Keychain entry is called `ridenote-demo-local`.
+
+These commands all use the saved key, so you never type a key or an entry name:
+
+| Command              | What it does                                                        |
+| -------------------- | ------------------------------------------------------------------- |
+| `npm run dev:key`    | Start the development server (asks for the key the first time)      |
+| `npm run start:key`  | Start the production server (after `npm run build`)                 |
+| `npm run eval:key`   | Run the live accuracy eval                                          |
+| `npm run key:status` | Say whether a key is saved (never shows it)                         |
+| `npm run key:set`    | Save a new key, replacing the old one (for example when it expires) |
+| `npm run key:remove` | Delete the saved key                                                |
+| `npm run key`        | List these commands                                                 |
+
+Good to know:
+
+- Paste the key when asked (Cmd + V). Nothing appears as you paste. That is normal.
+- It only accepts something that starts with `sk-ant-`. Anything else is refused and nothing is saved.
+- macOS may ask once whether Terminal can use the item. Choose Allow.
+- If you also have a key in `.env.local`, the two do not clash: the `:key` commands use the Keychain,
+  and plain `npm run dev` uses the file.
+- While the app runs, the key is in that one process's environment. That is safer than a file on disk
+  but not invisible to other programs you run as the same user.
+- Keys are replaceable, so there is nothing to back up. If you lose the Mac, delete the key in the
+  Console and make a new one.
+- Advanced: to keep a second key under another name (for example for a different project), put
+  `RIDENOTE_KEYCHAIN_SERVICE=my-other-name` in front of any of these commands.
+
+Prefer a vault app that is not tied to a company's cloud? KeePassXC keeps an encrypted file on your own
+disk. For this project the Keychain is simpler.
+
+### Keys on Vercel
+
+- Add the demo key under Settings, Environment Variables, for **Production** only, and mark it
+  **Sensitive**. Leave Preview and Development empty, or give them a separate low-limit key, so pull
+  request builds cannot read the production key.
+- It is a different key from your local one, so nothing needs switching: the machine decides which
+  one is used. Your Mac uses the Keychain key; Vercel uses its own.
+- You do not need to rotate on a schedule. Rotate when a key may have leaked or someone who had it no
+  longer needs it: create a new key in the Console, replace the value in Vercel, **redeploy** (a changed
+  variable only applies to new deployments), confirm the demo works, then delete the old key.
 
 Keep the key safe:
 
@@ -85,21 +188,21 @@ Keep the key safe:
 
 ## Sharing or deploying a demo
 
-Someone who only wants to _see_ RideNote should not have to create a key.
+Someone who only wants to _see_ RideNote should not have to create a key, and nobody should be handed
+one.
 
-- **Best: host it.** Deploy the app (for example on Vercel) and store the key as a **server-only**
-  environment variable, using a key made for the demo with a low spend limit ($2 to $5 is plenty).
-  Visitors open a URL and click Parse. They never see the key. The app's per-client limit
+- **Host it.** Deploy the app (for example on Vercel) and store the key as a **server-only**
+  environment variable, using a key made for the demo with a low spend limit (this project uses $5 a
+  month). Visitors open a URL and click Parse. They never see the key. The app's per-client limit
   (10 requests a minute), shared budget, 1,000 character note limit and 600 token answer cap keep
   what anyone can do through it small.
-- **Next best: hand out a temporary key privately.** Send it directly to the person (never in the
-  repository, README or a pull request) and make it a capped key you can revoke. Someone holding a key
-  can call the API directly, up to its cap, not just through this app, so keep the cap low and do not
-  reuse that key anywhere else.
-- **When the demo's credit runs out,** the parser shows "This demo has used up its AI budget" (the API
-  answers 503 with code `out_of_credit`) and the server log says `parse failed: out of credit`. The
-  person can then follow Getting an API key above and use their own key. To bring a demo back, add
-  credit or raise its spend limit.
+- **Don't hand out keys.** A key can be used directly against the API, up to its cap, not only through
+  this app. Anyone who wants to go beyond the demo creates their own key in their own account and runs
+  the project themselves (Quick start above). The site's Contact page says this too.
+- **Keep the demo's limit fixed.** It is the most the demo can ever cost. When it is used up, the parser
+  shows "This demo has used up its AI budget" (the API answers 503 with code `out_of_credit`) and the
+  server log says `parse failed: out of credit`. The demo stays unavailable until the monthly limit
+  renews, and visitors are pointed to running it with their own key.
 - **Watch it.** Check usage in the Console now and then, and delete the key if anything looks wrong.
 
 ## Configuration
@@ -117,7 +220,7 @@ piece of user-facing text in **`lib/messages.ts`**. Change them there, not in th
 
 ## Using it
 
-The site has four sections, reachable from the navigation on the left (a **Menu** button on phones):
+The site has five sections, reachable from the navigation on the left (a **Menu** button on phones):
 
 | Page             | Path            | What it is                                                                 |
 | ---------------- | --------------- | -------------------------------------------------------------------------- |
@@ -126,6 +229,7 @@ The site has four sections, reachable from the navigation on the left (a **Menu*
 | **Docs**         | `/docs`         | Setup, accepted and rejected inputs, JSON pitfalls, every error explained. |
 | Docs: **Eval**   | `/docs/eval`    | How the live accuracy eval works, with every case listed.                  |
 | Docs: **FAQ**    | `/docs/faq`     | Common questions, and the bugs found along the way with their lessons.     |
+| **Contact**      | `/contact`      | How to email the owner with questions or feedback (keys are not provided). |
 | **Tests**        | `/tests`        | Every automated test name, read from the real test files at build time.    |
 
 What to type, in short: who, where from, where to, when, and mobility (`ambulatory`, `wheelchair`,
@@ -223,13 +327,16 @@ A pre-commit hook runs `npm run check`. CI runs everything on every push.
 
 ## Scripts
 
-| Script                            | Does                               |
-| --------------------------------- | ---------------------------------- |
-| `npm run dev`                     | Development server with hot reload |
-| `npm run build` / `start`         | Production build and server        |
-| `npm run lint` / `lint:fix`       | ESLint                             |
-| `npm run format` / `format:check` | Prettier                           |
-| `npm run typecheck`               | TypeScript without emitting files  |
+| Script                                          | Does                                                              |
+| ----------------------------------------------- | ----------------------------------------------------------------- |
+| `npm run dev`                                   | Development server with hot reload                                |
+| `npm run dev:key`                               | Same, with the key read from the Mac Keychain (asks once)         |
+| `npm run start:key` / `eval:key`                | Production server / live eval, with the Keychain key              |
+| `npm run key:status` / `key:set` / `key:remove` | Check, replace or delete the saved key (`npm run key` lists them) |
+| `npm run build` / `start`                       | Production build and server                                       |
+| `npm run lint` / `lint:fix`                     | ESLint                                                            |
+| `npm run format` / `format:check`               | Prettier                                                          |
+| `npm run typecheck`                             | TypeScript without emitting files                                 |
 
 ## Documentation map
 
@@ -246,11 +353,12 @@ This repository uses Next.js 16, which differs from older versions. See `AGENTS.
 
 ## Troubleshooting
 
-| Symptom                                    | Likely cause and fix                                                                       |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| "This demo has used up its AI budget"      | The key's credit or spend limit is used up. Add credit, raise the limit, or use a new key. |
-| "We couldn't parse that note" every time   | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`.      |
-| 429 while testing by hand                  | You passed 10 requests in a minute. Wait for `Retry-After` seconds.                        |
-| Everyone shares one rate limit locally     | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.                |
-| `npm run test:e2e` cannot launch a browser | Run `npx playwright install chromium` once.                                                |
-| Tests page says it found no test files     | The build must run where the source files exist. See the FAQ.                              |
+| Symptom                                       | Likely cause and fix                                                                                                                 |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| "This demo has used up its AI budget"         | The demo's fixed monthly limit is spent. It stays off until the limit renews. Run RideNote yourself with your own key (Quick start). |
+| "We couldn't parse that note" every time      | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`.                                                |
+| 429 while testing by hand                     | You passed 10 requests in a minute. Wait for `Retry-After` seconds.                                                                  |
+| Everyone shares one rate limit locally        | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.                                                          |
+| `npm run test:e2e` cannot launch a browser    | Run `npx playwright install chromium` once.                                                                                          |
+| `npm run dev:key` says it only works on a Mac | It uses the macOS Keychain. Use `.env.local` and `npm run dev` instead.                                                              |
+| Tests page says it found no test files        | The build must run where the source files exist. See the FAQ.                                                                        |

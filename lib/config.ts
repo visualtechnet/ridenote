@@ -73,3 +73,9 @@ export const OUTPUT_LIMITS = {
   fieldName: 40,
   missingFieldCount: 10,
 } as const;
+
+/** Where visitors write with questions or feedback. Shown on the Contact page. API keys are not provided. */
+export const CONTACT = {
+  email: "mark2579@gmail.com",
+  subject: "RideNote",
+} as const;

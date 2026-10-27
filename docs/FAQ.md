@@ -89,6 +89,14 @@ The build is running somewhere the source files are not present (for example a s
 The failure is deliberate: better to refuse to build than to publish "0 tests". Build where the
 source tree exists.
 
+### What does `npm run dev:key` do, and why not just `npm run dev`?
+
+Both start the app. `dev:key` first looks for your Anthropic API key in the Mac Keychain. The first
+time, it asks you to paste the key and saves it there, so you are never asked again and no file holds
+the key. Plain `npm run dev` reads the key from a `.env.local` file instead, which also works on
+Windows and Linux. If `dev:key` says it only works on a Mac, use `.env.local`. To check, replace or
+delete the saved key, use `npm run key:status`, `npm run key:set` and `npm run key:remove`.
+
 ### What is the eval, and when do I run it?
 
 A live accuracy check: about thirty realistic notes are sent to the real AI and the answers are
@@ -115,14 +123,16 @@ expectation was too strict (a correct answer worded differently) before changing
 
 ### I am a manager and just want to see it. Do I need an API key?
 
-Not if someone hosts it for you: open the link and click Parse. To run it on your own computer you
-need a key; the README and the Setup page have step-by-step instructions, and the owner may send you a
-temporary low-limit key privately instead.
+Not if you use the public demo: open the link and click Parse. It runs on a small, fixed budget of
+about $5 a month for everyone together, and that limit is not raised, so it can run out. To run it on
+your own computer you **do** need your own Anthropic API key, created in your own account. API keys
+are not provided or shared. The README and the Setup page have the steps.
 
 ### It says "This demo has used up its AI budget". What now?
 
-The key behind the demo has no credit left. Either come back after the owner tops it up, or create
-your own key (Docs, Setup) and run it locally. Owners: add credit or raise the spend limit.
+The demo's fixed monthly limit is spent. It stays unavailable until the limit renews, and it is not
+raised on request. To keep going, run RideNote yourself: clone the repository, create your own key in
+your Anthropic account, put it in `.env.local` (or run `npm run dev:key` on a Mac), and start it.
 
 ### Is this safe for the AI part? What about prompt injection?
 

@@ -1,0 +1,54 @@
+import { render, screen } from "@testing-library/react";
+import { axe } from "jest-axe";
+import { CONTACT } from "@/lib/config";
+import ContactPage from "./page";
+
+describe("Contact page", () => {
+  it("has one h1 and sections for the demo and for running it yourself", () => {
+    render(<ContactPage />);
+    expect(screen.getByRole("heading", { level: 1, name: "Contact" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "The public demo" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Run it yourself with your own key" }),
+    ).toBeInTheDocument();
+  });
+
+  it("links the owner's email for questions and feedback", () => {
+    render(<ContactPage />);
+    const mail = screen.getByRole("link", { name: CONTACT.email });
+    expect(mail).toHaveAttribute(
+      "href",
+      `mailto:${CONTACT.email}?subject=${encodeURIComponent(CONTACT.subject)}`,
+    );
+  });
+
+  it("says keys are not provided, and does not offer to send one", () => {
+    const { container } = render(<ContactPage />);
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/API keys are not provided or shared/);
+    expect(text).not.toMatch(/request a (temporary )?key|ask for a (temporary )?key/i);
+  });
+
+  it("states the demo's fixed monthly limit and that it is not raised", () => {
+    const { container } = render(<ContactPage />);
+    expect(container.textContent).toMatch(/\$5 a month/);
+    expect(container.textContent).toMatch(/not raised/);
+  });
+
+  it("tells visitors to run it with their own key, with the .env.local steps", () => {
+    const { container } = render(<ContactPage />);
+    expect(container.textContent).toMatch(/need your own Anthropic API key/);
+    expect(container.textContent).toContain(".env.local");
+    expect(container.textContent).toContain("ANTHROPIC_API_KEY=");
+  });
+
+  it("points to the setup guide", () => {
+    render(<ContactPage />);
+    expect(screen.getByRole("link", { name: /setup guide/i })).toHaveAttribute("href", "/docs");
+  });
+
+  it("has no accessibility violations", async () => {
+    const { container } = render(<ContactPage />);
+    expect(await axe(container)).toHaveNoViolations();
+  });
+});

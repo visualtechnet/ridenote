@@ -22,6 +22,10 @@ describe("Routes", () => {
     expect(Routes.all()).toEqual(expect.arrayContaining(["/docs/eval", "/docs/faq"]));
   });
 
+  it("has a contact page", () => {
+    expect(Routes.page("contact")).toBe("/contact");
+  });
+
   it("only produces absolute paths", () => {
     for (const route of Routes.all()) expect(route.startsWith("/")).toBe(true);
   });
