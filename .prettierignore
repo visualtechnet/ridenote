@@ -1,0 +1,11 @@
+.next
+node_modules
+coverage
+.claude
+.agents
+public
+package-lock.json
+skills-lock.json
+tsconfig.tsbuildinfo
+test-results
+playwright-report

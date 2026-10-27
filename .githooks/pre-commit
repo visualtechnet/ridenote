@@ -1,0 +1,12 @@
+#!/bin/sh
+# Enabled by `npm install` (see "prepare" in package.json).
+
+# Never let a real env file or key into a commit.
+blocked=$(git diff --cached --name-only | grep -E '(^|/)(\.?env(\.[^/]+)?)$' | grep -v '\.env\.example$')
+if [ -n "$blocked" ]; then
+  echo "Refusing to commit env files:" >&2
+  echo "$blocked" >&2
+  exit 1
+fi
+
+npm run check
