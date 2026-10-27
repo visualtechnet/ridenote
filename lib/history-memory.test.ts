@@ -37,6 +37,15 @@ describe("memory store", () => {
     expect((await store.list(10, 7)).map((r) => r.passenger_name)).toEqual(["edge", "old"]);
   });
 
+  it("includes a row exactly sinceDays old", async () => {
+    // Inclusive cut-off: Task 7's purge must delete only strictly older rows.
+    let now = 10 * DAY;
+    const store = createMemoryStore(() => now);
+    await store.insert(rec("exact"), 100);
+    now += 7 * DAY;
+    expect((await store.list(10, 7)).map((r) => r.passenger_name)).toEqual(["exact"]);
+  });
+
   it("lists newest first and honours the limit", async () => {
     let now = 5 * DAY;
     const store = createMemoryStore(() => now);

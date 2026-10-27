@@ -15,9 +15,15 @@ export type HistoryRecord = {
 export type HistoryRow = HistoryRecord & { id: number; created_at: Date };
 
 export interface HistoryStore {
-  /** Returns false, saving nothing, when `dailyCap` rows were already saved in the last 24 hours. */
+  /**
+   * Returns false, saving nothing, when `dailyCap` rows were already saved in the last 24 hours.
+   * The cap counts rows strictly newer than 24 hours.
+   */
   insert(record: HistoryRecord, dailyCap: number): Promise<boolean>;
-  /** Rows from the last `sinceDays` days, newest first, at most `limit`. */
+  /**
+   * Rows from the last `sinceDays` days, newest first, at most `limit`. Inclusive: a row exactly
+   * `sinceDays` old is returned; the purge deletes only strictly older rows.
+   */
   list(limit: number, sinceDays: number): Promise<HistoryRow[]>;
 }
 
@@ -35,12 +41,9 @@ export function toRecord(trip: Trip): HistoryRecord | null {
     pickup_time: trip.pickup_time,
     mobility: trip.mobility,
   };
-  const hasText = [
-    record.passenger_name,
-    record.pickup_location,
-    record.dropoff_location,
-    record.pickup_time,
-  ].some((value) => value !== null && value !== REMOVED);
+  const hasText = [record.passenger_name, record.pickup_location, record.dropoff_location].some(
+    (value) => value !== null && value !== REMOVED,
+  );
   return hasText || record.mobility.length > 0 ? record : null;
 }
 
@@ -72,6 +75,7 @@ export async function loadHistory(store?: HistoryStore): Promise<HistoryResult> 
 }
 
 /** Built on first use, so importing this file never opens a connection. */
+// HISTORY_STORE=memory is for tests and browser tests only; it is never set on Vercel.
 export function getStore(): HistoryStore {
   if (process.env.HISTORY_STORE === "memory") return getMemoryStore();
   throw new Error("no history store configured");
