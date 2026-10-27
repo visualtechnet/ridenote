@@ -8,7 +8,7 @@ import {
   normalizeModelTrip,
   type Trip,
 } from "./trip";
-import { MOBILITY, OUTPUT_LIMITS } from "./config";
+import { MOBILITY, OUTPUT_LIMITS, REQUIRED_TRIP_FIELDS } from "./config";
 import { wrapNote } from "./prompt";
 
 describe("TripSchema", () => {
@@ -151,12 +151,12 @@ describe("what the model may say versus what we keep", () => {
 });
 
 describe("missingFields", () => {
-  const base = {
+  const base: Trip = {
     passenger_name: "A",
     pickup_location: "B",
     dropoff_location: "C",
     pickup_time: "09:00",
-    mobility: [] as Trip["mobility"],
+    mobility: ["wheelchair"],
     missing_fields: [],
     notes: "",
   };
@@ -170,6 +170,46 @@ describe("missingFields", () => {
 
   it("is empty when everything is stated", () => {
     expect(missingFields(base)).toEqual([]);
+  });
+
+  describe("mobility", () => {
+    it("is flagged when the note named no aid, because 'not stated' is not the same as 'needs none'", () => {
+      expect(missingFields({ ...base, mobility: [] })).toEqual(["mobility"]);
+    });
+
+    it("is not flagged when any aid is named, including walking unaided", () => {
+      for (const mobility of [
+        ["wheelchair"],
+        ["cane", "walker"],
+        ["ambulatory"],
+        ["other"],
+      ] as const) {
+        expect(missingFields({ ...base, mobility: [...mobility] })).toEqual([]);
+      }
+    });
+
+    it("comes last, after the other fields, so the order never changes", () => {
+      expect(
+        missingFields({
+          ...base,
+          passenger_name: null,
+          pickup_location: null,
+          dropoff_location: null,
+          pickup_time: null,
+          mobility: [],
+        }),
+      ).toEqual([
+        "passenger_name",
+        "pickup_location",
+        "dropoff_location",
+        "pickup_time",
+        "mobility",
+      ]);
+    });
+
+    it("fits within the limit on how many missing fields can be reported", () => {
+      expect(REQUIRED_TRIP_FIELDS.length + 1).toBeLessThanOrEqual(OUTPUT_LIMITS.missingFieldCount);
+    });
   });
 });
 

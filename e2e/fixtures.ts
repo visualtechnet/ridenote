@@ -61,6 +61,12 @@ export const emptyTrip = {
   dropoff_location: null,
   pickup_time: null,
   mobility: [],
-  missing_fields: ["passenger_name", "pickup_location", "dropoff_location", "pickup_time"],
+  missing_fields: [
+    "passenger_name",
+    "pickup_location",
+    "dropoff_location",
+    "pickup_time",
+    "mobility",
+  ],
   notes: "",
 };

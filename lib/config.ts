@@ -32,8 +32,14 @@ export const BUDGET = {
 export const UPSTREAM = {
   defaultModel: "claude-haiku-5-5",
   modelEnvVar: "MODEL",
-  // A typical trip record is about 150 tokens and the schema caps the worst case near 450. A tight ceiling caps the cost of a runaway or manipulated answer.
+  // Measured: a trip answer averages about 160 tokens, and the schema caps the worst case near 450. A
+  // tight ceiling caps the cost of a runaway or manipulated answer. This only holds with reasoning
+  // off (below): with it on, the same notes averaged 550 tokens and tricky ones used up the whole cap.
   maxTokens: 600,
+  // Extraction needs no hidden reasoning. With it on, the model spent most of its tokens thinking, a
+  // tricky note could run out of tokens before the JSON was written (a cut-off answer became a 502),
+  // and it cost about 3.5 times as much. With it off, 30 of 30 runs of a hostile note resisted it.
+  thinking: { type: "disabled" } as const,
   timeoutMs: 30_000,
   maxRetries: 1,
 } as const;

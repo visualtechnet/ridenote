@@ -375,7 +375,9 @@ export default function DocsPage() {
               cane or a walker. All of them are listed, as a list. The AI sorts plain words into
               these categories: {MOBILITY.join(", ")} (a rollator becomes a walker, a gurney a
               stretcher). If the note says nothing, the list is empty (
-              <code className={code}>[]</code>) and the card says &ldquo;Not stated&rdquo;.
+              <code className={code}>[]</code>), the card says &ldquo;Not stated&rdquo;, and{" "}
+              <strong>mobility is flagged as Missing</strong> so you check it before dispatching.
+              Not stated is not the same as needs no help, so if someone walks unaided, say so.
             </li>
           </ul>
           <p className={p}>
@@ -590,8 +592,9 @@ export default function DocsPage() {
                   </th>
                   <td className={td}>list of names</td>
                   <td className={td}>
-                    Computed by the server from the nulls above, so it cannot disagree with the
-                    data.
+                    Computed by the server from the nulls above, plus{" "}
+                    <code className={code}>mobility</code> when no aid is named, so it cannot
+                    disagree with the data.
                   </td>
                 </tr>
                 <tr>

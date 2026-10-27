@@ -11,8 +11,8 @@ export type Expectation = {
   /** Exact 24-hour HH:MM, or null when the note does not give a usable time. */
   pickup_time?: string | null;
   mobility?: Trip["mobility"];
-  /** Fields that must appear in missing_fields. */
-  missing?: Array<(typeof REQUIRED_TRIP_FIELDS)[number]>;
+  /** Fields that must appear in missing_fields. "mobility" appears when the note names no aid. */
+  missing?: Array<(typeof REQUIRED_TRIP_FIELDS)[number] | "mobility">;
   /** The notes sentence must match: used when the model has to flag something for a person. */
   notes?: RegExp;
 };
@@ -161,7 +161,7 @@ export const CASES: EvalCase[] = [
       dropoff_location: null,
       pickup_time: null,
       mobility: [],
-      missing: ["pickup_location", "dropoff_location", "pickup_time"],
+      missing: ["pickup_location", "dropoff_location", "pickup_time", "mobility"],
     },
   },
 
@@ -208,7 +208,7 @@ export const CASES: EvalCase[] = [
     name: "mobility not stated is an empty list",
     note: "Pick up Mrs. Lee at 12 Oak St at 9:30am, to County Hospital.",
     critical: true,
-    expect: { mobility: [] },
+    expect: { mobility: [], missing: ["mobility"] },
   },
   {
     name: "a walker is returned as an aid",
@@ -261,7 +261,11 @@ export const CASES: EvalCase[] = [
     name: "a vague need is not turned into an aid",
     note: "Mrs. Reyes at 3 Fir St to County Hospital at 10am, she needs a hand getting around.",
     critical: true,
-    expect: { mobility: [], notes: /hand|help|assist|vague|unclear|around/i },
+    expect: {
+      mobility: [],
+      missing: ["mobility"],
+      notes: /hand|help|assist|vague|unclear|around/i,
+    },
   },
 
   // --- Unusual notes ---
