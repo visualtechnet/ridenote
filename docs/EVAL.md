@@ -80,7 +80,8 @@ should not stop a release. A single invented pickup time should.
 ## Running it
 
 1. Put your key in `.env.local` as `ANTHROPIC_API_KEY`.
-2. `npm run eval`. It takes about a minute and costs a few cents.
+2. `npm run eval` (or `npm run eval:key` on a Mac, to use the key saved in the Keychain). It takes under a
+   minute and costs a few cents.
 3. Read the `FAIL` lines. Each names the case and what was expected against what came back.
 
 **Run it once now and keep the result as your baseline.** After that, run it whenever you change

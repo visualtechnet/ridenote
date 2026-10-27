@@ -134,6 +134,19 @@ The demo's fixed monthly limit is spent. It stays unavailable until the limit re
 raised on request. To keep going, run RideNote yourself: clone the repository, create your own key in
 your Anthropic account, put it in `.env.local` (or run `npm run dev:key` on a Mac), and start it.
 
+### How do I deploy it to Vercel?
+
+The README has a step-by-step "Deploying to Vercel" section. The short version: import the repository,
+add `ANTHROPIC_API_KEY` as a Production-only, Sensitive variable using the demo key, and deploy. A
+changed variable only applies to new deployments, so redeploy after changing it.
+
+### Is it safe to leave the public demo running?
+
+The most it can cost is the spend limit on the demo's API key, because the key has a small fixed cap.
+The code adds per-client and shared limits, input checks, and strict handling of the AI's answer. The
+key is never in the repository or sent to the browser. `SECURITY.md` lists what is protected and the
+known limits, such as the in-memory rate limiter counting per server instance.
+
 ### Is this safe for the AI part? What about prompt injection?
 
 Several layers: notes with markup or hidden characters are refused; angle brackets are escaped
