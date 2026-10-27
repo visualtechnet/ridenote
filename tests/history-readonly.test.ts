@@ -50,4 +50,28 @@ describe("db/schema.sql", () => {
   it("sets no password", () => {
     expect(code).not.toMatch(/password/i);
   });
+
+  it("ends with a privilege self-check that raises when a role holds more than its grants", () => {
+    const lastGrant = code.lastIndexOf("GRANT ");
+    const check = code.slice(code.lastIndexOf("DO $$"));
+    expect(code.lastIndexOf("DO $$")).toBeGreaterThan(lastGrant);
+    for (const priv of ["UPDATE", "DELETE", "TRUNCATE"]) {
+      expect(check).toMatch(
+        new RegExp(`has_table_privilege\\('history_app',\\s*'history',\\s*'${priv}'\\)`),
+      );
+    }
+    for (const priv of ["INSERT", "UPDATE", "TRUNCATE"]) {
+      expect(check).toMatch(
+        new RegExp(`has_table_privilege\\('history_purge',\\s*'history',\\s*'${priv}'\\)`),
+      );
+    }
+    expect(check).toMatch(/RAISE EXCEPTION/);
+  });
+
+  it("says the roles must be created by the script and the console only sets passwords", () => {
+    const header = sql.slice(0, sql.indexOf("CREATE TABLE"));
+    expect(header).toMatch(/must be created by this script/i);
+    expect(header).toMatch(/not in the (Neon )?console/i);
+    expect(header).toMatch(/only (to|for) set(ting)? (their|the) passwords/i);
+  });
 });

@@ -1,11 +1,14 @@
 -- History table and its two database roles.
 --
 -- Run once, as the database owner, in the Neon console SQL editor (there is no migration tool).
--- Then set each role's password by hand in the Neon console (Roles) and build the two connection
--- strings from them:
+-- The two roles must be created by this script, not in the console: a role made in the console
+-- joins neon_superuser and keeps write privileges this script cannot take away. The console is used
+-- only to set their passwords afterwards (Roles), from which you build the two connection strings:
 --   history_app    -> HISTORY_DATABASE_URL        (pooled; the parse route and the History page)
 --   history_purge  -> HISTORY_PURGE_DATABASE_URL  (read only by the daily clean-up route)
 -- No password belongs in this file or anywhere in the repository.
+-- The last block checks what each role can really do and fails the script if it holds more than
+-- its grants below.
 
 CREATE TABLE IF NOT EXISTS history (
   id               bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -19,7 +22,7 @@ CREATE TABLE IF NOT EXISTS history (
 
 CREATE INDEX IF NOT EXISTS history_created_at_idx ON history (created_at);
 
--- Roles are created without LOGIN credentials; the console adds the password.
+-- Roles are created with LOGIN but no password; the console sets the password afterwards.
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'history_app') THEN
@@ -40,3 +43,19 @@ GRANT INSERT, SELECT ON history TO history_app;
 
 -- Clean-up role: read and delete rows, nothing else.
 GRANT SELECT, DELETE ON history TO history_purge;
+
+-- Self-check: has_table_privilege counts every source of privilege (role membership, PUBLIC,
+-- predefined roles, default privileges), so this fails if a role can do more than it is granted.
+DO $$
+BEGIN
+  IF has_table_privilege('history_app', 'history', 'UPDATE')
+    OR has_table_privilege('history_app', 'history', 'DELETE')
+    OR has_table_privilege('history_app', 'history', 'TRUNCATE')
+    OR has_table_privilege('history_purge', 'history', 'INSERT')
+    OR has_table_privilege('history_purge', 'history', 'UPDATE')
+    OR has_table_privilege('history_purge', 'history', 'TRUNCATE')
+  THEN
+    RAISE EXCEPTION 'history roles have more than their grants';
+  END IF;
+END
+$$;
