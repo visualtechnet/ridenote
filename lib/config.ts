@@ -13,6 +13,8 @@ export const LIMITS = {
 export const RATE_LIMIT = {
   /** Per client, counting every request, valid or not, so junk traffic is throttled too. */
   maxRequests: 10,
+  /** Per client in production only; preview and development keep maxRequests. */
+  maxRequestsProduction: 3,
   windowMs: 60_000,
   maxTrackedClients: 10_000,
 } as const;

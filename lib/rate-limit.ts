@@ -3,6 +3,15 @@ import { RATE_LIMIT } from "./config";
 type Options = { limit: number; windowMs: number; maxKeys?: number; now?: () => number };
 type Result = { allowed: boolean; retryAfterSec: number };
 
+/** Per-client limit: the strict one in production, the looser one in development and preview. */
+export function maxRequestsFor(
+  env: { VERCEL_ENV?: string; [key: string]: string | undefined } = {},
+): number {
+  return env.VERCEL_ENV === "production"
+    ? RATE_LIMIT.maxRequestsProduction
+    : RATE_LIMIT.maxRequests;
+}
+
 /**
  * Fixed-window limiter held in process memory. On serverless or multi-instance hosts each
  * instance counts separately; back this with a shared store (e.g. Redis) before relying on it.
