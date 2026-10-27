@@ -180,14 +180,12 @@ describe("Home page", () => {
   });
 
   it("shows the server's error message in an alert", async () => {
-    fetchMock.mockReturnValue(json({ error: "Too many requests. Try again shortly." }, 429));
+    fetchMock.mockReturnValue(json({ error: "Note is too long." }, 400));
     const user = userEvent.setup();
     renderWithProviders(<Home />);
     await user.type(note(), "Pick up Lee");
     await user.click(parseBtn());
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Too many requests. Try again shortly.",
-    );
+    expect(await screen.findByRole("alert")).toHaveTextContent("Note is too long.");
     expect(parseBtn()).toBeEnabled();
   });
 
