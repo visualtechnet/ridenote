@@ -7,8 +7,10 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:key": "bash scripts/with-keychain.sh next dev",
     "build": "next build",
     "start": "next start",
+    "start:key": "bash scripts/with-keychain.sh next start",
     "lint": "eslint .",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -20,6 +22,11 @@
     "prepare": "git config core.hooksPath .githooks || true",
     "test:coverage": "jest --coverage",
     "eval": "jest --config jest.eval.config.mjs",
+    "eval:key": "bash scripts/with-keychain.sh jest --config jest.eval.config.mjs",
+    "key": "bash scripts/keychain.sh help",
+    "key:status": "bash scripts/keychain.sh status",
+    "key:set": "bash scripts/keychain.sh set",
+    "key:remove": "bash scripts/keychain.sh remove",
     "test:e2e": "playwright test",
     "test:all": "npm run check && npm run test:e2e"
   },

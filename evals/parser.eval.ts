@@ -49,7 +49,7 @@ const results: CaseResult[] = [];
 });
 
 if (!hasKey) {
-  it("needs ANTHROPIC_API_KEY (set it in .env.local) to run the live eval", () => {
+  it("needs ANTHROPIC_API_KEY (.env.local, or `npm run eval:key` with the Keychain) to run the live eval", () => {
     throw new Error("ANTHROPIC_API_KEY is not set, so the live eval cannot run.");
   });
 }
