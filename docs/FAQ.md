@@ -1,0 +1,384 @@
+# FAQ, and what went wrong along the way
+
+This page has two parts.
+
+1. **[Questions people ask](#part-1-questions-people-ask)**: how to use and run the project.
+2. **[Mistakes and bugs, and what they taught us](#part-2-mistakes-and-bugs-and-what-they-taught-us)**:
+   real problems found while building this, including mistakes made by the assistant that wrote much
+   of the code. They are written down on purpose. A bug you have read about is a bug you will
+   recognise in your own code.
+
+---
+
+# Part 1: Questions people ask
+
+### How do I run it?
+
+`npm install`, copy `.env.example` to `.env.local`, add your `ANTHROPIC_API_KEY`, then `npm run dev`.
+Full steps are in the [README](../README.md).
+
+### What should I type into the parser?
+
+Write it the way a dispatcher naturally would: who, where from, where to, when, and mobility. The
+**Docs** page in the site lists 12 notes that work and 13 that are refused, with the reason for each.
+
+### Why did my note come back with "Missing" fields?
+
+Because the note did not say those things. The parser never guesses: an unstated value is `null` and
+is listed under Missing. Missing is a successful result, not an error.
+
+### My address has no state. Will it fail?
+
+No. Locations are free text, not city/state/zip columns. Whatever you wrote is kept as written.
+
+### Why is `<` sometimes refused?
+
+The validator blocks HTML and script text. The rule is "`<` followed by a letter, `/`, `!` or `?`"
+(plus whitespace before those). So `<b>Lee</b>` is refused, but `ETA < 10 minutes` and `5 <3` are fine.
+
+### What is the difference between a 400 and a 502?
+
+- **400** means _your request_ was wrong (bad JSON, or a note that fails a rule). Fix it and resend.
+- **502** means _our side or the AI_ failed. Nothing is wrong with your note. Try again.
+
+The Docs page explains 400, 404, 405, 413, 415, 422, 429, 500, 502 and 503.
+
+### What does 429 mean, and what does 503 mean? They both say "try later".
+
+- **429**: _you_ sent too many requests (10 per minute per client). The `Retry-After` header says when.
+- **503**: _everyone together_ is using too much (the shared AI budget or the simultaneous-call cap).
+  It protects cost and the server. It is not about you in particular.
+
+### Does the app store my notes?
+
+No. Notes go to the AI service to be parsed and are not saved by this app. Server logs record only
+an error _type_, never the note, because notes contain personal details. Use fictional names in
+examples, tests and bug reports.
+
+### Why do two people sending the same note at the same moment cost one AI call?
+
+On purpose. Identical concurrent requests share one call (`lib/coalesce.ts`). Nothing is kept
+afterwards. A longer-lived cache was deliberately not added because it would hold passenger details
+in memory. Decide that with a privacy review first.
+
+### Why does pressing Parse twice on the same note do nothing?
+
+The result on screen is already the answer for that exact note, and every call costs money. Edit the
+note and Parse again, or press Clear.
+
+### Why does the rate limit behave oddly on my machine?
+
+With no proxy headers (local `npm run dev`), every client looks identical and shares one bucket.
+Hosts such as Vercel set `x-real-ip`, so each visitor gets their own. Also, counters live in memory,
+so on serverless hosting each instance counts separately. See [SCALING.md](SCALING.md).
+
+### Can I change the limits?
+
+Yes, in `lib/config.ts` only. If you raise `LIMITS.noteMax`, raise `LIMITS.bodyMaxBytes` too (body =
+6 x note length + 100, rounded up). Run `npm test`; the tests are written against the constants, so
+they follow the change.
+
+### Why does the Tests page show a count? Where does it come from?
+
+`lib/test-catalog.ts` reads the real `*.test.ts(x)` files when the site is built and lists their
+`describe` and `it` names. It reads names only, never test code. It cannot drift from reality.
+
+### The Tests page build fails with "No test files found".
+
+The build is running somewhere the source files are not present (for example a stripped container).
+The failure is deliberate: better to refuse to build than to publish "0 tests". Build where the
+source tree exists.
+
+### Is this safe for the AI part? What about prompt injection?
+
+Several layers: notes with markup or hidden characters are refused; angle brackets are escaped
+before the note is placed inside `<note>` tags; the system prompt says everything inside is data,
+never instructions; and the AI's answer is validated against a strict schema again before it
+reaches the browser. `missing_fields` is computed by the server from the nulls, so a manipulated
+answer cannot misreport it.
+
+---
+
+# Part 2: Mistakes and bugs, and what they taught us
+
+Each entry says **what happened**, **why**, **how it was caught**, and **the lesson**. Where the
+assistant made the mistake, it says so.
+
+## Bugs in the code
+
+### 1. The "hidden characters" check could be dodged by the trim step
+
+**What happened.** The validator rejects invisible characters such as a byte order mark (U+FEFF) and
+line separators (U+2028). But the note was trimmed _before_ the check, and JavaScript's `trim()`
+treats those characters as whitespace. A note that started with U+FEFF had it silently deleted,
+then passed.
+
+**Caught by.** A new test that fed a leading U+FEFF to the validator. It failed.
+
+**Fix.** A small `trimOrdinary` that trims normal whitespace but leaves those characters in place
+so the check can see them. The form's character counter uses the same function.
+
+**Lesson.** _Order of operations is part of security._ A "clean up" step that runs before validation
+can erase the very thing you wanted to reject. Validate the raw input, or make sure cleanup cannot
+remove evidence. And: write a test for every character class you claim to block.
+
+### 2. The rate limiter reset itself when its table was full
+
+**What happened.** `lib/rate-limit.ts` makes room for new clients by deleting old entries once it
+tracks too many. The code ran that cleanup _before_ checking whether the current key already existed.
+With a table size of 1 (used for the shared budget), every call deleted its own counter, so the limit
+never triggered.
+
+**Caught by.** The first test of the shared budget: it expected a 503 and got 200. The limiter's own
+tests had never used a table size small enough to hit this.
+
+**Fix.** Only make room for a key you have not seen. A regression test pins it.
+
+**Lesson.** _Test the boundary of every limit, including the unusual settings._ The bug was invisible
+at the default size (10,000) and obvious at size 1. Also: "it passed all its tests" only means the
+tests did not look there.
+
+### 3. The body-size limit still let the whole body be read first
+
+**What happened.** The API checked `Content-Length` and then called `req.text()`, which reads the
+entire body into memory _before_ checking its real size. A client that omitted or lied about
+`Content-Length` could make the server buffer a huge upload. The 16 KB cap did not bound memory.
+
+**Caught by.** An automated code review.
+
+**Fix.** `lib/read-body.ts` reads the body as a stream and stops the moment it passes the limit.
+
+**Lesson.** _A header is a claim, not a fact._ Enforce limits on the bytes you actually receive, as
+you receive them.
+
+### 4. Pressing Parse twice quickly sent two paid requests
+
+**What happened.** The Parse button is disabled while a request runs, so it looked protected. But
+"disabled" only takes effect after React re-renders, and a very fast double click lands before that.
+
+**Caught by.** An end-to-end test that double-clicks. A unit test alone would not have found it,
+because the unit test clicked one step at a time.
+
+**Fix.** A `useRef` flag set _synchronously_ in the click handler is the real lock. The disabled
+button is just the visual hint. A test fires two clicks in the same instant, and was checked by
+removing the lock and watching the test fail.
+
+**Lesson.** _A disabled button is a hint, not a lock._ State that is updated by React is asynchronous;
+a lock must be synchronous. Also: a test you have never seen fail is a test you cannot trust, so
+break the code on purpose once.
+
+### 5. A validation error could make the Parse click silently miss
+
+**What happened.** Type an invalid note, click Parse. On mouse-down the text box loses focus, which
+reveals the error message _above_ the buttons. That pushes the Parse button down, away from the
+pointer, so the click never lands and nothing seems to happen.
+
+**Caught by.** An end-to-end test that clicked Parse after typing markup. Only the cases with longer
+messages failed, which fits the explanation that a bigger shift moves the button further. That
+explanation was inferred from the pattern and confirmed only by the fix working.
+
+**Fix.** The error message now sits _below_ the button row, so it cannot move the buttons.
+
+**Lesson.** _Layout shifts break clicks._ Anything that appears between the user's pointer and their
+target moves the target. Put late-appearing content where it cannot push controls. Real browsers
+find bugs that simulated ones cannot.
+
+### 6. Long text overflowed the card on a phone
+
+**What happened.** A very long unbroken name or address pushed the page wider than a 320 px phone.
+`break-words` was already on the text. It was not enough.
+
+**Why.** Flex and grid children have an automatic minimum width equal to their content. Text cannot
+shrink below that unless the child also has `min-w-0`. The notes paragraph also had no
+`break-words` at all, and the Tests page file names had none either.
+
+**Caught by.** An end-to-end test with 250-character values at 320 px wide, plus a probe that listed
+which elements ran past the screen edge.
+
+**Lesson.** _In flexbox and grid, `min-width: 0` is the answer to "why won't this shrink"._ And test
+layout with hostile data (very long, no spaces), not just friendly data.
+
+### 7. The character counter and the validator disagreed
+
+**What happened.** The counter showed the raw typed length; the validator trims and normalises
+first. Twenty trailing spaces on a 990-character note showed "over the limit" while the server would
+have accepted it.
+
+**Lesson.** _Show the user the number the system actually uses._ One definition of "length", shared.
+
+### 8. A result could stay on screen for a note that had changed
+
+**What happened.** Parse a note, edit it, and the old card stayed with no hint it was out of date.
+
+**Fix.** The card now says "The note has changed since this was parsed" when the text no longer
+matches what was parsed.
+
+**Lesson.** _Derived data should say when it is stale._ It is cheap to compare, and costly to
+dispatch the wrong ride.
+
+### 9. The browser had no timeout and ignored `Retry-After`
+
+**What happened.** The page could wait forever on a hung request, and a 429 told people "you're going
+a bit fast" with no wait time even though the server knew it.
+
+**Fix.** A browser timeout slightly longer than the server's own worst case, and the message now
+says "wait N seconds" when `Retry-After` is present.
+
+**Lesson.** _Every network call needs a timeout, and information the server sends should reach the
+person._
+
+### 10. A cancelled request was logged as a failure
+
+**What happened.** When someone closed the tab mid-request, the abort was caught as a generic error,
+logged as "parse failed" and answered with a 502 nobody received. Monitoring would have shown phantom
+upstream failures.
+
+**Fix.** If the client has gone, answer quietly (499) and log nothing.
+
+**Lesson.** _Separate "the user left" from "something broke"._ Noisy logs hide real problems.
+
+### 11. HSTS applied to localhost and to sibling subdomains
+
+**What happened.** The security header `Strict-Transport-Security` was sent in development with
+`includeSubDomains`. That can pin `localhost` to HTTPS in your browser, and can break any plain-HTTP
+service on a sibling subdomain for up to two years.
+
+**Fix.** Production only, and without `includeSubDomains`.
+
+**Lesson.** _Security headers have side effects that outlast the page._ Understand each one before
+turning it on, especially the ones browsers remember.
+
+## Design mistakes
+
+### 12. Hardcoded numbers in the tests
+
+**What happened.** Several tests said `"2001 / 2000"` and `"a".repeat(2001)`. When the limit changed
+to 1,000 they broke, even though the code was right. The project's own rule is "numbers live in
+`config.ts`", and the tests had quietly broken it.
+
+**Fix.** Tests read `LIMITS.noteMax` like everything else.
+
+**Lesson.** _The rule against hardcoding applies to tests too._ A test with a magic number is a
+second copy of the number, which will drift.
+
+### 13. Spending the shared budget on requests that were turned away
+
+**What happened.** The first version of the AI-call guard checked the shared budget _before_ the
+simultaneous-call gate. A request refused at the gate had already used up a unit of the budget.
+
+**Caught by.** A test that counted calls exactly.
+
+**Fix.** Gate first, budget second, and give the gate slot back if the budget refuses.
+
+**Lesson.** _Only charge for work that happens._ When several limits stack, order them so a refusal
+at one does not consume another.
+
+### 14. The first answer-size cap was too tight
+
+**What happened.** `max_tokens` was first lowered to 400 to save money. Working out the worst case
+from the schema limits (a 200-character name, two 300-character locations, a 300-character note) showed
+a legitimate answer could exceed that and be cut off, which would show as a mysterious 502.
+
+**Fix.** 600, with a comment saying why.
+
+**Lesson.** _A cost cap must sit above the legitimate worst case._ Derive it from the schema, not
+from a feeling.
+
+### 15. The Tests page reads the file system
+
+**What happened.** The page lists tests by reading source files at build time. Two risks: the bundler
+warned that it would trace the whole project into the deployment, and on a build without the sources
+the page would silently say "0 tests".
+
+**Fix.** The path is explicitly excluded from tracing, and an empty result now fails the build.
+
+**Lesson.** _Code that depends on files existing at runtime needs to fail loudly when they do not._
+A confident wrong answer is worse than a crash.
+
+### 16. A change to the page broke a test the assistant did not run
+
+**What happened.** Adding the site header put two new stops in the keyboard tab order (brand link,
+menu button). The keyboard e2e test expected the text box right after the skip link and failed. The
+assistant had run the unit tests but not the browser tests after changing the layout, so the
+failure surfaced one round later.
+
+**Lesson.** _Run the slow test suite after any change to the thing it tests._ Fast tests passing
+does not mean the whole system works. Here a browser test caught what jsdom cannot.
+
+### 17. Re-parsing the same note was a tested behaviour, then deliberately changed
+
+**What happened.** An old test asserted that pressing Parse again re-sent the request. When we stopped
+paying for identical re-parses, that test failed.
+
+**Lesson.** _When a test fails after an intentional change, change the test on purpose, and say why._
+The test was right about the old behaviour. It was updated to assert the new rule (edit the note, then
+it re-sends), not deleted or loosened.
+
+## Mistakes in understanding, tooling and review
+
+### 18. Reading a review finding too literally (and not literally enough)
+
+**What happened.** An automated review claimed that notes like `Pickup <John Smith>` or `ETA <5 min`
+were wrongly rejected. Reading the regex showed `<5` is fine, because a letter or `/ ! ?` must follow
+the `<`. The reviewer's text had HTML-escaped the `<` symbols, which made the examples confusing. But
+the review was partly right: `x < a` _is_ rejected, because whitespace is allowed before the letter.
+That is a minor false positive and was left as is, with the rule documented.
+
+**Lesson.** _Check a finding against the code before acting, in both directions._ Reviews, human or
+automated, are often half right. Do not dismiss the whole finding because part of it is wrong.
+
+### 19. Editing files with tools that behave differently on macOS
+
+**What happened.** Several commands failed for platform reasons: `sed -i` needs a different
+form on macOS (BSD `sed`), the `timeout` command does not exist, and a shell redirect path in `/tmp`
+went against the project's scratch-directory rule.
+
+**Lesson.** _Shell commands are not portable._ For repeatable edits, prefer a script in a language you
+control, or the editor's own tools. When a command "silently" does nothing, check that it actually
+ran.
+
+### 20. Invisible characters in source code
+
+**What happened.** The hidden-character regex had literal invisible characters pasted into the source
+file. They looked like nothing, were impossible to review, and a scripted edit corrupted them,
+producing confusing TypeScript syntax errors.
+
+**Fix.** Rewrite the regex with explicit `\uXXXX` escapes, so every character is visible and
+reviewable.
+
+**Lesson.** _Never put characters you cannot see into source code._ Use escapes. If a reviewer cannot
+read it, it is not reviewed.
+
+### 21. Test helpers that were not safe to run in parallel
+
+**What happened.** The end-to-end helper that gave each test a unique client address used a plain
+counter. Playwright runs tests in several worker processes, each with its own counter, so two workers
+produced the same address, shared a rate-limit bucket, and one test failed randomly.
+
+**Fix.** Random bytes instead of a counter.
+
+**Lesson.** _A counter is not unique across processes._ When tests run in parallel, shared state must
+come from something truly unique (random values, process ids), and "it passed when run alone" is a
+warning sign, not good news.
+
+### 22. `instanceof Error` is not reliable across environments
+
+**What happened.** The client checked `err instanceof Error` to detect a timeout. A `DOMException`
+created in the test's Node environment is not an `Error` from the same realm, so the check failed and
+the timeout message never appeared.
+
+**Fix.** Check the error's `name` property.
+
+**Lesson.** _`instanceof` can lie when code crosses realms_ (iframes, test sandboxes, workers). For
+errors, checking `.name` is more robust.
+
+---
+
+# What these have in common
+
+- **Most bugs were found by a test written for a different reason.** Writing a test for a new feature
+  exposed an old bug (#1, #2, #4, #5, #6). Keep adding tests at the edges.
+- **The browser finds what simulations cannot** (#4, #5, #6, #16).
+- **Limits need testing at their boundaries**, including the strange settings (#2, #3, #14).
+- **Order matters** for cleanup versus validation (#1) and for stacked limits (#13).
+- **Say so when you are wrong.** Writing the mistake down is the fastest way to stop repeating it.
