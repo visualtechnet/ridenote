@@ -1,0 +1,75 @@
+/** Every tunable number and name lives here, so nothing is hardcoded in the code that uses it. */
+
+export const LIMITS = {
+  noteMin: 5,
+  // A dispatcher note is a few sentences (roughly 100 to 400 characters). 1,000 leaves room for a
+  // pasted email snippet while keeping every request cheap: cost grows with input length.
+  noteMax: 1000,
+  // 1,000 characters even if every one is written as a 6-byte JSON escape (\uXXXX) is 6,000 bytes,
+  // plus the {"note":""} wrapper. 8 KB covers that with headroom and nothing more.
+  bodyMaxBytes: 8_192,
+} as const;
+
+export const RATE_LIMIT = {
+  /** Per client, counting every request, valid or not, so junk traffic is throttled too. */
+  maxRequests: 10,
+  windowMs: 60_000,
+  maxTrackedClients: 10_000,
+} as const;
+
+/**
+ * Limits on the paid upstream call, shared by everyone. Per-client limits stop one noisy client;
+ * these stop many quiet ones (a distributed flood) from running up the bill or exhausting the host.
+ */
+export const BUDGET = {
+  /** Upstream calls per window across all clients. Beyond this the API answers 503. */
+  maxCallsPerWindow: 300,
+  windowMs: 60_000,
+  /** Upstream calls running at the same moment in one server instance. */
+  maxConcurrent: 10,
+} as const;
+
+export const UPSTREAM = {
+  defaultModel: "claude-haiku-5-5",
+  modelEnvVar: "MODEL",
+  // A typical trip record is about 150 tokens and the schema caps the worst case near 450. A tight ceiling caps the cost of a runaway or manipulated answer.
+  maxTokens: 600,
+  timeoutMs: 30_000,
+  maxRetries: 1,
+} as const;
+
+/** The browser gives up after the server's own worst case (timeout x attempts) plus headroom. */
+export const CLIENT = {
+  timeoutMs: UPSTREAM.timeoutMs * (UPSTREAM.maxRetries + 1) + 5_000,
+} as const;
+
+export const HTTP = {
+  ok: 200,
+  badRequest: 400,
+  payloadTooLarge: 413,
+  unsupportedMediaType: 415,
+  unprocessable: 422,
+  tooManyRequests: 429,
+  badGateway: 502,
+  unavailable: 503,
+  clientClosed: 499,
+} as const;
+
+export const MOBILITY = ["ambulatory", "wheelchair", "stretcher", "unknown"] as const;
+
+/** Fields a trip needs before it can be dispatched. Used to compute what's missing. */
+export const REQUIRED_TRIP_FIELDS = [
+  "passenger_name",
+  "pickup_location",
+  "dropoff_location",
+  "pickup_time",
+] as const;
+
+/** Maximum lengths for text the model returns (we never trust model output blindly). */
+export const OUTPUT_LIMITS = {
+  name: 200,
+  location: 300,
+  notes: 300,
+  fieldName: 40,
+  missingFieldCount: 10,
+} as const;

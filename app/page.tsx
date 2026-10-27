@@ -1,68 +1,63 @@
-import Image from "next/image";
+"use client";
+
+import { useRef } from "react";
+import { NoteForm } from "@/components/NoteForm";
+import { ResultPanel } from "@/components/ResultPanel";
+import { COPY } from "@/lib/messages";
+import { useParserStore } from "@/lib/store";
+import { useParseNote } from "@/lib/use-parse-note";
+import { validateNote } from "@/lib/validation";
 
 export default function Home() {
+  const parse = useParseNote();
+  // A disabled button only takes effect after React re-renders, so a fast double click can slip
+  // through. This ref flips synchronously and is the real lock.
+  const inFlight = useRef(false);
+  const note = useParserStore((s) => s.note);
+  const current = validateNote(note);
+  // A shown result belongs to the note that was parsed; flag it once the text has moved on.
+  const stale = parse.variables !== undefined && !(current.ok && current.note === parse.variables);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="flex flex-1 justify-center bg-zinc-50 font-sans dark:bg-black">
+      <main id="main" className="flex w-full max-w-2xl flex-col gap-6 px-4 py-12 sm:px-6 sm:py-16">
+        <header className="flex flex-col gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
+            {COPY.appName}
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+          <p className="text-zinc-700 dark:text-zinc-300">{COPY.intro}</p>
+          <section aria-labelledby="how-it-works" className="mt-2">
+            <h2 id="how-it-works" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              {COPY.howItWorksLabel}
+            </h2>
+            <ol
+              aria-labelledby="how-it-works"
+              className="mt-1 list-decimal space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-300"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+              {COPY.howItWorksSteps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </section>
+        </header>
+
+        <NoteForm
+          pending={parse.isPending}
+          onSubmit={(submitted) => {
+            // The result on screen is already for exactly this note: don't pay for the same answer twice.
+            if (parse.isSuccess && parse.variables === submitted) return;
+            if (inFlight.current) return;
+            inFlight.current = true;
+            parse.mutate(submitted, { onSettled: () => (inFlight.current = false) });
+          }}
+          onClear={() => parse.reset()}
+        />
+        <ResultPanel
+          pending={parse.isPending}
+          error={parse.error?.message ?? null}
+          trip={parse.data}
+          stale={stale}
+        />
       </main>
     </div>
   );
