@@ -81,6 +81,10 @@ describe("toRecord", () => {
     ).toBeNull();
   });
 
+  it("returns null for a trip with only a pickup time", () => {
+    expect(toRecord(emptyTrip({ pickup_time: "09:30" }))).toBeNull();
+  });
+
   it("saves a trip that has only a mobility aid", () => {
     expect(toRecord(emptyTrip({ mobility: ["cane"] }))).toEqual({
       passenger_name: null,
@@ -112,6 +116,12 @@ describe("saveEntry", () => {
   it("does nothing when there is nothing worth saving", async () => {
     const store = fakeStore();
     await saveEntry(emptyTrip(), store);
+    expect(store.insert).not.toHaveBeenCalled();
+  });
+
+  it("does nothing for a trip with only a pickup time", async () => {
+    const store = fakeStore();
+    await saveEntry(emptyTrip({ pickup_time: "09:30" }), store);
     expect(store.insert).not.toHaveBeenCalled();
   });
 
