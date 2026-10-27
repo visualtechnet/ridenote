@@ -18,6 +18,8 @@ describe("scrubText", () => {
     ["DOB 03/14/1950", REMOVED],
     ["Medicaid ID A12345", REMOVED],
     ["policy #889921", REMOVED],
+    ["ID: 83702", REMOVED],
+    ["ID #A12345", REMOVED],
     // links
     ["https://evil.example/x", REMOVED],
     ["www.x.com", REMOVED],
@@ -32,6 +34,8 @@ describe("scrubText", () => {
     "Suite 300",
     "09:30",
     "Mrs. Lee",
+    "Boise, ID 83702",
+    "Pick up at 123 Main St, ID 83702",
     "",
   ])("leaves %j alone", (input) => {
     expect(scrubText(input)).toBe(input);

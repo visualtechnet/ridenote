@@ -10,9 +10,10 @@ const RULES: { name: string; pattern: RegExp }[] = [
   { name: "email", pattern: /[^\s@]+@[^\s@]+\.[^\s@]+/g },
   {
     // A label plus the value after it. The value must contain a digit, so "member services" stays.
+    // A bare "ID" needs a ":" or "#", so the state in "Boise, ID 83702" stays.
     name: "labelled value",
     pattern:
-      /\b(?:dob|ssn|id|member|policy|account|medicaid|medicare|insurance)\b(?:\s+(?:id|number|no\.?))*\s*[:#]?\s*(?=[a-z0-9/-]*\d)[a-z0-9][a-z0-9/-]*/gi,
+      /(?:\b(?:dob|ssn|member|policy|account|medicaid|medicare|insurance)\b(?:\s+(?:id|number|no\.?))*\s*[:#]?|\bid\s*[:#])\s*(?=[a-z0-9/-]*\d)[a-z0-9][a-z0-9/-]*/gi,
   },
   // +country code, then groups of digits
   {
