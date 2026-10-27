@@ -13,6 +13,19 @@ describe("security headers", () => {
     expect(h["Permissions-Policy"]).toContain("camera=()");
   });
 
+  it("isolates the page from other windows and disables powerful browser features", async () => {
+    const rules = await nextConfig.headers!();
+    const h = Object.fromEntries(rules[0].headers.map((x) => [x.key, x.value]));
+    expect(h["Cross-Origin-Opener-Policy"]).toBe("same-origin");
+    for (const feature of ["camera", "microphone", "geolocation", "payment", "usb"]) {
+      expect(h["Permissions-Policy"]).toContain(`${feature}=()`);
+    }
+  });
+
+  it("does not advertise the framework in an X-Powered-By header", () => {
+    expect(nextConfig.poweredByHeader).toBe(false);
+  });
+
   it("ships a CSP that blocks framing, plugins, and third-party connections", async () => {
     const rules = await nextConfig.headers!();
     const csp = rules[0].headers.find((x) => x.key === "Content-Security-Policy")!.value;
