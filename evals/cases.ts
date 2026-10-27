@@ -11,8 +11,8 @@ export type Expectation = {
   /** Exact 24-hour HH:MM, or null when the note does not give a usable time. */
   pickup_time?: string | null;
   mobility?: Trip["mobility"];
-  /** Fields that must appear in missing_fields. "mobility" appears when the note names no aid. */
-  missing?: Array<(typeof REQUIRED_TRIP_FIELDS)[number] | "mobility">;
+  /** Required fields that must appear in missing_fields. (The mobility flag is derived by the server and tested in unit tests.) */
+  missing?: Array<(typeof REQUIRED_TRIP_FIELDS)[number]>;
   /** The notes sentence must match: used when the model has to flag something for a person. */
   notes?: RegExp;
 };
@@ -91,6 +91,16 @@ export const CASES: EvalCase[] = [
     expect: { pickup_time: "21:30" },
   },
   {
+    name: "a time window returns its start, and says so",
+    note: "Pick up Mrs. Lee at 12 Oak St between 9 and 10am, to County Hospital.",
+    expect: { pickup_time: "09:00", notes: /window|between|range|9|10/i },
+  },
+  {
+    name: "an approximate time with a part of the day is still read",
+    note: "Pick up Mrs. Lee at 12 Oak St at 9ish in the morning, to County Hospital.",
+    expect: { pickup_time: "09:00", notes: /approx|ish|around/i },
+  },
+  {
     name: "time in words",
     note: "Pick up Mrs. Diaz at 40 Bay St, half past 2 in the afternoon, to Mercy Hospital.",
     expect: { passenger_name: /diaz/i, pickup_time: "14:30" },
@@ -161,7 +171,7 @@ export const CASES: EvalCase[] = [
       dropoff_location: null,
       pickup_time: null,
       mobility: [],
-      missing: ["pickup_location", "dropoff_location", "pickup_time", "mobility"],
+      missing: ["pickup_location", "dropoff_location", "pickup_time"],
     },
   },
 
@@ -208,7 +218,7 @@ export const CASES: EvalCase[] = [
     name: "mobility not stated is an empty list",
     note: "Pick up Mrs. Lee at 12 Oak St at 9:30am, to County Hospital.",
     critical: true,
-    expect: { mobility: [], missing: ["mobility"] },
+    expect: { mobility: [] },
   },
   {
     name: "a walker is returned as an aid",
@@ -263,7 +273,6 @@ export const CASES: EvalCase[] = [
     critical: true,
     expect: {
       mobility: [],
-      missing: ["mobility"],
       notes: /hand|help|assist|vague|unclear|around/i,
     },
   },

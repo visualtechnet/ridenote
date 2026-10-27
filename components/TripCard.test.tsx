@@ -1,6 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import { TripCard } from "./TripCard";
+import { COPY } from "@/lib/messages";
 import type { Trip } from "@/lib/trip";
+import { makeTrip } from "../tests/test-utils";
 
 const full: Trip = {
   passenger_name: "Mrs. Lee",
@@ -58,9 +60,29 @@ describe("TripCard", () => {
     });
 
     it("says 'Not stated' when the list is empty, rather than showing nothing", () => {
-      render(<TripCard trip={{ ...full, mobility: [] }} />);
+      render(<TripCard trip={makeTrip({ mobility: [] })} />);
       expect(screen.queryByRole("list", { name: "Mobility" })).not.toBeInTheDocument();
       expect(screen.getAllByText("Not stated")).toHaveLength(1);
+    });
+
+    it("asks for a check with a quiet line, not an amber chip, when mobility is not stated", () => {
+      render(<TripCard trip={makeTrip({ mobility: [] })} />);
+      expect(screen.getByText(COPY.confirmMobility)).toBeInTheDocument();
+      // Nothing else is missing, so there is no Missing list at all.
+      expect(screen.queryByRole("list", { name: "Missing fields" })).not.toBeInTheDocument();
+    });
+
+    it("keeps mobility out of the Missing chips even when other fields are missing", () => {
+      render(<TripCard trip={makeTrip({ mobility: [], pickup_time: null })} />);
+      const list = screen.getByRole("list", { name: "Missing fields" });
+      expect(list).toHaveTextContent("pickup_time");
+      expect(list).not.toHaveTextContent("mobility");
+      expect(screen.getByText(COPY.confirmMobility)).toBeInTheDocument();
+    });
+
+    it("shows no check line when an aid is named", () => {
+      render(<TripCard trip={makeTrip({ mobility: ["cane"] })} />);
+      expect(screen.queryByText(COPY.confirmMobility)).not.toBeInTheDocument();
     });
 
     it("shows an unaided walker plainly", () => {

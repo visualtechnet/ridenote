@@ -1,16 +1,27 @@
 import { randomBytes } from "node:crypto";
 import type { Page } from "@playwright/test";
 import { Routes } from "../lib/routes";
+import { missingFields, type Trip } from "../lib/trip";
 
-export const trip = {
-  passenger_name: "Mrs. Lee",
-  pickup_location: "12 Oak St",
-  dropoff_location: "County Hospital",
-  pickup_time: "09:30",
-  mobility: ["wheelchair"],
-  missing_fields: [],
-  notes: "Confirm ramp access.",
+/**
+ * A trip as the server would return it: missing_fields is computed from the data, so a browser test
+ * can never show a state the server cannot produce.
+ */
+export const tripWith = (overrides: Partial<Trip> = {}): Trip => {
+  const base: Trip = {
+    passenger_name: "Mrs. Lee",
+    pickup_location: "12 Oak St",
+    dropoff_location: "County Hospital",
+    pickup_time: "09:30",
+    mobility: ["wheelchair"],
+    missing_fields: [],
+    notes: "Confirm ramp access.",
+    ...overrides,
+  };
+  return { ...base, missing_fields: missingFields(base) };
 };
+
+export const trip = tripWith();
 
 /** Replaces the real (paid) API with a canned response and records how many times it was called. */
 export async function mockParseApi(page: Page, body: unknown, status = 200) {
@@ -55,18 +66,11 @@ export const freshClient = () => {
   return { "x-forwarded-for": `198.18.${a}.${b}` };
 };
 
-export const emptyTrip = {
+export const emptyTrip = tripWith({
   passenger_name: null,
   pickup_location: null,
   dropoff_location: null,
   pickup_time: null,
   mobility: [],
-  missing_fields: [
-    "passenger_name",
-    "pickup_location",
-    "dropoff_location",
-    "pickup_time",
-    "mobility",
-  ],
   notes: "",
-};
+});

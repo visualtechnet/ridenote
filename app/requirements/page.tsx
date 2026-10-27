@@ -119,8 +119,9 @@ export default function RequirementsPage() {
             </li>
             <li>
               Never invent facts. Anything not stated is null and listed as missing. An empty
-              mobility list is listed too, so it is checked before dispatching: walking unaided has
-              to be stated.
+              mobility list is also reported in <code className={code}>missing_fields</code>, and
+              the card shows a quiet &ldquo;confirm before dispatching&rdquo; line (not an amber
+              chip, so the Missing list stays meaningful): walking unaided has to be stated.
             </li>
             <li>
               Do not guess an ambiguous time (an hour with no AM or PM): leave it null and explain

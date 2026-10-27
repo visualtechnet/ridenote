@@ -110,13 +110,15 @@ No. The time is exactly what the note says. It is never converted to the server'
 zone. If the note says "3pm EST", the result is `15:00` and the zone is only repeated in `notes`, so a
 person can see it. There is no date field either; days and dates are repeated in `notes`.
 
-### Why does the card say mobility is Missing when the passenger needs no help?
+### Why does the card ask me to confirm mobility when the passenger needs no help?
 
 Because the note did not say so, and RideNote never guesses. "Not stated" is not the same as "needs
-none": a wrong guess could send a car that cannot carry a wheelchair or a stretcher. An empty mobility
-list is therefore listed under Missing, like a missing pickup time, so the dispatcher checks it before
-dispatching. If the passenger walks unaided, write that in the note ("walks without help") and the
-result is `["ambulatory"]`, which is not flagged. This only shows the amber flag; it is not an error.
+none": a wrong guess could send a car that cannot carry a wheelchair or a stretcher. So when a note names
+no aid, the server adds `mobility` to `missing_fields`, and the card shows a quiet line beside Mobility:
+"Mobility not stated. Confirm before dispatching." It is deliberately not an amber chip like a missing
+pickup time: most notes name no aid, and a warning on nearly every card would be ignored. If the passenger
+walks unaided, write that in the note ("walks without help"); the result is `["ambulatory"]` and nothing
+is flagged. It is a prompt to check, not an error.
 
 ### What does "Not stated" mean for mobility? What happened to "Unknown"?
 
@@ -688,6 +690,29 @@ perfect on the hostile note and quietly broke time handling. Also: a setting tha
 slower, longer and dearer is not automatically making it better, and an AI that "works" because it can
 think may be covering for instructions that are unclear.
 
+### 38. A warning on most cards gets ignored, and we asked the AI for a list we threw away
+
+**What happened.** An automated code review of the mobility flag found two design problems. First, the flag
+put an amber "mobility" chip on nearly every card, because most notes name no aid. A warning that is almost
+always there stops being read, and it can hide the one that matters (a missing pickup time). Second, the
+AI was still asked to write `missing_fields`, which the server overwrote anyway. That cost tokens and could
+fail a good note: if the AI wrote a list that was too long, strict checking returned an error.
+
+**Caught by.** The review, run after the change was already pushed.
+
+**Fix.** The flag stays in the data (`missing_fields` includes `mobility`), but the card shows a quiet "confirm
+before dispatching" line beside Mobility instead of a chip, so the amber Missing list stays rare and
+meaningful. The AI is no longer asked for `missing_fields` at all, and a test confirms that its answer to a
+question we do not ask cannot fail a note. The flag's name now lives in one place in `lib/config.ts`. A
+shared fixture helper computes `missing_fields` the way the server does, so tests cannot show a state the
+server cannot produce. The review also noticed gaps in time wording; probing them found that "9ish in the
+morning" returned no time every time, which was fixed and added to the eval (41 of 41, twice).
+
+**Lesson.** _An alert that fires on most items teaches people to ignore alerts._ Reserve loud signals for rare
+cases. And _do not ask the AI for something the server computes:_ it adds cost and a way to fail, and it makes
+tests look like they check the AI when they check the server. A second pair of eyes after a change, even an
+automated one, finds things the author misses.
+
 ---
 
 # What these have in common
@@ -709,4 +734,5 @@ think may be covering for instructions that are unclear.
   verbose reply into an outage.
 - **A fix proven on one case can break another** (#37). Run the whole suite, with enough repeats to
   see a rate, before trusting it.
+- **Reserve loud signals for rare cases, and do not ask the AI for what the server can compute** (#38).
 - **Say so when you are wrong.** Writing the mistake down is the fastest way to stop repeating it.

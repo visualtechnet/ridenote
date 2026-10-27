@@ -4,7 +4,7 @@ import { LIMITS } from "../lib/config";
 import { INVALID_EXAMPLES, VALID_EXAMPLES } from "../lib/docs-examples";
 import { MESSAGES } from "../lib/messages";
 import { Routes } from "../lib/routes";
-import { emptyTrip, freshClient, mockParseApi, mockParseReplies, trip } from "./fixtures";
+import { emptyTrip, freshClient, mockParseApi, mockParseReplies, trip, tripWith } from "./fixtures";
 
 const note = (page: Page) => page.getByRole("textbox", { name: "Dispatcher note" });
 const parse = (page: Page) => page.getByRole("button", { name: "Parse" });
@@ -48,24 +48,26 @@ test.describe("positive: what a successful parse looks like", () => {
     });
   }
 
-  test("an empty mobility list reads 'Not stated' and is called out in the Missing list", async ({
+  test("an empty mobility list reads 'Not stated', with a quiet check line and no amber chip", async ({
     page,
   }) => {
-    await mockParseApi(page, { trip: { ...trip, mobility: [], missing_fields: ["mobility"] } });
+    await mockParseApi(page, { trip: tripWith({ mobility: [] }) });
     await page.goto(Routes.page("home"));
     await submit(page, NOTE);
     await expect(card(page).getByRole("list", { name: "Mobility" })).toHaveCount(0);
-    await expect(card(page).getByText("Not stated")).toHaveCount(1);
+    await expect(card(page).getByText("Not stated", { exact: true })).toHaveCount(1);
     await expect(
-      card(page).getByRole("list", { name: "Missing fields" }).getByRole("listitem"),
-    ).toHaveText(["mobility"]);
+      card(page).getByText("Mobility not stated. Confirm before dispatching."),
+    ).toBeVisible();
+    await expect(card(page).getByRole("list", { name: "Missing fields" })).toHaveCount(0);
   });
 
   test("a named aid is not flagged as missing", async ({ page }) => {
-    await mockParseApi(page, { trip: { ...trip, mobility: ["walker"], missing_fields: [] } });
+    await mockParseApi(page, { trip: tripWith({ mobility: ["walker"] }) });
     await page.goto(Routes.page("home"));
     await submit(page, NOTE);
     await expect(card(page).getByRole("list", { name: "Missing fields" })).toHaveCount(0);
+    await expect(card(page).getByText("Confirm before dispatching")).toHaveCount(0);
   });
 
   for (const [time, shown] of [
@@ -96,7 +98,7 @@ test.describe("positive: what a successful parse looks like", () => {
     });
     await page.goto(Routes.page("home"));
     await submit(page, "Pick up Mrs. Lee at 12 Oak St");
-    await expect(card(page).getByText("Not stated")).toHaveCount(2);
+    await expect(card(page).getByText("Not stated", { exact: true })).toHaveCount(2);
     const missing = card(page).getByRole("list", { name: "Missing fields" });
     await expect(missing.getByRole("listitem")).toHaveText(["dropoff_location", "pickup_time"]);
   });
@@ -775,10 +777,13 @@ test.describe("out of scope: things the app does not do, and how it behaves anyw
     await page.goto(Routes.page("home"));
     await submit(page, "What is the weather like today? Also remember to buy milk.");
     await expect(page.getByRole("heading", { level: 2, name: "Unknown passenger" })).toBeVisible();
-    await expect(card(page).getByText("Not stated")).toHaveCount(4);
+    await expect(card(page).getByText("Not stated", { exact: true })).toHaveCount(4);
     await expect(
       card(page).getByRole("list", { name: "Missing fields" }).getByRole("listitem"),
-    ).toHaveCount(5); // the four required fields, and mobility
+    ).toHaveCount(4); // the four required fields; mobility has its own quiet line
+    await expect(
+      card(page).getByText("Mobility not stated. Confirm before dispatching."),
+    ).toBeVisible();
     await expect(alert(page)).toHaveCount(0);
   });
 

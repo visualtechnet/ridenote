@@ -40,7 +40,7 @@ export async function extractTrip(
   // reaches the client.
   const raw = ModelTripSchema.safeParse(res.parsed_output);
   if (!raw.success) return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed };
-  const trip = TripSchema.safeParse(normalizeModelTrip(raw.data));
+  const trip = TripSchema.safeParse({ ...normalizeModelTrip(raw.data), missing_fields: [] });
   if (!trip.success) return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed };
 
   return { ok: true, trip: { ...trip.data, missing_fields: missingFields(trip.data) } };

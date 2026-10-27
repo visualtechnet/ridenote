@@ -375,9 +375,9 @@ export default function DocsPage() {
               cane or a walker. All of them are listed, as a list. The AI sorts plain words into
               these categories: {MOBILITY.join(", ")} (a rollator becomes a walker, a gurney a
               stretcher). If the note says nothing, the list is empty (
-              <code className={code}>[]</code>), the card says &ldquo;Not stated&rdquo;, and{" "}
-              <strong>mobility is flagged as Missing</strong> so you check it before dispatching.
-              Not stated is not the same as needs no help, so if someone walks unaided, say so.
+              <code className={code}>[]</code>), the card says &ldquo;Not stated&rdquo;, and a quiet
+              line asks you to <strong>confirm mobility before dispatching</strong>. Not stated is
+              not the same as needs no help, so if someone walks unaided, say so.
             </li>
           </ul>
           <p className={p}>
