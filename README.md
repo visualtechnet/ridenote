@@ -521,14 +521,17 @@ is not in git.
 
 ## Documentation map
 
-| Read this                                        | When you want to                                                              |
-| ------------------------------------------------ | ----------------------------------------------------------------------------- |
-| [docs/GUIDE.md](docs/GUIDE.md)                   | Understand the whole project from scratch                                     |
-| [docs/EVAL.md](docs/EVAL.md)                     | Learn how the live accuracy eval works and how it ties into prompt and schema |
-| [docs/FAQ.md](docs/FAQ.md)                       | See common questions and **the bugs we hit and what they taught us**          |
-| [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md) | Learn the habits this code is built on                                        |
-| [SECURITY.md](SECURITY.md)                       | Report a problem, and see what is protected and the known limits              |
-| [docs/SCALING.md](docs/SCALING.md)               | Understand cost, limits and abuse protection, and what to add for production  |
+| Read this                                                                 | When you want to                                                                                                           |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [docs/GUIDE.md](docs/GUIDE.md)                                            | Understand the whole project from scratch                                                                                  |
+| [docs/EVAL.md](docs/EVAL.md)                                              | Learn how the live accuracy eval works and how it ties into prompt and schema                                              |
+| [docs/FAQ.md](docs/FAQ.md)                                                | See common questions and **the bugs we hit and what they taught us**                                                       |
+| [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md)                          | Learn the habits this code is built on                                                                                     |
+| [docs/SUBAGENTS.md](docs/SUBAGENTS.md)                                    | Learn, step by step, how a feature was planned and built with a team of AI subagents (also on the site under Docs, Agents) |
+| [The History design](docs/superpowers/specs/2026-10-27-history-design.md) | Read the approved design of the History feature, with the options weighed                                                  |
+| [The History plan](docs/superpowers/plans/2026-10-27-history.md)          | Read the task-by-task plan that was executed to build it                                                                   |
+| [SECURITY.md](SECURITY.md)                                                | Report a problem, and see what is protected and the known limits                                                           |
+| [docs/SCALING.md](docs/SCALING.md)                                        | Understand cost, limits and abuse protection, and what to add for production                                               |
 
 This repository uses Next.js 16, which differs from older versions. See `AGENTS.md`: read the guides in
 `node_modules/next/dist/docs/` before changing framework-level code.

@@ -20,6 +20,7 @@ const DOC_SECTIONS = [
   { label: COPY.navDocsSetup, href: Routes.page("docs") },
   { label: COPY.navDocsEval, href: Routes.page("docsEval") },
   { label: COPY.navDocsFaq, href: Routes.page("docsFaq") },
+  { label: COPY.navDocsAgents, href: Routes.page("docsAgents") },
 ] as const;
 
 const LINK_CLASS =
@@ -41,6 +42,10 @@ export function SideNav() {
   // Following a link closes the menu: it is only "open" for the page it was opened on.
   const isOpen = open && openedAt === pathname;
   const inDocs = pathname === Routes.page("docs") || pathname.startsWith(`${Routes.page("docs")}/`);
+
+  // Setup is exactly /docs; every other section also owns the pages beneath it (/docs/agents/design).
+  const isCurrentSection = (href: string) =>
+    pathname === href || (href !== Routes.page("docs") && pathname.startsWith(`${href}/`));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -103,7 +108,7 @@ export function SideNav() {
                     <li key={section.href}>
                       <Link
                         href={section.href}
-                        aria-current={pathname === section.href ? "page" : undefined}
+                        aria-current={isCurrentSection(section.href) ? "page" : undefined}
                         className={`${LINK_CLASS} py-2 text-sm ${FOCUS}`}
                       >
                         {section.label}
