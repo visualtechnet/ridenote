@@ -36,9 +36,9 @@ export default function ContactPage() {
             Anyone can use it as it is. It runs on a small, fixed budget shared by everyone, and
             that limit is not raised. When it is used up, the page says &ldquo;This demo has used up
             its AI budget&rdquo; and the demo stays unavailable until the monthly limit renews.
-            Nothing is wrong with your note. Please keep to {RATE_LIMIT.maxRequests} parses a minute
-            and notes under {LIMITS.noteMax.toLocaleString("en-US")} characters, and use made-up
-            names, not real passengers.
+            Nothing is wrong with your note. Please keep to {RATE_LIMIT.maxRequestsProduction}{" "}
+            parses a minute and notes under {LIMITS.noteMax.toLocaleString("en-US")} characters, and
+            use made-up names, not real passengers.
           </p>
         </section>
 
