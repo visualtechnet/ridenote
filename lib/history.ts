@@ -1,5 +1,6 @@
 import { HISTORY } from "./config";
 import { getMemoryStore } from "./history-memory";
+import { createPostgresStore } from "./history-postgres";
 import { REMOVED, scrubText } from "./scrub";
 import type { Trip } from "./trip";
 
@@ -78,5 +79,5 @@ export async function loadHistory(store?: HistoryStore): Promise<HistoryResult> 
 // HISTORY_STORE=memory is for tests and browser tests only; it is never set on Vercel.
 export function getStore(): HistoryStore {
   if (process.env.HISTORY_STORE === "memory") return getMemoryStore();
-  throw new Error("no history store configured");
+  return createPostgresStore();
 }
