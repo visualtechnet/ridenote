@@ -1,8 +1,8 @@
 /**
  * A deliberately small Markdown reader for the guides in docs/. It understands only what those files
- * use (headings, paragraphs, lists, fenced code, rules, and `code`, **bold**, _italic_ and links
- * inside text), so the site and the repository can share one source without a Markdown dependency.
- * Anything fancier (tables, images, HTML) is not supported and shows up as plain text.
+ * use (headings, paragraphs, lists, tables, fenced code, rules, and `code`, **bold**, _italic_ and
+ * links inside text), so the site and the repository can share one source without a Markdown
+ * dependency. Anything fancier (images, HTML) is not supported and shows up as plain text.
  */
 
 export type Inline =
@@ -17,6 +17,7 @@ export type Block =
   | { type: "paragraph"; children: Inline[] }
   | { type: "list"; ordered: boolean; items: Inline[][] }
   | { type: "code"; text: string }
+  | { type: "table"; header: Inline[][]; rows: Inline[][][] }
   | { type: "rule" };
 
 // Code first, so markers inside backticks are left alone. Underscore emphasis must not touch
@@ -61,8 +62,44 @@ const ORDERED_ITEM = /^\d+\. /;
 const RULE = /^-{3,}\s*$/;
 const FENCE = /^```/;
 
-const startsBlock = (line: string) =>
-  HEADING.test(line) || LIST_ITEM.test(line) || RULE.test(line) || FENCE.test(line);
+const TABLE_ROW = /^\s*\|.*\|\s*$/;
+// A table's second line: cells of dashes, optionally with alignment colons, e.g. | --- | :-: |
+const TABLE_DIVIDER = /^\s*\|(?:\s*:?-+:?\s*\|)+\s*$/;
+
+const startsTable = (lines: string[], i: number) =>
+  TABLE_ROW.test(lines[i]) && TABLE_DIVIDER.test(lines[i + 1] ?? "");
+
+const startsBlock = (lines: string[], i: number) =>
+  HEADING.test(lines[i]) ||
+  LIST_ITEM.test(lines[i]) ||
+  RULE.test(lines[i]) ||
+  FENCE.test(lines[i]) ||
+  startsTable(lines, i);
+
+/** Splits a table row into cells. A pipe inside `code` or written as \| belongs to the cell. */
+function splitRow(line: string): string[] {
+  const cells: string[] = [];
+  let cell = "";
+  let inCode = false;
+  const body = line.trim().slice(1, -1);
+  for (let k = 0; k < body.length; k++) {
+    const ch = body[k];
+    if (ch === "\\" && body[k + 1] === "|") {
+      cell += "|";
+      k++;
+    } else if (ch === "`") {
+      inCode = !inCode;
+      cell += ch;
+    } else if (ch === "|" && !inCode) {
+      cells.push(cell.trim());
+      cell = "";
+    } else {
+      cell += ch;
+    }
+  }
+  cells.push(cell.trim());
+  return cells;
+}
 
 /**
  * `skipTitle` drops the first `# ` heading: the page already shows its own title as the h1.
@@ -87,6 +124,20 @@ export function parseMarkdown(source: string, options: { skipTitle?: boolean } =
       while (i < lines.length && !FENCE.test(lines[i])) body.push(lines[i++]);
       i++; // the closing fence
       blocks.push({ type: "code", text: body.join("\n") });
+    } else if (startsTable(lines, i)) {
+      const header = splitRow(line);
+      i += 2; // the header and its divider
+      const rows: string[][] = [];
+      while (i < lines.length && TABLE_ROW.test(lines[i])) {
+        // Ragged rows are padded or cut to the header's width so every row has the same columns.
+        const cells = splitRow(lines[i++]);
+        rows.push(header.map((_, c) => cells[c] ?? ""));
+      }
+      blocks.push({
+        type: "table",
+        header: header.map(parseInline),
+        rows: rows.map((row) => row.map(parseInline)),
+      });
     } else if (RULE.test(line)) {
       blocks.push({ type: "rule" });
       i++;
@@ -131,7 +182,7 @@ export function parseMarkdown(source: string, options: { skipTitle?: boolean } =
       blocks.push({ type: "list", ordered, items: items.map(parseInline) });
     } else {
       const text: string[] = [];
-      while (i < lines.length && lines[i].trim() && (!text.length || !startsBlock(lines[i]))) {
+      while (i < lines.length && lines[i].trim() && (!text.length || !startsBlock(lines, i))) {
         text.push(lines[i++].trim());
       }
       blocks.push({ type: "paragraph", children: parseInline(text.join(" ")) });
