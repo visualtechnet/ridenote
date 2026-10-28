@@ -29,7 +29,11 @@ export function createStubClient(): Pick<Anthropic, "messages"> {
         if (start === -1) throw new Error("stub: note has no E2E: prefix");
         const end = content.lastIndexOf("\n</note>");
         const json = content.slice(start + PREFIX.length, end === -1 ? undefined : end);
-        return { stop_reason: "end_turn", parsed_output: JSON.parse(json) };
+        return {
+          stop_reason: "end_turn",
+          parsed_output: JSON.parse(json),
+          usage: { input_tokens: 0, output_tokens: 0 },
+        };
       },
     },
   } as unknown as Pick<Anthropic, "messages">;

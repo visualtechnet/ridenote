@@ -1,0 +1,87 @@
+/** @jest-environment node */
+
+import { HTTP, UPSTREAM } from "./config";
+import { extractTrip } from "./extract";
+
+const goodTrip = {
+  passenger_name: "Mrs. Lee",
+  pickup_location: "12 Oak St",
+  dropoff_location: "County Hospital",
+  pickup_time: "09:30",
+  mobility: ["wheelchair"],
+  notes: "",
+};
+
+const USAGE = {
+  input_tokens: 120,
+  output_tokens: 160,
+  cache_read_input_tokens: 5,
+  cache_creation_input_tokens: 7,
+};
+
+function clientReturning(res: Record<string, unknown>) {
+  return { messages: { parse: jest.fn().mockResolvedValue(res) } } as never;
+}
+
+describe("extractTrip meta", () => {
+  it("reports tokens, stop reason, model and latency on success", async () => {
+    const result = await extractTrip(
+      clientReturning({ stop_reason: "end_turn", parsed_output: goodTrip, usage: USAGE }),
+      "note",
+    );
+    expect(result.ok).toBe(true);
+    expect(result.meta).toEqual({
+      model: UPSTREAM.defaultModel,
+      inputTokens: 120,
+      outputTokens: 160,
+      cacheRead: 5,
+      cacheWrite: 7,
+      stopReason: "end_turn",
+      latencyMs: expect.any(Number),
+    });
+  });
+
+  it("still reports meta when the model refuses", async () => {
+    const result = await extractTrip(
+      clientReturning({ stop_reason: "refusal", parsed_output: null, usage: USAGE }),
+      "note",
+    );
+    expect(result).toMatchObject({ ok: false, status: HTTP.unprocessable });
+    expect(result.meta.stopReason).toBe("refusal");
+  });
+
+  it("still reports meta when the answer is cut off at max_tokens", async () => {
+    const result = await extractTrip(
+      clientReturning({ stop_reason: "max_tokens", parsed_output: null, usage: USAGE }),
+      "note",
+    );
+    expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
+    expect(result.meta.outputTokens).toBe(160);
+  });
+
+  it("still reports meta when the output fails validation", async () => {
+    const result = await extractTrip(
+      clientReturning({ stop_reason: "end_turn", parsed_output: { nope: 1 }, usage: USAGE }),
+      "note",
+    );
+    expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
+    expect(result.meta.inputTokens).toBe(120);
+  });
+
+  it("logs missing cache counts as 0, not null", async () => {
+    const result = await extractTrip(
+      clientReturning({
+        stop_reason: "end_turn",
+        parsed_output: goodTrip,
+        usage: {
+          input_tokens: 1,
+          output_tokens: 2,
+          cache_read_input_tokens: null,
+          cache_creation_input_tokens: null,
+        },
+      }),
+      "note",
+    );
+    expect(result.meta).toMatchObject({ cacheRead: 0, cacheWrite: 0 });
+  });
+});
