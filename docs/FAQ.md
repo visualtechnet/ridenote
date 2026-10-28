@@ -720,6 +720,36 @@ cases. And _do not ask the AI for something the server computes:_ it adds cost a
 tests look like they check the AI when they check the server. A second pair of eyes after a change, even an
 automated one, finds things the author misses.
 
+### 39. The owner could not test the roles, and the new roles were invisible
+
+**What happened.** While setting up History we tried to prove the two roles with `set role history_app` and got
+`permission denied to set role`. Neon's owner login is not a superuser, so it cannot become another role
+unless it is a member of it. Separately, Neon's Roles page listed only `neondb_owner`: the roles created
+by `db/schema.sql` did not show there, which looked like the script had failed.
+
+**Caught by.** Running the setup by hand against a real database. The automated tests never touch Postgres.
+
+**Fix.** `db/verify.sql` grants the owner temporary membership in both roles, tests each role's allowed and
+forbidden actions, then revokes the membership. The guide says to check roles with `select ... from
+pg_roles`, not the Roles page, and that the script was run in pieces by hand.
+
+**Lesson.** _Hosted databases differ from the textbook one._ A step that works on a plain Postgres can need an
+extra grant on a managed one. Prove a security boundary by trying to cross it, and write down what you saw.
+
+### 40. Only one connection string, and a password in a chat
+
+**What happened.** Neon hands out one connection string, for the owner. The two app strings had to be built
+by swapping the user and password, and by dropping `&channel_binding=require`, which the driver does not
+support. During setup the owner password was also pasted into a chat.
+
+**Caught by.** Doing the setup. The paste was noticed straight away.
+
+**Fix.** The guide spells out the recipe and says never to paste passwords or strings anywhere but Neon and
+Vercel. It also says to reset the owner password in Neon (Roles, Reset password) if it was ever exposed.
+
+**Lesson.** _A secret that has been pasted somewhere is spent._ Rotating it takes a minute; arguing about who
+might have seen it does not.
+
 ---
 
 # What these have in common
@@ -742,4 +772,5 @@ automated one, finds things the author misses.
 - **A fix proven on one case can break another** (#37). Run the whole suite, with enough repeats to
   see a rate, before trusting it.
 - **Reserve loud signals for rare cases, and do not ask the AI for what the server can compute** (#38).
+- **Hosted services differ from the textbook, and a spent secret should be rotated** (#39, #40).
 - **Say so when you are wrong.** Writing the mistake down is the fastest way to stop repeating it.
