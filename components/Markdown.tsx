@@ -3,9 +3,9 @@ import { Routes } from "@/lib/routes";
 import { parseMarkdown, type Block, type Inline } from "@/lib/markdown";
 
 const HEADING_CLASS = {
-  2: "mt-10 scroll-mt-4 text-xl font-semibold text-zinc-900 dark:text-zinc-50",
-  3: "mt-8 scroll-mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50",
-  4: "mt-6 scroll-mt-4 text-base font-semibold text-zinc-900 dark:text-zinc-50",
+  2: "mt-10 scroll-mt-4 text-xl font-semibold text-zinc-50",
+  3: "mt-8 scroll-mt-4 text-lg font-semibold text-zinc-50",
+  4: "mt-6 scroll-mt-4 text-base font-semibold text-zinc-50",
 } as const;
 /** Guides that link to each other by file name (so the links work on GitHub) get the site's route. */
 const SITE_PAGE: Record<string, string> = {
@@ -13,8 +13,8 @@ const SITE_PAGE: Record<string, string> = {
   "EVAL.md": Routes.page("docsEval"),
 };
 
-const BODY = "text-zinc-700 dark:text-zinc-300";
-const CODE = "rounded bg-zinc-200 px-1 py-0.5 font-mono text-sm dark:bg-zinc-800";
+const BODY = "text-zinc-300";
+const CODE = "rounded px-1 py-0.5 font-mono text-sm bg-zinc-800";
 
 function renderInline(nodes: Inline[]): ReactNode {
   return nodes.map((node, i) => {
@@ -93,7 +93,7 @@ function renderBlock(block: Block, key: number): ReactNode {
         </pre>
       );
     case "rule":
-      return <hr key={key} className="mt-10 border-zinc-300 dark:border-zinc-700" />;
+      return <hr key={key} className="mt-10 border-zinc-700" />;
   }
 }
 

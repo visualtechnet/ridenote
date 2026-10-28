@@ -57,10 +57,10 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? "note-help note-error" : "note-help"}
         placeholder={COPY.notePlaceholder}
-        className={`w-full resize-y border bg-[#070b10] p-3 font-mono text-[15px] text-zinc-50 transition-[border-color,box-shadow] placeholder:text-zinc-500 focus-visible:shadow-[0_0_0_4px_rgba(89,184,255,0.18)] focus-visible:outline-none ${
+        className={`bg-well w-full resize-y border p-3 font-mono text-[15px] text-zinc-50 transition-[border-color,box-shadow] placeholder:text-zinc-500 focus-visible:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_18%,transparent)] focus-visible:outline-none ${
           error
-            ? "border-red-400 focus-visible:shadow-[0_0_0_4px_rgba(248,113,113,0.2)]"
-            : "border-etch-2 focus-visible:border-accent"
+            ? "border-red-400 focus-visible:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-red-400)_20%,transparent)]"
+            : "border-edge focus-visible:border-accent"
         }`}
       />
 
@@ -117,7 +117,7 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
 
       <div aria-live="polite">
         {error && (
-          <p id="note-error" className="text-sm font-medium text-red-700 dark:text-red-300">
+          <p id="note-error" className="text-sm font-medium text-red-300">
             {error}
           </p>
         )}

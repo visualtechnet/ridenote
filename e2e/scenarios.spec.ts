@@ -529,7 +529,7 @@ test.describe("the real API: refuses bad requests before any paid call", () => {
 
 // ---------------------------------------------------------------------------------------------
 test.describe("navigation, docs and the menu", () => {
-  test("on a desktop the navigation is a vertical sidebar on the left, always visible", async ({
+  test("on a desktop the navigation is a top bar above the content, always visible", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -550,17 +550,23 @@ test.describe("navigation, docs and the menu", () => {
     const boxes = await nav.getByRole("link").evaluateAll((links) =>
       links.map((l) => {
         const r = l.getBoundingClientRect();
-        return { left: Math.round(r.left), top: Math.round(r.top), right: Math.round(r.right) };
+        return {
+          left: Math.round(r.left),
+          top: Math.round(r.top),
+          bottom: Math.round(r.bottom),
+          height: Math.round(r.height),
+        };
       }),
     );
     const main = await page.locator("main").boundingBox();
-    expect(new Set(boxes.map((b) => b.left)).size).toBe(1); // one column
-    expect(boxes.map((b) => b.top)).toEqual([...boxes.map((b) => b.top)].sort((a, b) => a - b));
-    expect(new Set(boxes.map((b) => b.top)).size).toBe(boxes.length); // stacked, not side by side
-    expect(Math.max(...boxes.map((b) => b.right))).toBeLessThanOrEqual(main!.x); // left of the content
+    expect(new Set(boxes.map((b) => b.top)).size).toBe(1); // one row
+    expect(boxes.map((b) => b.left)).toEqual([...boxes.map((b) => b.left)].sort((a, b) => a - b));
+    expect(new Set(boxes.map((b) => b.left)).size).toBe(boxes.length); // side by side, not stacked
+    expect(Math.max(...boxes.map((b) => b.bottom))).toBeLessThanOrEqual(main!.y); // above the content
+    expect(Math.min(...boxes.map((b) => b.height))).toBeGreaterThanOrEqual(44); // touch-sized
   });
 
-  test("the sidebar stays in place while a long page scrolls", async ({ page }) => {
+  test("the navigation stays in place while a long page scrolls", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 600 });
     await page.goto(Routes.page("docs"));
     const link = page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Docs" });
@@ -570,7 +576,7 @@ test.describe("navigation, docs and the menu", () => {
     expect(await link.boundingBox()).toEqual(before);
   });
 
-  test("on a desktop you can reach every page from the sidebar without a menu button", async ({
+  test("on a desktop you can reach every page from the top bar without a menu button", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });

@@ -6,7 +6,7 @@ import type { Trip } from "@/lib/trip";
 import type { Usage } from "@/lib/usage";
 
 const BLANK =
-  "inline-block min-w-28 border-b-2 border-dashed border-etch-2 text-base text-zinc-400 italic";
+  "inline-block min-w-28 border-b-2 border-dashed border-edge text-base text-zinc-400 italic";
 
 const TAG = "font-mono border px-2 py-0.5 text-xs tracking-[0.14em] uppercase";
 
@@ -102,7 +102,11 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
 
 export function TripCardSkeleton() {
   return (
-    <div role="status" aria-label={COPY.loadingLabel} className="bezel animate-pulse p-5">
+    <div
+      role="status"
+      aria-label={COPY.loadingLabel}
+      className="bezel p-5 motion-safe:animate-pulse"
+    >
       <div className="bg-etch h-7 w-1/3" />
       <div className="mt-5 grid gap-px sm:grid-cols-2">
         {[0, 1, 2].map((i) => (

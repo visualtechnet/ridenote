@@ -23,17 +23,17 @@ export async function HistorySection() {
   const result = await (shouldCache() ? loadCached() : loadHistory());
 
   if (result.status === "disabled") {
-    return <p className="mt-6 text-zinc-700 dark:text-zinc-300">{COPY.historyDisabled}</p>;
+    return <p className="mt-6 text-zinc-300">{COPY.historyDisabled}</p>;
   }
   if (result.status === "error") {
     return (
-      <p role="alert" className="mt-6 text-red-800 dark:text-red-300">
+      <p role="alert" className="mt-6 text-red-300">
         {COPY.historyError}
       </p>
     );
   }
   if (result.rows.length === 0) {
-    return <p className="mt-6 text-zinc-700 dark:text-zinc-300">{COPY.historyEmpty}</p>;
+    return <p className="mt-6 text-zinc-300">{COPY.historyEmpty}</p>;
   }
   return <HistoryList rows={result.rows} />;
 }
