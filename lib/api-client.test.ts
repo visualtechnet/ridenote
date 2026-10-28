@@ -37,9 +37,17 @@ describe("parseNote", () => {
     expect(JSON.parse(init.body)).toEqual({ note: "Pick up Lee" });
   });
 
-  it("returns the validated trip", async () => {
+  it("returns the validated trip and its usage", async () => {
+    const usage = { inputTokens: 120, outputTokens: 160, latencyMs: 842 };
+    respond({ trip, usage });
+    await expect(parseNote("Pick up Lee")).resolves.toEqual({ trip, usage });
+  });
+
+  it("returns the trip with no usage when the usage is missing or malformed", async () => {
     respond({ trip });
-    await expect(parseNote("Pick up Lee")).resolves.toEqual(trip);
+    await expect(parseNote("Pick up Lee")).resolves.toEqual({ trip, usage: undefined });
+    respond({ trip, usage: { inputTokens: -1, outputTokens: "x", latencyMs: 1 } });
+    await expect(parseNote("Pick up Lee")).resolves.toEqual({ trip, usage: undefined });
   });
 
   it("throws a ParseError carrying the server's message and status", async () => {

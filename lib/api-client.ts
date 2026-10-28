@@ -2,6 +2,7 @@ import { CLIENT, HTTP } from "./config";
 import { MESSAGES } from "./messages";
 import { Routes } from "./routes";
 import { TripSchema, type Trip } from "./trip";
+import { UsageSchema, type Usage } from "./usage";
 
 /** Longest server-provided message we will show. Anything longer is cut, never trusted. */
 const MAX_SERVER_MESSAGE_LENGTH = 200;
@@ -17,8 +18,8 @@ export class ParseError extends Error {
   }
 }
 
-/** Sends a note to the API and returns a validated trip. Throws ParseError on any failure. */
-export async function parseNote(note: string): Promise<Trip> {
+/** Sends a note to the API and returns a validated trip with its usage. Throws ParseError on any failure. */
+export async function parseNote(note: string): Promise<{ trip: Trip; usage?: Usage }> {
   let res: Response;
   try {
     res = await fetch(Routes.api("parse"), {
@@ -56,5 +57,7 @@ export async function parseNote(note: string): Promise<Trip> {
   // The server already checked this, but data crossing the network is validated again on arrival.
   const trip = TripSchema.safeParse(data?.trip);
   if (!trip.success) throw new ParseError(MESSAGES.parseFailed, res.status);
-  return trip.data;
+  // Usage is informational: a malformed one hides the line, it never fails a good parse.
+  const usage = UsageSchema.safeParse(data?.usage);
+  return { trip: trip.data, usage: usage.success ? usage.data : undefined };
 }

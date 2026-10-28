@@ -11,6 +11,7 @@ import { createRateLimiter, maxRequestsFor } from "@/lib/rate-limit";
 import { isOutOfCredit } from "@/lib/upstream-errors";
 import { readLimitedText } from "@/lib/read-body";
 import type { Trip } from "@/lib/trip";
+import { toUsage } from "@/lib/usage";
 import { validateRequestBody } from "@/lib/validation";
 
 // Layer 1: per client, counts every request (valid or not).
@@ -104,7 +105,7 @@ async function callModel(note: string, signal: AbortSignal): Promise<Outcome> {
     console.info("parse usage:", JSON.stringify(result.meta));
     if (!result.ok) return { status: result.status, body: { error: result.error } };
     saveAfterResponse(result.trip);
-    return { status: HTTP.ok, body: { trip: result.trip } };
+    return { status: HTTP.ok, body: { trip: result.trip, usage: toUsage(result.meta) } };
   } catch (err) {
     // The one failure a person can act on. It is logged as its own kind so the owner sees it.
     if (isOutOfCredit(err)) {

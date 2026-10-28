@@ -149,7 +149,7 @@ describe("POST /api/parse history save", () => {
     mockSaveEntry.mockRejectedValue(new Error("db down"));
     const res = await POST(request({ note: "Pick up Mrs. Lee at 12 Oak St" }));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ trip: goodTrip });
+    expect(await res.json()).toEqual({ trip: goodTrip, usage: expect.any(Object) });
   });
 
   it("answers the same when saveEntry throws synchronously", async () => {
@@ -161,7 +161,7 @@ describe("POST /api/parse history save", () => {
     });
     const res = await POST(request({ note: "Pick up Mrs. Lee at 12 Oak St" }));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ trip: goodTrip });
+    expect(await res.json()).toEqual({ trip: goodTrip, usage: expect.any(Object) });
   });
 
   it("answers the same when after itself throws", async () => {
@@ -170,7 +170,7 @@ describe("POST /api/parse history save", () => {
     });
     const res = await POST(request({ note: "Pick up Mrs. Lee at 12 Oak St" }));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ trip: goodTrip });
+    expect(await res.json()).toEqual({ trip: goodTrip, usage: expect.any(Object) });
     expect(mockSaveEntry).not.toHaveBeenCalled();
   });
 });
