@@ -468,8 +468,11 @@ describe("POST /api/parse usage log", () => {
     });
     await POST(request({ note: "Mrs. Lee 12 Oak St wheelchair" }));
     expect(infoCalls()).toHaveLength(1);
-    const [label, meta] = infoCalls()[0];
+    const [label, line] = infoCalls()[0];
     expect(label).toBe("parse usage:");
+    expect(typeof line).toBe("string");
+    expect(line).not.toContain("\n");
+    const meta = JSON.parse(line);
     expect(meta).toMatchObject({
       stopReason: "end_turn",
       inputTokens: 120,
@@ -477,7 +480,7 @@ describe("POST /api/parse usage log", () => {
       latencyMs: expect.any(Number),
     });
     expect(infoCalls().flat().map(String).join(" ")).not.toContain("Oak St");
-    expect(JSON.stringify(meta)).not.toContain("Lee");
+    expect(line).not.toContain("Lee");
   });
 
   it("still logs usage when the model refuses", async () => {
@@ -488,7 +491,7 @@ describe("POST /api/parse usage log", () => {
     });
     const res = await POST(request({ note: VALID_NOTE }));
     expect(res.status).toBe(HTTP.unprocessable);
-    expect(infoCalls()[0][1]).toMatchObject({ stopReason: "refusal", outputTokens: 3 });
+    expect(JSON.parse(infoCalls()[0][1])).toMatchObject({ stopReason: "refusal", outputTokens: 3 });
   });
 
   it("logs no usage line when the call itself throws, and keeps the error-type log", async () => {

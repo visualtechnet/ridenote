@@ -101,7 +101,7 @@ async function callModel(note: string, signal: AbortSignal): Promise<Outcome> {
     client ??= stubActive() ? createStubClient() : new Anthropic();
     const result = await extractTrip(client, note, { signal });
     // Numbers, model name and stop reason only: never the note or anything parsed from it.
-    console.info("parse usage:", result.meta);
+    console.info("parse usage:", JSON.stringify(result.meta));
     if (!result.ok) return { status: result.status, body: { error: result.error } };
     saveAfterResponse(result.trip);
     return { status: HTTP.ok, body: { trip: result.trip } };
