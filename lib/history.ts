@@ -33,17 +33,24 @@ export function historyEnabled(env: Record<string, string | undefined> = process
   return env.VERCEL_ENV === "production" && Boolean(env.HISTORY_DATABASE_URL);
 }
 
+/** Blank text is nothing: it is saved as null, never as an empty string. */
+const orNull = (text: string | null) => (text?.trim() ? text : null);
+
+/** True when something other than removed markers, punctuation and spaces is left to show. */
+const hasContent = (text: string | null) =>
+  text !== null && /[\p{L}\p{N}]/u.test(text.replaceAll(REMOVED, ""));
+
 /** Maps a trip to what may be saved, or null when there is nothing worth saving. */
 export function toRecord(trip: Trip): HistoryRecord | null {
   const record: HistoryRecord = {
-    passenger_name: scrubText(trip.passenger_name),
-    pickup_location: scrubText(trip.pickup_location),
-    dropoff_location: scrubText(trip.dropoff_location),
+    passenger_name: orNull(scrubText(trip.passenger_name)),
+    pickup_location: orNull(scrubText(trip.pickup_location)),
+    dropoff_location: orNull(scrubText(trip.dropoff_location)),
     pickup_time: trip.pickup_time,
     mobility: trip.mobility,
   };
   const hasText = [record.passenger_name, record.pickup_location, record.dropoff_location].some(
-    (value) => value !== null && value !== REMOVED,
+    hasContent,
   );
   return hasText || record.mobility.length > 0 ? record : null;
 }
