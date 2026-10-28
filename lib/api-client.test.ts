@@ -43,11 +43,11 @@ describe("parseNote", () => {
   });
 
   it("throws a ParseError carrying the server's message and status", async () => {
-    respond({ error: "Too many requests." }, 429);
+    respond({ error: "Note is too long." }, 400);
     await expect(parseNote("Pick up Lee")).rejects.toMatchObject({
       name: "ParseError",
-      message: "Too many requests.",
-      status: 429,
+      message: "Note is too long.",
+      status: 400,
     });
   });
 
@@ -109,6 +109,34 @@ describe("parseNote", () => {
     });
     await expect(parseNote("Pick up Lee")).rejects.toMatchObject({
       message: MESSAGES.tooManyRequestsIn(42),
+      status: 429,
+    });
+  });
+
+  it('a 429 with no JSON body and no Retry-After shows the slow-down message, not "couldn\'t parse"', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 429,
+      headers: { get: () => null },
+      json: async () => {
+        throw new SyntaxError("x");
+      },
+    });
+    await expect(parseNote("Pick up Lee")).rejects.toMatchObject({
+      message: MESSAGES.tooManyRequests,
+      status: 429,
+    });
+  });
+
+  it("a 429 with a JSON error and no Retry-After still shows the slow-down message", async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 429,
+      headers: { get: () => null },
+      json: async () => ({ error: "server wording" }),
+    });
+    await expect(parseNote("Pick up Lee")).rejects.toMatchObject({
+      message: MESSAGES.tooManyRequests,
       status: 429,
     });
   });

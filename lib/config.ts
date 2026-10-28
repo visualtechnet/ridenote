@@ -13,6 +13,8 @@ export const LIMITS = {
 export const RATE_LIMIT = {
   /** Per client, counting every request, valid or not, so junk traffic is throttled too. */
   maxRequests: 10,
+  /** Per client in production only; preview and development keep maxRequests. */
+  maxRequestsProduction: 3,
   windowMs: 60_000,
   maxTrackedClients: 10_000,
 } as const;
@@ -53,10 +55,12 @@ export const CLIENT = {
 export const HTTP = {
   ok: 200,
   badRequest: 400,
+  unauthorized: 401,
   payloadTooLarge: 413,
   unsupportedMediaType: 415,
   unprocessable: 422,
   tooManyRequests: 429,
+  serverError: 500,
   badGateway: 502,
   unavailable: 503,
   clientClosed: 499,
@@ -101,6 +105,15 @@ export const OUTPUT_LIMITS = {
   fieldName: 40,
   missingFieldCount: 10,
   mobilityCount: MOBILITY.length,
+} as const;
+
+/** The public History page and the database behind it. */
+export const HISTORY = {
+  retentionDays: 7,
+  pageRowCap: 200,
+  /** Saves per rolling 24 hours; beyond this nothing more is stored until older rows age out. */
+  dailySaveCap: 2000,
+  revalidateSec: 60,
 } as const;
 
 /** Where visitors write with questions or feedback. Shown on the Contact page. API keys are not provided. */

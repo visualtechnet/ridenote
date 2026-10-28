@@ -3,13 +3,18 @@ const PAGES = {
   docs: "/docs",
   docsEval: "/docs/eval",
   docsFaq: "/docs/faq",
+  docsAgents: "/docs/agents",
+  docsAgentsDesign: "/docs/agents/design",
+  docsAgentsPlan: "/docs/agents/plan",
   requirements: "/requirements",
   tests: "/tests",
+  history: "/history",
   contact: "/contact",
 } as const;
 
 const API = {
   parse: "/api/parse",
+  historyPurge: "/api/history/purge",
 } as const;
 
 /**

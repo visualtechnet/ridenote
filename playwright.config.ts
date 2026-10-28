@@ -16,5 +16,14 @@ export default defineConfig({
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // Production-like History and rate limit, with an in-memory store and a stubbed model. Never
+    // set these anywhere but here: the stub refuses to run on a production build.
+    env: {
+      VERCEL_ENV: "production",
+      HISTORY_DATABASE_URL: "memory://test",
+      HISTORY_STORE: "memory",
+      CRON_SECRET: "e2e-secret",
+      E2E_STUB_PARSE: "1",
+    },
   },
 });

@@ -9,6 +9,7 @@ const PAGES = [
   Routes.page("docsFaq"),
   Routes.page("requirements"),
   Routes.page("tests"),
+  Routes.page("history"),
   Routes.page("contact"),
 ];
 

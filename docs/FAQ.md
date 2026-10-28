@@ -45,15 +45,22 @@ The Docs page explains 400, 404, 405, 413, 415, 422, 429, 500, 502 and 503.
 
 ### What does 429 mean, and what does 503 mean? They both say "try later".
 
-- **429**: _you_ sent too many requests (10 per minute per client). The `Retry-After` header says when.
+- **429**: _you_ sent too many requests (3 per minute per client on the live site, 10 in development and preview). The `Retry-After` header says when.
 - **503**: _everyone together_ is using too much (the shared AI budget or the simultaneous-call cap).
   It protects cost and the server. It is not about you in particular.
 
 ### Does the app store my notes?
 
-No. Notes go to the AI service to be parsed and are not saved by this app. Server logs record only
-an error _type_, never the note, because notes contain personal details. Use fictional names in
-examples, tests and bug reports.
+The note itself, never. Notes go to the AI service to be parsed. On the live site the _parsed trip_
+(name, pickup and dropoff, time, mobility aids) is saved for 7 days and shown on the public History
+page, with phone numbers and email addresses replaced by `[removed]`. A real name or address typed into
+a note can still be saved, because a pattern cannot tell it from ordinary text, so use made-up ones.
+Server logs record only an error _type_. Nothing is saved in development or preview.
+
+### How do I look at, or remove, what History saved?
+
+See "Querying History from a Mac" in the README for `psql` and example queries. To remove a row, run
+`delete from history where id = ...;` in the Neon console as the owner: the app itself cannot delete.
 
 ### Why do two people sending the same note at the same moment cost one AI call?
 

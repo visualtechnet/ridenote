@@ -169,15 +169,17 @@ export default function RequirementsPage() {
               <strong>Safety:</strong> the output carries a reminder to verify before dispatching.
             </li>
             <li>
-              <strong>Privacy:</strong> notes may contain personal details; they are not stored and
-              are not logged.
+              <strong>Privacy:</strong> notes may contain personal details; the note itself is never
+              saved or logged. The parsed trip (name, addresses, time, aids) is saved and shown
+              publicly on the History page for 7 days on the live site, with phone numbers and
+              emails removed.
             </li>
             <li>
               <strong>Security:</strong> HTML, scripts and hidden characters are rejected; the
               AI&rsquo;s answer is re-validated; the API key stays on the server.
             </li>
             <li>
-              <strong>Cost and abuse:</strong> at most {RATE_LIMIT.maxRequests} parses per{" "}
+              <strong>Cost and abuse:</strong> at most {RATE_LIMIT.maxRequestsProduction} parses per{" "}
               {RATE_LIMIT.windowMs / 1000} seconds per client; request bodies over{" "}
               {LIMITS.bodyMaxBytes.toLocaleString("en-US")} bytes are refused. Across all clients,
               at most {BUDGET.maxCallsPerWindow} AI calls per {BUDGET.windowMs / 1000} seconds and{" "}
@@ -197,7 +199,10 @@ export default function RequirementsPage() {
           </ul>
           <h3 className={h3}>Out of scope (today)</h3>
           <ul className={ul}>
-            <li>Saving trips, accounts or sign-in, and sending trips to a dispatch system.</li>
+            <li>
+              Accounts or sign-in, editing or deleting saved trips, and sending trips to a dispatch
+              system.
+            </li>
             <li>
               A date field. Dates such as &ldquo;tomorrow&rdquo; or &ldquo;Friday&rdquo; are not
               converted; they are repeated in the notes so a person can see them.

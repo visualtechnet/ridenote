@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { MESSAGES } from "../lib/messages";
 import { Routes } from "../lib/routes";
-import { mockParseApi, trip } from "./fixtures";
+import { freshClient, mockParseApi, trip } from "./fixtures";
 
 const note = (page: import("@playwright/test").Page) =>
   page.getByRole("textbox", { name: "Dispatcher note" });
@@ -110,23 +110,27 @@ test.describe("validation and security", () => {
   }) => {
     const bad = await request.post(Routes.api("parse"), {
       data: Buffer.from("{not json"),
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...freshClient() },
     });
     expect(bad.status()).toBe(400);
 
     const xss = await request.post(Routes.api("parse"), {
       data: { note: "<script>alert(1)</script>" },
+      headers: freshClient(),
     });
     expect(xss.status()).toBe(400);
     expect((await xss.json()).error).toBe(MESSAGES.noteMarkup);
 
     const bareString = await request.post(Routes.api("parse"), {
       data: Buffer.from('"Pick up Mrs. Lee at 12 Oak St"'),
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...freshClient() },
     });
     expect(bareString.status()).toBe(400);
 
-    const empty = await request.post(Routes.api("parse"), { data: { note: "" } });
+    const empty = await request.post(Routes.api("parse"), {
+      data: { note: "" },
+      headers: freshClient(),
+    });
     expect(empty.status()).toBe(400);
     expect(xss.headers()["cache-control"]).toBe("no-store");
   });
