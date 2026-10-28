@@ -46,6 +46,8 @@ function request(
 const loggedText = () =>
   (console.error as ReturnType<typeof jest.fn>).mock.calls.flat().map(String).join(" ");
 
+const infoCalls = () => (console.info as ReturnType<typeof jest.fn>).mock.calls;
+
 beforeEach(() => {
   mockParse.mockReset();
   mockParse.mockResolvedValue({
@@ -54,6 +56,7 @@ beforeEach(() => {
     usage: { input_tokens: 1, output_tokens: 1 },
   });
   jest.spyOn(console, "error").mockImplementation(() => {});
+  jest.spyOn(console, "info").mockImplementation(() => {});
 });
 
 describe("POST /api/parse", () => {
@@ -451,5 +454,68 @@ describe("POST /api/parse", () => {
     const res = await POST(request({ note: VALID_NOTE }));
     expect(res.status).toBe(502);
     expect(loggedText()).toContain("unknown error");
+  });
+});
+
+describe("POST /api/parse usage log", () => {
+  beforeEach(() => jest.mocked(console.info).mockClear());
+
+  it("logs one numbers-only usage line per paid call", async () => {
+    mockParse.mockResolvedValue({
+      stop_reason: "end_turn",
+      parsed_output: goodTrip,
+      usage: { input_tokens: 120, output_tokens: 160 },
+    });
+    await POST(request({ note: "Mrs. Lee 12 Oak St wheelchair" }));
+    expect(infoCalls()).toHaveLength(1);
+    const [label, meta] = infoCalls()[0];
+    expect(label).toBe("parse usage:");
+    expect(meta).toMatchObject({
+      stopReason: "end_turn",
+      inputTokens: 120,
+      outputTokens: 160,
+      latencyMs: expect.any(Number),
+    });
+    expect(infoCalls().flat().map(String).join(" ")).not.toContain("Oak St");
+    expect(JSON.stringify(meta)).not.toContain("Lee");
+  });
+
+  it("still logs usage when the model refuses", async () => {
+    mockParse.mockResolvedValue({
+      stop_reason: "refusal",
+      parsed_output: null,
+      usage: { input_tokens: 50, output_tokens: 3 },
+    });
+    const res = await POST(request({ note: VALID_NOTE }));
+    expect(res.status).toBe(HTTP.unprocessable);
+    expect(infoCalls()[0][1]).toMatchObject({ stopReason: "refusal", outputTokens: 3 });
+  });
+
+  it("logs no usage line when the call itself throws, and keeps the error-type log", async () => {
+    mockParse.mockRejectedValue(new Error("boom"));
+    await POST(request({ note: VALID_NOTE }));
+    expect(infoCalls()).toHaveLength(0);
+    expect(loggedText()).toContain("Error");
+  });
+
+  it("logs usage once for identical notes submitted at the same moment", async () => {
+    let finish!: () => void;
+    mockParse.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = () =>
+            resolve({
+              stop_reason: "end_turn",
+              parsed_output: goodTrip,
+              usage: { input_tokens: 1, output_tokens: 1 },
+            });
+        }),
+    );
+    const note = "Pick up the Nguyen family at 7 Pine Ln";
+    const pending = [POST(request({ note })), POST(request({ note }))];
+    await new Promise((r) => setTimeout(r, 10));
+    finish();
+    await Promise.all(pending);
+    expect(infoCalls()).toHaveLength(1);
   });
 });
