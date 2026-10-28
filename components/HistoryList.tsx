@@ -13,14 +13,17 @@ const SAVED_AT = new Intl.DateTimeFormat("en-US", {
   timeZoneName: "short",
 });
 
+const BLANK =
+  "inline-block min-w-28 border-b-2 border-dashed border-edge text-base text-zinc-400 italic";
+
+const TAG = "font-mono border px-2 py-0.5 text-xs tracking-[0.14em] uppercase";
+
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-        {label}
-      </dt>
-      <dd className="mt-1 break-words text-zinc-900 dark:text-zinc-50">
-        {value || <span className="text-zinc-500 italic dark:text-zinc-400">{COPY.notStated}</span>}
+      <dt className="lab">{label}</dt>
+      <dd className="mt-1.5 font-mono text-base break-words text-zinc-50">
+        {value || <span className={BLANK}>{COPY.notStated}</span>}
       </dd>
     </div>
   );
@@ -32,24 +35,24 @@ export function HistoryList({ rows }: { rows: HistoryRow[] }) {
   return (
     <>
       {rated > 0 && (
-        <p className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">
+        <p className="mt-6 text-sm text-zinc-300">
           {COPY.ratingSummary(rated, medianTokens, medianLatencyMs)}
         </p>
       )}
       <ol aria-label={COPY.historyListLabel} className="mt-6 flex flex-col gap-4">
         {rows.map((row) => (
           <li key={row.id}>
-            <article className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <article className="bezel p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="min-w-0 text-lg font-semibold break-words text-zinc-900 dark:text-zinc-50">
+                <h2 className="caps min-w-0 text-2xl break-words text-zinc-50">
                   {row.passenger_name ?? COPY.unknownPassenger}
                 </h2>
                 {ratings.get(row.id) && (
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    className={`${TAG} ${
                       ratings.get(row.id) === "problematic"
-                        ? "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200"
-                        : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+                        ? "border-amber-400 text-amber-300"
+                        : "border-accent text-accent"
                     }`}
                   >
                     {ratings.get(row.id) === "problematic"
@@ -71,10 +74,7 @@ export function HistoryList({ rows }: { rows: HistoryRow[] }) {
                     row.mobility.length > 0 && (
                       <ul aria-label={COPY.mobilityListLabel} className="flex flex-wrap gap-2">
                         {row.mobility.map((aid) => (
-                          <li
-                            key={aid}
-                            className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                          >
+                          <li key={aid} className={`${TAG} border-accent text-accent`}>
                             {mobilityLabel(aid)}
                           </li>
                         ))}
@@ -84,7 +84,7 @@ export function HistoryList({ rows }: { rows: HistoryRow[] }) {
                 />
               </dl>
               {row.input_tokens != null && row.output_tokens != null && row.latency_ms != null && (
-                <p className="mt-4 text-xs text-zinc-600 dark:text-zinc-400">
+                <p className="mt-4 text-xs text-zinc-400">
                   <span className="font-medium">{COPY.usageLabel}</span>{" "}
                   {COPY.usageValue({
                     inputTokens: row.input_tokens,
@@ -93,7 +93,7 @@ export function HistoryList({ rows }: { rows: HistoryRow[] }) {
                   })}
                 </p>
               )}
-              <p className="mt-4 text-xs text-zinc-600 dark:text-zinc-400">
+              <p className="mt-4 text-xs text-zinc-400">
                 {COPY.historySaved}{" "}
                 <time dateTime={row.created_at.toISOString()}>
                   {SAVED_AT.format(row.created_at)}

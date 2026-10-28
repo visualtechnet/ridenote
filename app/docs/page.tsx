@@ -11,13 +11,13 @@ export const metadata: Metadata = {
   description: "Setup, accepted and rejected inputs, and every error explained.",
 };
 
-const h2 = "mt-10 scroll-mt-4 text-xl font-semibold text-zinc-900 dark:text-zinc-50";
-const p = "mt-2 text-zinc-700 dark:text-zinc-300";
-const code = "rounded bg-zinc-200 px-1 py-0.5 font-mono text-sm dark:bg-zinc-800";
+const h2 = "mt-10 scroll-mt-4 text-xl font-semibold text-zinc-50";
+const p = "mt-2 text-zinc-300";
+const code = "rounded px-1 py-0.5 font-mono text-sm bg-zinc-800";
 const pre =
   "mt-2 overflow-x-auto rounded-lg bg-zinc-900 p-3 font-mono text-sm text-zinc-50 whitespace-pre-wrap break-words";
-const th = "border-b border-zinc-300 px-3 py-2 text-left font-medium dark:border-zinc-700";
-const td = "border-b border-zinc-200 px-3 py-2 align-top dark:border-zinc-800";
+const th = "border-b px-3 py-2 text-left font-medium border-zinc-700";
+const td = "border-b px-3 py-2 align-top border-zinc-800";
 
 const errors = [
   [
@@ -108,11 +108,9 @@ const validationCodes = [
 
 export default function DocsPage() {
   return (
-    <div className="flex flex-1 justify-center bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex flex-1 justify-center font-sans">
       <main id="main" className="w-full max-w-3xl px-4 py-10 sm:px-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Documentation
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Documentation</h1>
         <p className={p}>
           This section has three parts, in the menu on the left: <strong>Setup</strong> (this page),{" "}
           <Link href={Routes.page("docsEval")} className="underline underline-offset-4">
@@ -130,7 +128,7 @@ export default function DocsPage() {
           by an automated test.
         </p>
         <nav aria-label="On this page" className="mt-4">
-          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-900 underline underline-offset-4 dark:text-zinc-50">
+          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-50 underline underline-offset-4">
             {[
               ["need", "What you need"],
               ["setup", "Setup"],
@@ -156,7 +154,7 @@ export default function DocsPage() {
           <h2 id="need" className={h2}>
             What you need to try it
           </h2>
-          <ul className="mt-2 list-disc space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+          <ul className="mt-2 list-disc space-y-2 pl-6 text-zinc-300">
             <li>
               <strong>To run it on your own computer, you need your own Anthropic API key.</strong>{" "}
               This project does not include one, and the AI cannot run without it. You create it in
@@ -184,7 +182,7 @@ export default function DocsPage() {
           <h2 id="setup" className={h2}>
             Setup
           </h2>
-          <ol className="mt-2 list-decimal space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+          <ol className="mt-2 list-decimal space-y-2 pl-6 text-zinc-300">
             <li>
               Install Node.js 20 or newer, then run <code className={code}>npm install</code>.
             </li>
@@ -235,7 +233,7 @@ export default function DocsPage() {
             RideNote calls the Claude API, so it needs a key from your own Anthropic account. Each
             person who runs it locally uses their own key; the project contains none.
           </p>
-          <ol className="mt-2 list-decimal space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+          <ol className="mt-2 list-decimal space-y-2 pl-6 text-zinc-300">
             <li>
               Sign in or create an account at{" "}
               <a
@@ -271,10 +269,8 @@ export default function DocsPage() {
             </li>
           </ol>
           <p className={p}>Menu names in the Console change from time to time.</p>
-          <h3 className="mt-6 text-base font-semibold text-zinc-900 dark:text-zinc-50">
-            Keeping the key safe
-          </h3>
-          <ul className="mt-2 list-disc space-y-1 pl-6 text-zinc-700 dark:text-zinc-300">
+          <h3 className="mt-6 text-base font-semibold text-zinc-50">Keeping the key safe</h3>
+          <ul className="mt-2 list-disc space-y-1 pl-6 text-zinc-300">
             <li>
               Never commit it or paste it into an issue, chat or screenshot. The{" "}
               <code className={code}>.env.local</code> file is git-ignored and the pre-commit hook
@@ -296,7 +292,7 @@ export default function DocsPage() {
           <p className={p}>
             Someone who only wants to see RideNote should not have to create a key.
           </p>
-          <ul className="mt-2 list-disc space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+          <ul className="mt-2 list-disc space-y-2 pl-6 text-zinc-300">
             <li>
               <strong>Best: host it.</strong> Deploy the app (for example on Vercel) with the key
               stored as a <em>server-only</em> environment variable, using a key made for the demo
@@ -333,7 +329,7 @@ export default function DocsPage() {
           <h2 id="first-parse" className={h2}>
             Your first successful parse
           </h2>
-          <ol className="mt-2 list-decimal space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+          <ol className="mt-2 list-decimal space-y-2 pl-6 text-zinc-300">
             <li>Open the parser (the home page).</li>
             <li>
               Click <strong>Use an example</strong>, or paste a note of your own.
@@ -357,7 +353,7 @@ export default function DocsPage() {
             Write the way a dispatcher naturally would. The more of these you include, the fewer
             fields come back Missing:
           </p>
-          <ul className="mt-2 list-disc space-y-1 pl-6 text-zinc-700 dark:text-zinc-300">
+          <ul className="mt-2 list-disc space-y-1 pl-6 text-zinc-300">
             <li>
               <strong>Who:</strong> passenger name.
             </li>
@@ -399,13 +395,10 @@ export default function DocsPage() {
           </p>
           <ul className="mt-4 space-y-4">
             {VALID_EXAMPLES.map((ex) => (
-              <li
-                key={ex.title}
-                className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-              >
-                <h3 className="font-medium text-zinc-900 dark:text-zinc-50">{ex.title}</h3>
+              <li key={ex.title} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                <h3 className="font-medium text-zinc-50">{ex.title}</h3>
                 <pre className={pre}>{ex.note}</pre>
-                <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">{ex.why}</p>
+                <p className="mt-2 text-sm text-zinc-300">{ex.why}</p>
                 <div className="mt-2">
                   <TryButton note={ex.note} />
                 </div>
@@ -424,7 +417,7 @@ export default function DocsPage() {
             cleaned; a rejected note is refused with an explanation.
           </p>
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm text-zinc-800 dark:text-zinc-200">
+            <table className="w-full text-left text-sm text-zinc-200">
               <caption className="sr-only">Validation codes</caption>
               <thead>
                 <tr>
@@ -454,15 +447,12 @@ export default function DocsPage() {
           </div>
           <ul className="mt-4 space-y-4">
             {INVALID_EXAMPLES.map((ex) => (
-              <li
-                key={ex.title}
-                className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-              >
-                <h3 className="font-medium text-zinc-900 dark:text-zinc-50">
+              <li key={ex.title} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                <h3 className="font-medium text-zinc-50">
                   {ex.title} <span className={code}>{ex.code}</span>
                 </h3>
                 <pre className={pre}>{ex.display ?? ex.note}</pre>
-                <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">{ex.why}</p>
+                <p className="mt-2 text-sm text-zinc-300">{ex.why}</p>
               </li>
             ))}
           </ul>
@@ -479,7 +469,7 @@ export default function DocsPage() {
             curl). The body must be exactly <code className={code}>{`{"note": "..."}`}</code>.
           </p>
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm text-zinc-800 dark:text-zinc-200">
+            <table className="w-full text-left text-sm text-zinc-200">
               <caption className="sr-only">Raw API requests and their results</caption>
               <thead>
                 <tr>
@@ -526,7 +516,7 @@ export default function DocsPage() {
             Output fields
           </h2>
           <div className="mt-2 overflow-x-auto">
-            <table className="w-full text-left text-sm text-zinc-800 dark:text-zinc-200">
+            <table className="w-full text-left text-sm text-zinc-200">
               <caption className="sr-only">Trip fields</caption>
               <thead>
                 <tr>
@@ -621,7 +611,7 @@ export default function DocsPage() {
             4xx means the request was wrong (you can fix it), 5xx means our side or the AI failed.
           </p>
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm text-zinc-800 dark:text-zinc-200">
+            <table className="w-full text-left text-sm text-zinc-200">
               <caption className="sr-only">HTTP status codes</caption>
               <thead>
                 <tr>
@@ -673,7 +663,7 @@ export default function DocsPage() {
           <h2 id="privacy" className={h2}>
             Privacy and security
           </h2>
-          <ul className="mt-2 list-disc space-y-1 pl-6 text-zinc-700 dark:text-zinc-300">
+          <ul className="mt-2 list-disc space-y-1 pl-6 text-zinc-300">
             <li>
               The API key lives only in server environment variables. It is not in the code, the
               browser or these docs.

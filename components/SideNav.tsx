@@ -24,7 +24,7 @@ const DOC_SECTIONS = [
 ] as const;
 
 const LINK_CLASS =
-  "caps block border-b border-transparent px-3 py-2.5 text-[15px] text-zinc-400 hover:text-accent aria-[current=page]:border-accent aria-[current=page]:text-accent md:px-0 md:py-1";
+  "caps block border-b border-transparent px-3 py-2.5 text-[15px] text-zinc-400 hover:text-accent aria-[current=page]:border-accent aria-[current=page]:text-accent md:flex md:min-h-11 md:items-center md:px-0 md:py-0";
 
 const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent";
 
@@ -78,7 +78,7 @@ export function SideNav() {
             setOpenedAt(pathname);
             setOpen(!isOpen);
           }}
-          className={`caps border-etch-2 hover:text-accent border px-3 py-2 text-sm text-zinc-100 md:hidden ${FOCUS}`}
+          className={`caps border-etch-2 hover:text-accent min-h-11 border px-3 py-2 text-sm text-zinc-100 md:hidden ${FOCUS}`}
         >
           <span aria-hidden="true">{isOpen ? "✕ " : "☰ "}</span>
           {COPY.menu}
