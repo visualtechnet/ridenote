@@ -24,13 +24,13 @@ const DOC_SECTIONS = [
 ] as const;
 
 const LINK_CLASS =
-  "block rounded-md px-3 py-2.5 text-rail-ink/90 hover:bg-white/10 aria-[current=page]:bg-white aria-[current=page]:font-semibold aria-[current=page]:text-[#0a4a94] dark:aria-[current=page]:text-[#071c38]";
+  "caps block border-b border-transparent px-3 py-2.5 text-[15px] text-zinc-400 hover:text-accent aria-[current=page]:border-accent aria-[current=page]:text-accent md:px-0 md:py-1";
 
-const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
+const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent";
 
 /**
- * Site navigation. A vertical sidebar on the left from the `md` breakpoint up; on a phone it
- * becomes a top bar with a Menu button that opens the same links.
+ * Site navigation. A sticky top bar from the `md` breakpoint up; on a phone the links fold behind
+ * a Menu button.
  */
 export function SideNav() {
   const pathname = usePathname();
@@ -58,16 +58,16 @@ export function SideNav() {
   }, [isOpen]);
 
   return (
-    <header className="bg-rail text-rail-ink md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:overflow-y-auto">
-      <div className="flex items-center justify-between px-4 py-3 md:block md:px-5 md:py-6">
-        <div>
+    <header className="border-etch-2 sticky top-0 z-20 border-b bg-zinc-950/95 backdrop-blur md:flex md:h-16 md:items-center md:gap-10 md:px-6">
+      <div className="flex items-center justify-between px-4 py-3 md:p-0">
+        <div className="flex items-baseline gap-4">
           <Link
             href={Routes.page("home")}
-            className={`text-rail-ink text-xl font-bold tracking-tight ${FOCUS}`}
+            className={`caps text-accent text-2xl leading-none font-extrabold tracking-[0.12em] ${FOCUS}`}
           >
             {COPY.appName}
           </Link>
-          <p className="text-rail-ink/85 mt-1 hidden text-sm md:block">{COPY.tagline}</p>
+          <p className="lab hidden xl:block">{COPY.tagline}</p>
         </div>
         <button
           ref={buttonRef}
@@ -78,7 +78,7 @@ export function SideNav() {
             setOpenedAt(pathname);
             setOpen(!isOpen);
           }}
-          className={`text-rail-ink rounded-md border border-white/50 px-3 py-2 text-sm font-medium md:hidden ${FOCUS}`}
+          className={`caps border-etch-2 hover:text-accent border px-3 py-2 text-sm text-zinc-100 md:hidden ${FOCUS}`}
         >
           <span aria-hidden="true">{isOpen ? "✕ " : "☰ "}</span>
           {COPY.menu}
@@ -87,11 +87,11 @@ export function SideNav() {
       <nav
         id="site-menu"
         aria-label={COPY.navLabel}
-        className={`border-t border-white/20 md:block md:border-t-0 ${isOpen ? "block" : "hidden"}`}
+        className={`border-etch border-t md:ml-auto md:block md:border-t-0 ${isOpen ? "block" : "hidden"}`}
       >
-        <ul className="flex flex-col gap-1 px-2 py-2 md:px-3">
+        <ul className="flex flex-col gap-1 px-2 py-2 md:flex-row md:items-center md:gap-8 md:p-0">
           {LINKS.map(({ label, href }) => (
-            <li key={href}>
+            <li key={href} className="md:flex md:items-center md:gap-4">
               <Link
                 href={href}
                 aria-current={pathname === href ? "page" : undefined}
@@ -100,7 +100,10 @@ export function SideNav() {
                 {label}
               </Link>
               {href === Routes.page("docs") && inDocs && (
-                <ul aria-label={COPY.navDocsSections} className="mt-1 ml-4 flex flex-col gap-1">
+                <ul
+                  aria-label={COPY.navDocsSections}
+                  className="border-etch-2 mt-1 ml-4 flex flex-col gap-1 md:mt-0 md:ml-0 md:flex-row md:gap-4 md:border-l md:pl-4"
+                >
                   {DOC_SECTIONS.map((section) => (
                     <li key={section.href}>
                       <Link

@@ -83,6 +83,7 @@ export const COPY = {
   backHome: "Back to the parser",
   menu: "Menu",
   navLabel: "Main",
+  onThisPage: "On this page",
   navParser: "Parser",
   navRequirements: "Requirements",
   navDocs: "Docs",
