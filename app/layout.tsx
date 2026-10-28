@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Atkinson_Hyperlegible_Next, Atkinson_Hyperlegible_Mono } from "next/font/google";
+import { Atkinson_Hyperlegible_Next, Barlow_Condensed, Sometype_Mono } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { SideNav } from "@/components/SideNav";
 import { COPY } from "@/lib/messages";
@@ -12,8 +12,14 @@ const atkinson = Atkinson_Hyperlegible_Next({
   adjustFontFallback: false,
 });
 
-const atkinsonMono = Atkinson_Hyperlegible_Mono({
-  variable: "--font-atkinson-mono",
+const barlow = Barlow_Condensed({
+  variable: "--font-barlow",
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+});
+
+const sometype = Sometype_Mono({
+  variable: "--font-sometype",
   subsets: ["latin"],
   adjustFontFallback: false,
 });
@@ -25,8 +31,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${atkinson.variable} ${atkinsonMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col md:flex-row">
+    <html
+      lang="en"
+      className={`${atkinson.variable} ${barlow.variable} ${sometype.variable} dark h-full antialiased`}
+    >
+      <body className="flex min-h-full flex-col">
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-10 focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:text-zinc-900"
