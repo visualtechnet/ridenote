@@ -25,34 +25,27 @@ export default function TestsPage() {
   );
 
   return (
-    <div className="flex flex-1 justify-center bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex flex-1 justify-center font-sans">
       <main id="main" className="w-full max-w-3xl px-4 py-10 sm:px-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Tests
-        </h1>
-        <p className="mt-2 text-zinc-700 dark:text-zinc-300">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Tests</h1>
+        <p className="mt-2 text-zinc-300">
           {total} automated tests across {files.length} files. This list is read from the real test
           files when the site is built, so it always matches what runs. Only test names are shown.
         </p>
-        <p className="mt-2 text-zinc-700 dark:text-zinc-300">
+        <p className="mt-2 text-zinc-300">
           Run them with{" "}
-          <code className="rounded bg-zinc-200 px-1 py-0.5 font-mono text-sm dark:bg-zinc-800">
-            npm test
-          </code>
-          . Browser tests in{" "}
-          <code className="rounded bg-zinc-200 px-1 py-0.5 font-mono text-sm dark:bg-zinc-800">
-            e2e/
-          </code>{" "}
-          run with{" "}
-          <code className="rounded bg-zinc-200 px-1 py-0.5 font-mono text-sm dark:bg-zinc-800">
+          <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-sm">npm test</code>.
+          Browser tests in{" "}
+          <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-sm">e2e/</code> run with{" "}
+          <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-sm">
             npm run test:e2e
           </code>
           . The AI is always mocked, so tests are free and repeatable.
         </p>
-        <dl className="mt-4 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+        <dl className="mt-4 space-y-1 text-sm text-zinc-300">
           {kinds.map((k) => (
             <div key={k}>
-              <dt className="inline font-medium text-zinc-900 dark:text-zinc-50">{k}: </dt>
+              <dt className="inline font-medium text-zinc-50">{k}: </dt>
               <dd className="inline">{KIND_HELP[k]}</dd>
             </div>
           ))}
@@ -60,22 +53,17 @@ export default function TestsPage() {
 
         <div className="mt-8 space-y-3">
           {files.map((f) => (
-            <details
-              key={f.file}
-              className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-            >
-              <summary className="cursor-pointer font-mono text-sm break-words text-zinc-900 dark:text-zinc-50">
+            <details key={f.file} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+              <summary className="cursor-pointer font-mono text-sm break-words text-zinc-50">
                 {f.file}{" "}
-                <span className="font-sans text-zinc-600 dark:text-zinc-400">
+                <span className="font-sans text-zinc-400">
                   ({f.kind}, {f.groups.reduce((n, g) => n + g.tests.length, 0)} tests)
                 </span>
               </summary>
               {f.groups.map((g) => (
                 <section key={g.name} className="mt-3" aria-label={g.name}>
-                  <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                    {g.name}
-                  </h2>
-                  <ul className="mt-1 list-disc space-y-1 pl-6 text-sm text-zinc-700 dark:text-zinc-300">
+                  <h2 className="text-sm font-semibold text-zinc-50">{g.name}</h2>
+                  <ul className="mt-1 list-disc space-y-1 pl-6 text-sm text-zinc-300">
                     {g.tests.map((t, i) => (
                       <li key={`${i}-${t}`}>{t}</li>
                     ))}

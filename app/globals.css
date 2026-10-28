@@ -10,6 +10,10 @@
   --panel-2: #172030;
   --etch: #232c38;
   --etch-2: #334152;
+  /* Edges that identify a control or an empty slot. 3.8:1 on the panel, 4.1:1 on the glass; the
+     etch tones above are decoration only (under 2:1). */
+  --edge: #63758b;
+  --well: #070b10;
   --ink: #d5dee9;
   --ink-dim: #93a1b3;
   --accent: #59b8ff;
@@ -25,6 +29,8 @@
   --color-panel-2: var(--panel-2);
   --color-etch: var(--etch);
   --color-etch-2: var(--etch-2);
+  --color-edge: var(--edge);
+  --color-well: var(--well);
   --color-ink: var(--ink);
   --color-ink-dim: var(--ink-dim);
   --color-accent: var(--accent);
@@ -143,7 +149,7 @@ time,
 }
 .key:hover:not(:disabled) {
   border-color: var(--ink-dim);
-  color: #fff;
+  color: var(--color-zinc-50);
 }
 .key:active:not(:disabled) {
   transform: translateY(1px);

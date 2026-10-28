@@ -36,14 +36,14 @@ export default function Home() {
           <h1 className="caps text-accent text-6xl leading-[0.9] font-extrabold tracking-[0.04em] sm:text-7xl">
             {COPY.appName}
           </h1>
-          <p className="text-zinc-700 dark:text-zinc-300">{COPY.intro}</p>
+          <p className="text-zinc-300">{COPY.intro}</p>
           <section aria-labelledby="how-it-works" className="mt-2">
             <h2 id="how-it-works" className="caps text-sm text-zinc-50">
               {COPY.howItWorksLabel}
             </h2>
             <ol
               aria-labelledby="how-it-works"
-              className="mt-1 list-decimal space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-300"
+              className="mt-1 list-decimal space-y-1 pl-5 text-sm text-zinc-300"
             >
               {COPY.howItWorksSteps.map((step) => (
                 <li key={step}>{step}</li>
@@ -77,7 +77,7 @@ export default function Home() {
             onClear={() => parse.reset()}
           />
         </div>
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">{COPY.historyNotice}</p>
+        <p className="text-sm text-zinc-300">{COPY.historyNotice}</p>
         <div id="result">
           <ResultPanel
             pending={parse.isPending}

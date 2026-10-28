@@ -8,35 +8,28 @@ export const metadata: Metadata = {
   description: "How the live accuracy eval works, and every case it checks.",
 };
 
-const th = "border-b border-zinc-300 px-3 py-2 text-left font-medium dark:border-zinc-700";
-const td = "border-b border-zinc-200 px-3 py-2 align-top dark:border-zinc-800";
+const th = "border-b px-3 py-2 text-left font-medium border-zinc-700";
+const td = "border-b px-3 py-2 align-top border-zinc-800";
 
 export default function EvalPage() {
   const critical = CASES.filter((c) => c.critical).length;
   return (
-    <div className="flex flex-1 justify-center bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex flex-1 justify-center font-sans">
       <main id="main" className="w-full max-w-3xl px-4 py-10 sm:px-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Eval
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Eval</h1>
         <Markdown source={readDoc("EVAL")} />
 
-        <h2
-          id="cases"
-          className="mt-10 scroll-mt-4 text-xl font-semibold text-zinc-900 dark:text-zinc-50"
-        >
+        <h2 id="cases" className="mt-10 scroll-mt-4 text-xl font-semibold text-zinc-50">
           Every case
         </h2>
-        <p className="mt-3 text-zinc-700 dark:text-zinc-300">
+        <p className="mt-3 text-zinc-300">
           {CASES.length} notes, {critical} of them critical. A run needs every critical case and{" "}
           {Math.round(PASS_RATE_FLOOR * 100)}% of all cases to pass. This list is read from{" "}
-          <code className="rounded bg-zinc-200 px-1 py-0.5 font-mono text-sm dark:bg-zinc-800">
-            evals/cases.ts
-          </code>
-          , so it always matches what runs.
+          <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-sm">evals/cases.ts</code>,
+          so it always matches what runs.
         </p>
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-sm text-zinc-800 dark:text-zinc-200">
+          <table className="w-full text-left text-sm text-zinc-200">
             <caption className="sr-only">Eval cases</caption>
             <thead>
               <tr>

@@ -127,3 +127,47 @@ describe("parseMarkdown", () => {
     }
   });
 });
+
+describe("parseMarkdown tables", () => {
+  const table = "| Word | Means |\n| --- | --- |\n| **A** | one `x` |\n| B | two |";
+
+  it("reads a header and its rows, with inline formatting in the cells", () => {
+    const [block] = parseMarkdown(table);
+    expect(block).toMatchObject({ type: "table" });
+    if (block.type !== "table") throw new Error("not a table");
+    expect(block.header.map(plainText)).toEqual(["Word", "Means"]);
+    expect(block.rows.map((row) => row.map(plainText))).toEqual([
+      ["A", "one x"],
+      ["B", "two"],
+    ]);
+    expect(block.rows[0][0][0]).toMatchObject({ type: "strong" });
+  });
+
+  it("keeps a pipe inside code or escaped as \\| within its cell", () => {
+    const [block] = parseMarkdown("| a | b |\n|---|---|\n| `x | y` | p \\| q |");
+    if (block.type !== "table") throw new Error("not a table");
+    expect(block.rows[0].map(plainText)).toEqual(["x | y", "p | q"]);
+  });
+
+  it("pads short rows and cuts long ones to the header width", () => {
+    const [block] = parseMarkdown("| a | b |\n| - | - |\n| 1 |\n| 1 | 2 | 3 |");
+    if (block.type !== "table") throw new Error("not a table");
+    expect(block.rows.map((row) => row.map(plainText))).toEqual([
+      ["1", ""],
+      ["1", "2"],
+    ]);
+  });
+
+  it("accepts alignment colons in the divider", () => {
+    expect(parseMarkdown("| a | b |\n| :-- | --: |\n| 1 | 2 |")[0].type).toBe("table");
+  });
+
+  it("ends a paragraph where a table starts, and the table where a blank line comes", () => {
+    const blocks = parseMarkdown(`intro line\n${table}\n\nafter`);
+    expect(blocks.map((b) => b.type)).toEqual(["paragraph", "table", "paragraph"]);
+  });
+
+  it("leaves pipes without a divider row as plain text", () => {
+    expect(parseMarkdown("| not | a table |")[0].type).toBe("paragraph");
+  });
+});
