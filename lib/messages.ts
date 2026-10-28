@@ -79,6 +79,10 @@ export const COPY = {
   missingListLabel: "Missing fields",
   staleResult: "The note has changed since this was parsed. Parse again to update it.",
   usageLabel: "Usage",
+  ratingEfficient: "Efficient",
+  ratingProblematic: "Problematic",
+  ratingSummary: (rated: number, tokens: number, latencyMs: number) =>
+    `Rated against the median of ${rated} calls (${Math.round(tokens)} tokens, ${Math.round(latencyMs)} ms). Ratings are relative: a long note uses more tokens.`,
   usageValue: (u: Usage) => `${u.inputTokens} in · ${u.outputTokens} out · ${u.latencyMs} ms`,
   verifyReminder: "AI-extracted from the note. Verify before dispatching.",
   skipToContent: "Skip to main content",

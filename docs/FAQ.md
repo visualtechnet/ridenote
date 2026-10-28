@@ -52,7 +52,7 @@ The Docs page explains 400, 404, 405, 413, 415, 422, 429, 500, 502 and 503.
 ### Does the app store my notes?
 
 The note itself, never. Notes go to the AI service to be parsed. On the live site the _parsed trip_
-(name, pickup and dropoff, time, mobility aids) is saved for 7 days and shown on the public History
+(name, pickup and dropoff, time, mobility aids, plus token counts and latency) is saved for 7 days and shown on the public History
 page, with phone numbers and email addresses replaced by `[removed]`. A real name or address typed into
 a note can still be saved, because a pattern cannot tell it from ordinary text, so use made-up ones.
 Server logs record an error _type_, plus token counts, stop reason and latency per model call, never the note. Nothing is saved in development or preview.

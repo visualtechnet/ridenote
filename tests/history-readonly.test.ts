@@ -75,3 +75,24 @@ describe("db/schema.sql", () => {
     expect(header).toMatch(/only (to|for) set(ting)? (their|the) passwords/i);
   });
 });
+
+describe("usage columns", () => {
+  const read = (f: string) => fs.readFileSync(path.join(root, f), "utf8").replace(/--.*$/gm, "");
+  const migration = read("db/migrations/2026-10-28-history-usage.sql");
+
+  it("the migration adds three nullable integer columns and touches no data or grants", () => {
+    for (const col of ["input_tokens", "output_tokens", "latency_ms"]) {
+      expect(migration).toMatch(
+        new RegExp(`ADD COLUMN IF NOT EXISTS ${col} integer(?!\\s+NOT NULL)`, "i"),
+      );
+    }
+    expect(migration).not.toMatch(/\b(DROP|UPDATE|DELETE|GRANT|TRUNCATE)\b/i);
+  });
+
+  it("schema.sql creates the same columns for a fresh database", () => {
+    const schema = read("db/schema.sql");
+    for (const col of ["input_tokens", "output_tokens", "latency_ms"]) {
+      expect(schema).toMatch(new RegExp(`${col}\\s+integer`, "i"));
+    }
+  });
+});
