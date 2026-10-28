@@ -31,6 +31,7 @@ Built with Next.js 16, the Claude API (Anthropic), Zod, React Query and Zustand.
 - [Using it](#using-it)
 - [The API](#the-api)
 - [Limits](#limits)
+- [History](#history)
 - [Project layout](#project-layout)
 - [Security](#security)
 - [Testing](#testing)
@@ -196,7 +197,7 @@ one.
 - **Host it.** Deploy the app (for example on Vercel) and store the key as a **server-only**
   environment variable, using a key made for the demo with a low spend limit (this project uses $5 a
   month). Visitors open a URL and click Parse. They never see the key. The app's per-client limit
-  (10 requests a minute), shared budget, 1,000 character note limit and 600 token answer cap keep
+  (3 requests a minute on the live site, 10 elsewhere), shared budget, 1,000 character note limit and 600 token answer cap keep
   what anyone can do through it small.
 - **Don't hand out keys.** A key can be used directly against the API, up to its cap, not only through
   this app. Anyone who wants to go beyond the demo creates their own key in their own account and runs
@@ -232,10 +233,13 @@ If a deploy complains that `maxDuration` is above your plan's limit, lower the `
 Secrets live in environment variables, never in code. `.env.local` is git-ignored; `.env.example` is
 the committed template.
 
-| Variable            | Required | What it does                                                                                                                                   |
-| ------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY` | yes      | Your key. Read only on the server, never sent to the browser.                                                                                  |
-| `MODEL`             | no       | Claude model to use. Defaults to `UPSTREAM.defaultModel`. If another model rejects the request, see the `thinking` setting in `lib/config.ts`. |
+| Variable                     | Required        | What it does                                                                                                                                   |
+| ---------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`          | yes             | Your key. Read only on the server, never sent to the browser.                                                                                  |
+| `MODEL`                      | no              | Claude model to use. Defaults to `UPSTREAM.defaultModel`. If another model rejects the request, see the `thinking` setting in `lib/config.ts`. |
+| `HISTORY_DATABASE_URL`       | production only | Connection string for the `history_app` role (insert and read). Turns History on. Leave it unset everywhere else. See [History](#history).     |
+| `HISTORY_PURGE_DATABASE_URL` | production only | Connection string for the `history_purge` role (read and delete), used only by the daily clean-up.                                             |
+| `CRON_SECRET`                | production only | A long random string. Vercel sends it to the clean-up route, which refuses any caller without it.                                              |
 
 Every other tunable number (limits, timeouts, status codes) lives in **`lib/config.ts`**, and every
 piece of user-facing text in **`lib/messages.ts`**. Change them there, not in the code that uses them.
@@ -301,13 +305,130 @@ explains each status and each validation code.
 
 All in `lib/config.ts`. The reasoning behind each number is in [docs/SCALING.md](docs/SCALING.md).
 
-| Limit                 | Value                           |
-| --------------------- | ------------------------------- |
-| Note length           | 5 to 1,000 characters (trimmed) |
-| Request body          | 8 KB                            |
-| Per client            | 10 requests per minute          |
-| All clients together  | 300 AI calls per minute         |
-| Simultaneous AI calls | 10 per server                   |
+| Limit                 | Value                                                                                              |
+| --------------------- | -------------------------------------------------------------------------------------------------- |
+| Note length           | 5 to 1,000 characters (trimmed)                                                                    |
+| Request body          | 8 KB                                                                                               |
+| Per client            | 3 requests a minute on the live site (production), 10 requests a minute in development and preview |
+| All clients together  | 300 AI calls per minute                                                                            |
+| Simultaneous AI calls | 10 per server                                                                                      |
+
+## History
+
+The **History** page lists the trips people have parsed on the live site. It is public and read only,
+and it exists only on the production deployment: in development and preview it says so, and nothing is
+saved.
+
+**What is saved.** After a successful parse the app saves the parsed trip's name, pickup and dropoff
+location, pickup time and mobility aids. It never saves the note you typed, the `notes` sentence or the
+missing list. A trip with nothing in it (no name, no address, no aid) is not saved.
+
+**Who can see it, and for how long.** Anyone can open `/history`. Entries are deleted after 7 days by a daily
+clean-up (`vercel.json` cron calling `/api/history/purge`, which refuses any caller without `CRON_SECRET`).
+The parser page tells visitors this next to the Parse button and asks for made-up names.
+
+**The scrubber and its honest limit.** Before saving, phone numbers, email addresses and similar contact
+patterns are replaced with `[removed]`. A pattern cannot judge meaning: a real name or home address typed
+into the note is still saved if it looks like ordinary text. The visitor notice and the 7-day deletion are
+the safeguards.
+
+**Moderation.** The app cannot edit or delete a row. If someone saves something rude or someone else's real
+details, remove it by hand: in the Neon console open the SQL editor as the owner and run
+`delete from history where id = 123;` (find the id with a `select`).
+
+**Flood protection, in layers.** Writes happen only after a successful parse, so every layer that protects
+the paid call also bounds the database.
+
+1. Vercel's automatic DDoS mitigation (every plan, unbilled).
+2. An edge rate-limit rule on `POST /api/parse` (set in the dashboard, below). It refuses the fourth request
+   a minute from one address before any code runs.
+3. The in-app limiter: **3 requests a minute** per client in production and **10 requests a minute** in
+   development and preview, counting every request, valid or not. It counts per server instance, so it is
+   a backstop behind the edge rule.
+4. The size cap, validation, the shared budget and the concurrency cap, then the spend limit on the API key.
+5. A daily save cap (`HISTORY.dailySaveCap`, 2,000 rows) inside the insert: past it, parsing carries on and
+   saving stops. The 7-day clean-up bounds the table's size.
+6. The History page is cached for a minute, so page views do not each hit the database.
+
+Limits: many people can share one address (an office or a school), so colleagues trying the demo at the same
+moment can be refused for a minute. A large botnet where every address stays under the limit is not stopped
+by a per-address rule; layers 1, 4 and 5 bound the damage.
+
+### Setting up History on Vercel
+
+Do these once, in order, before enabling the variables.
+
+1. In the Vercel project open **Storage**, add the **Neon** Marketplace integration and create a database.
+2. Open the Neon console SQL editor and run the whole of `db/schema.sql` as the owner. It creates the table
+   and the two roles (`history_app`, `history_purge`) and checks that neither holds more than its grants.
+3. In the Neon console open **Roles**, set a password for each role, and build two connection strings from
+   them (pooled host for `history_app`). Never put a password in the repository or in chat.
+4. **Try it before enabling:** in the SQL editor run one `insert` and one `select` against `history` to
+   confirm the table works (the SQL has not been run against a real database by the automated tests), then
+   delete your test row as the owner.
+5. In **Settings, Environment Variables** add `HISTORY_DATABASE_URL`, `HISTORY_PURGE_DATABASE_URL` and
+   `CRON_SECRET` (a long random string) for **Production** only, all marked **Sensitive**. Redeploy.
+6. In **Settings, Cron Jobs** confirm the `/api/history/purge` job is listed. Vercel's documentation does not
+   say which time zone the schedule uses or whether previews run it, so check the page and note what it shows.
+7. Create the edge rule. In the project open **Firewall**, then **New Rule**. Match **Request Path** equals
+   `/api/parse` and **Method** equals `POST`. Choose rate limiting with the key **IP address**, a
+   **fixed window** of **60 seconds** and a limit of **3** requests. Set the action to **Log** first. Click
+   **Review Changes**, then **Publish**. (Field names can change; follow the dashboard.)
+8. After a few days of real traffic in the Firewall overview, edit the rule and change the action to **Deny**
+   (or the default 429), then publish again.
+
+**Check after each deploy:** from one machine send five quick parses (the example note, Parse, five times
+within a minute). The fourth should be refused with "You're going a bit fast", and `/history` should list
+three entries.
+
+### Querying History from a Mac
+
+Only the live site saves anything, so there is nothing to query locally. Rows older than 7 days are gone.
+
+1. Install the client: `brew install libpq`, then add `$(brew --prefix libpq)/bin` to your `PATH`. (Or paste
+   queries into the Neon console SQL editor and skip this.)
+2. Copy `HISTORY_DATABASE_URL` from the Vercel project's environment variables (or the Neon console). It is
+   the insert-and-read role, so a slip at the terminal cannot change or delete data. It is a secret: do not
+   commit it or paste it into chat.
+3. Connect with `psql "$HISTORY_DATABASE_URL"` (export it in that Terminal window first).
+
+Example queries:
+
+The latest 20 entries:
+
+```sql
+select created_at, passenger_name, pickup_location, dropoff_location, pickup_time, mobility
+from history order by created_at desc limit 20;
+```
+
+Everything from one pickup location:
+
+```sql
+select created_at, passenger_name, pickup_location, dropoff_location, pickup_time, mobility
+from history where pickup_location ilike '%airport%' order by created_at desc;
+```
+
+Trips that need a wheelchair:
+
+```sql
+select created_at, passenger_name, pickup_location, mobility
+from history where 'wheelchair' = any(mobility) order by created_at desc;
+```
+
+How many trips per pickup location:
+
+```sql
+select pickup_location, count(*) as trips
+from history group by pickup_location order by trips desc;
+```
+
+Entries in a date range:
+
+```sql
+select created_at, passenger_name, pickup_location
+from history where created_at between now() - interval '3 days' and now() - interval '1 day'
+order by created_at desc;
+```
 
 ## Project layout
 
@@ -345,6 +466,8 @@ visitor can only do a small, bounded thing: send one short note and get one stru
   and the live eval includes notes that try to give it instructions.
 - **The browser** gets a Content-Security-Policy, HSTS in production, no framing, a strict referrer
   policy, and camera, microphone, location, payment and USB turned off. Text is always escaped.
+- **History** saves only the parsed trip (never the note), with contact details removed, for 7 days. The
+  app role can insert and read but not delete; a separate role does the daily clean-up.
 - **Cost** is capped by per-client and shared limits, a short answer cap and, most importantly, a small
   fixed spend limit on the demo's API key.
 - **Dependencies** are installed from a lockfile with scripts disabled, audited in CI, and kept current
@@ -398,14 +521,17 @@ is not in git.
 
 ## Documentation map
 
-| Read this                                        | When you want to                                                              |
-| ------------------------------------------------ | ----------------------------------------------------------------------------- |
-| [docs/GUIDE.md](docs/GUIDE.md)                   | Understand the whole project from scratch                                     |
-| [docs/EVAL.md](docs/EVAL.md)                     | Learn how the live accuracy eval works and how it ties into prompt and schema |
-| [docs/FAQ.md](docs/FAQ.md)                       | See common questions and **the bugs we hit and what they taught us**          |
-| [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md) | Learn the habits this code is built on                                        |
-| [SECURITY.md](SECURITY.md)                       | Report a problem, and see what is protected and the known limits              |
-| [docs/SCALING.md](docs/SCALING.md)               | Understand cost, limits and abuse protection, and what to add for production  |
+| Read this                                                                 | When you want to                                                                                                           |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| [docs/GUIDE.md](docs/GUIDE.md)                                            | Understand the whole project from scratch                                                                                  |
+| [docs/EVAL.md](docs/EVAL.md)                                              | Learn how the live accuracy eval works and how it ties into prompt and schema                                              |
+| [docs/FAQ.md](docs/FAQ.md)                                                | See common questions and **the bugs we hit and what they taught us**                                                       |
+| [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md)                          | Learn the habits this code is built on                                                                                     |
+| [docs/SUBAGENTS.md](docs/SUBAGENTS.md)                                    | Learn, step by step, how a feature was planned and built with a team of AI subagents (also on the site under Docs, Agents) |
+| [The History design](docs/superpowers/specs/2026-10-27-history-design.md) | Read the approved design of the History feature, with the options weighed                                                  |
+| [The History plan](docs/superpowers/plans/2026-10-27-history.md)          | Read the task-by-task plan that was executed to build it                                                                   |
+| [SECURITY.md](SECURITY.md)                                                | Report a problem, and see what is protected and the known limits                                                           |
+| [docs/SCALING.md](docs/SCALING.md)                                        | Understand cost, limits and abuse protection, and what to add for production                                               |
 
 This repository uses Next.js 16, which differs from older versions. See `AGENTS.md`: read the guides in
 `node_modules/next/dist/docs/` before changing framework-level code.
@@ -416,7 +542,7 @@ This repository uses Next.js 16, which differs from older versions. See `AGENTS.
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | "This demo has used up its AI budget"         | The demo's fixed monthly limit is spent. It stays off until the limit renews. Run RideNote yourself with your own key (Quick start). |
 | "We couldn't parse that note" every time      | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`.                                                |
-| 429 while testing by hand                     | You passed 10 requests in a minute. Wait for `Retry-After` seconds.                                                                  |
+| 429 while testing by hand                     | You passed the per-client limit (3 a minute on the live site, 10 a minute locally). Wait for `Retry-After` seconds.                  |
 | Everyone shares one rate limit locally        | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.                                                          |
 | `npm run test:e2e` cannot launch a browser    | Run `npx playwright install chromium` once.                                                                                          |
 | `npm run dev:key` says it only works on a Mac | It uses the macOS Keychain. Use `.env.local` and `npm run dev` instead.                                                              |

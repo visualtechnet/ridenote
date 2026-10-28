@@ -8,7 +8,15 @@ const config = {
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   moduleNameMapper: { "^@/(.*)$": "<rootDir>/$1" },
-  testPathIgnorePatterns: ["/node_modules/", "/.next/", "/e2e/", "/.claude/", "/.agents/"],
+  // The skills folders hold copies of other tools' files, not this project's tests. They are anchored
+  // to the project root (<rootDir>) so a git worktree, which lives under .claude/worktrees/, still runs.
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/.next/",
+    "/e2e/",
+    "<rootDir>/.claude/",
+    "<rootDir>/.agents/",
+  ],
   collectCoverageFrom: [
     "app/**/*.{ts,tsx}",
     "components/**/*.{ts,tsx}",

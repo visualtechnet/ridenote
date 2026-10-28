@@ -4,6 +4,7 @@ import { axe } from "jest-axe";
 import Home from "@/app/page";
 import ErrorPage from "@/app/error";
 import NotFound from "@/app/not-found";
+import { HistoryList } from "@/components/HistoryList";
 import { render } from "@testing-library/react";
 import { renderWithProviders, reply } from "./test-utils";
 
@@ -68,6 +69,25 @@ describe("accessibility (axe)", () => {
 
   it("not-found page", async () => {
     const { container } = render(<NotFound />);
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("history list", async () => {
+    const { container } = render(
+      <HistoryList
+        rows={[
+          {
+            id: 1,
+            passenger_name: "Mrs. Lee",
+            pickup_location: "12 Oak St",
+            dropoff_location: null,
+            pickup_time: "09:30",
+            mobility: ["wheelchair"],
+            created_at: new Date("2026-10-27T14:05:00Z"),
+          },
+        ]}
+      />,
+    );
     expect(await axe(container)).toHaveNoViolations();
   });
 });

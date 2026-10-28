@@ -17,6 +17,8 @@ export const MESSAGES = {
   outOfCredit:
     "This demo has used up its AI budget. Please try again later, or run RideNote yourself with your own API key (see Docs, Setup).",
   tooManyRequests: "You're going a bit fast. Please wait a moment and try again.",
+  unauthorized: "Unauthorized.",
+  purgeFailed: "The clean-up could not be completed.",
   parseFailed: "We couldn't parse that note. Please try again.",
   modelDeclined: "The assistant couldn't process that note. Please rephrase it and try again.",
   tooManyRequestsIn: (seconds: number) =>
@@ -32,6 +34,8 @@ export const COPY = {
   appName: "RideNote",
   tagline: "Dispatcher notes, turned into trips.",
   appDescription: "Turn a dispatcher note into a structured trip record.",
+  historyNotice:
+    "Results are saved and shown publicly on the History page for 7 days on the live site. Please use made-up names and addresses.",
   intro:
     "RideNote turns a dispatcher's free-text message into a structured ride record: who is travelling, where from and to, when, and what mobility help they need. Paste the note, press Parse, and get a clean card instead of retyping it.",
   howItWorksLabel: "How it works",
@@ -83,11 +87,23 @@ export const COPY = {
   navRequirements: "Requirements",
   navDocs: "Docs",
   navTests: "Tests",
+  navHistory: "History",
   navContact: "Contact",
   navDocsSections: "Documentation sections",
   navDocsSetup: "Setup",
   navDocsEval: "Eval",
   navDocsFaq: "FAQ",
+  navDocsAgents: "Agents",
+  historyTitle: "History",
+  historyDescription: "The most recent notes parsed on this site.",
+  historyPrivacy:
+    "Entries are public, kept for 7 days, and have phone numbers, emails and other contact details removed. The note itself is never saved.",
+  historyLoading: "Loading history…",
+  historyDisabled: "History is turned off in this environment. It is saved only on the live site.",
+  historyError: "History could not be loaded right now. Try again in a minute.",
+  historyEmpty: "Nothing has been parsed in the last 7 days.",
+  historyListLabel: "Recent parsed trips",
+  historySaved: "Saved",
   tryInParser: "Try in the parser",
   errorTitle: "Something went wrong",
   notFoundTitle: "Page not found",

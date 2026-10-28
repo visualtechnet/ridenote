@@ -9,7 +9,7 @@ const submenu = (page: import("@playwright/test").Page) =>
   page.getByRole("list", { name: "Documentation sections" });
 
 test.describe("documentation sections", () => {
-  test("the submenu is absent elsewhere and appears under Docs, with Setup, Eval and FAQ", async ({
+  test("the submenu is absent elsewhere and appears under Docs, with Setup, Eval, FAQ and Agents", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -18,7 +18,7 @@ test.describe("documentation sections", () => {
 
     await mainNav(page).getByRole("link", { name: "Docs", exact: true }).click();
     await expect(page).toHaveURL(Routes.page("docs"));
-    await expect(submenu(page).getByRole("link")).toHaveText(["Setup", "Eval", "FAQ"]);
+    await expect(submenu(page).getByRole("link")).toHaveText(["Setup", "Eval", "FAQ", "Agents"]);
   });
 
   test("each section opens its page and is marked current", async ({ page }) => {
@@ -42,6 +42,39 @@ test.describe("documentation sections", () => {
     await submenu(page).getByRole("link", { name: "Setup" }).click();
     await expect(page).toHaveURL(Routes.page("docs"));
     await expect(page.getByRole("heading", { level: 1, name: "Documentation" })).toBeVisible();
+  });
+
+  test("the Agents section opens its guide, design and plan, each marked current", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(Routes.page("docs"));
+    await submenu(page).getByRole("link", { name: "Agents" }).click();
+    await expect(page).toHaveURL(Routes.page("docsAgents"));
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Building with subagents" }),
+    ).toBeVisible();
+
+    await page
+      .locator("main")
+      .getByRole("link", { name: /the design/i })
+      .click();
+    await expect(page).toHaveURL(Routes.page("docsAgentsDesign"));
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "History of parsed results",
+    );
+    await expect(submenu(page).getByRole("link", { name: "Agents" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    await page.goto(Routes.page("docsAgents"));
+    await page
+      .locator("main")
+      .getByRole("link", { name: /implementation plan/i })
+      .click();
+    await expect(page).toHaveURL(Routes.page("docsAgentsPlan"));
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Implementation plan");
   });
 
   test("the Setup page points to the other two sections", async ({ page }) => {
@@ -79,7 +112,7 @@ test.describe("documentation sections", () => {
     await page.goto(Routes.page("docsEval"));
     await expect(submenu(page)).toBeHidden();
     await page.getByRole("button", { name: "Menu" }).click();
-    await expect(submenu(page).getByRole("link")).toHaveText(["Setup", "Eval", "FAQ"]);
+    await expect(submenu(page).getByRole("link")).toHaveText(["Setup", "Eval", "FAQ", "Agents"]);
     await submenu(page).getByRole("link", { name: "FAQ" }).click();
     await expect(page).toHaveURL(Routes.page("docsFaq"));
     await expect(mainNav(page)).toBeHidden();

@@ -1,5 +1,20 @@
 /** @jest-environment node */
-import { createRateLimiter } from "./rate-limit";
+import { RATE_LIMIT } from "./config";
+import { createRateLimiter, maxRequestsFor } from "./rate-limit";
+
+describe("maxRequestsFor", () => {
+  it("is 3 in production", () => {
+    expect(maxRequestsFor({ VERCEL_ENV: "production" })).toBe(RATE_LIMIT.maxRequestsProduction);
+    expect(RATE_LIMIT.maxRequestsProduction).toBe(3);
+  });
+
+  it("keeps the looser limit of 10 for preview, development and unset", () => {
+    expect(maxRequestsFor({ VERCEL_ENV: "preview" })).toBe(10);
+    expect(maxRequestsFor({ VERCEL_ENV: "development" })).toBe(10);
+    expect(maxRequestsFor({})).toBe(10);
+    expect(maxRequestsFor()).toBe(10);
+  });
+});
 
 describe("createRateLimiter", () => {
   it("never tracks more than maxKeys, evicting the oldest even when all are live", () => {

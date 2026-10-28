@@ -47,7 +47,7 @@ const errors = [
   [
     HTTP.tooManyRequests,
     "Too many requests",
-    `More than ${RATE_LIMIT.maxRequests} parses in ${RATE_LIMIT.windowMs / 1000} seconds from one client. Wait for the Retry-After seconds.`,
+    `More than ${RATE_LIMIT.maxRequestsProduction} parses in ${RATE_LIMIT.windowMs / 1000} seconds from one client. Wait for the Retry-After seconds.`,
     MESSAGES.tooManyRequests,
   ],
   [
@@ -301,9 +301,9 @@ export default function DocsPage() {
               <strong>Best: host it.</strong> Deploy the app (for example on Vercel) with the key
               stored as a <em>server-only</em> environment variable, using a key made for the demo
               with a low spend limit ($2 to $5 is plenty). Visitors open a link and click Parse and
-              never see the key. The per-client limit ({RATE_LIMIT.maxRequests} requests a minute),
-              the shared budget, the {LIMITS.noteMax.toLocaleString("en-US")} character note limit
-              and the answer-size cap keep what anyone can do through it small.
+              never see the key. The per-client limit ({RATE_LIMIT.maxRequestsProduction} requests a
+              minute), the shared budget, the {LIMITS.noteMax.toLocaleString("en-US")} character
+              note limit and the answer-size cap keep what anyone can do through it small.
             </li>
             <li>
               <strong>Don&rsquo;t hand out keys.</strong> A key can be used directly against the
@@ -679,8 +679,10 @@ export default function DocsPage() {
               browser or these docs.
             </li>
             <li>
-              Notes may contain personal details. They are sent to the AI service to be parsed and
-              are not stored by this app; server logs record only an error type.
+              Notes may contain personal details. They are sent to the AI service to be parsed. The
+              note itself is never saved, but the parsed trip is shown publicly on the History page
+              for 7 days on the live site, with phone numbers and emails removed. Server logs record
+              only an error type.
             </li>
             <li>Use fictional names and addresses in examples, tests and bug reports.</li>
             <li>
