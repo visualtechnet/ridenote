@@ -23,7 +23,7 @@ export function stubActive(
 export function createStubClient(): Pick<Anthropic, "messages"> {
   return {
     messages: {
-      async parse(params: { messages: { content: unknown }[] }) {
+      async create(params: { messages: { content: unknown }[] }) {
         const content = String(params.messages[0]?.content ?? "");
         const start = content.indexOf(PREFIX);
         if (start === -1) throw new Error("stub: note has no E2E: prefix");
@@ -31,7 +31,7 @@ export function createStubClient(): Pick<Anthropic, "messages"> {
         const json = content.slice(start + PREFIX.length, end === -1 ? undefined : end);
         return {
           stop_reason: "end_turn",
-          parsed_output: JSON.parse(json),
+          content: [{ type: "text", text: JSON.stringify(JSON.parse(json)) }],
           usage: { input_tokens: 0, output_tokens: 0 },
         };
       },

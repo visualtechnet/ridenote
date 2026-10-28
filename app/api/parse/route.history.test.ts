@@ -4,7 +4,7 @@ const mockParse = jest.fn();
 jest.mock("@anthropic-ai/sdk", () => ({
   __esModule: true,
   default: class {
-    messages = { parse: mockParse };
+    messages = { create: mockParse };
   },
 }));
 
@@ -20,6 +20,7 @@ jest.mock("next/server", () => ({ after: (cb: () => unknown) => mockAfter(cb) })
 import { BUDGET, HTTP, RATE_LIMIT } from "@/lib/config";
 import { MESSAGES } from "@/lib/messages";
 import { POST } from "./route";
+import { jsonContent } from "@/tests/model-reply";
 
 const goodTrip = {
   passenger_name: "Mrs. Lee",
@@ -40,7 +41,7 @@ function request(body: unknown, ip = `10.1.0.${++ipCounter}`) {
   });
 }
 
-const goodResult = { stop_reason: "end_turn", parsed_output: goodTrip, usage: {} };
+const goodResult = { stop_reason: "end_turn", content: jsonContent(goodTrip), usage: {} };
 
 beforeEach(() => {
   mockParse.mockReset();

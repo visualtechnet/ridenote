@@ -20,6 +20,21 @@ export type Extraction = (
   { ok: true; trip: Trip } | { ok: false; status: number; error: string }
 ) & { meta: CallMeta };
 
+/** The first text block of a reply, or "" when it has none (it may open with thinking blocks). */
+function firstText(content: Anthropic.ContentBlock[]): string {
+  const block = content.find((b): b is Anthropic.TextBlock => b.type === "text");
+  return block?.text ?? "";
+}
+
+/** Parsed JSON, or undefined when the text is not JSON (the schema check then rejects it). */
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * The one model call, shared by the API route and the eval suite so both test the same prompt,
  * schema and validation. Throws if the SDK itself fails (network, timeout, abort).
@@ -31,7 +46,9 @@ export async function extractTrip(
 ): Promise<Extraction> {
   const model = process.env[UPSTREAM.modelEnvVar] ?? UPSTREAM.defaultModel;
   const started = performance.now();
-  const res = await client.messages.parse(
+  // create(), not parse(): parse() throws on a cut-off or invalid answer before we can read the
+  // usage, and those are the calls that cost the most. We read and validate the JSON ourselves.
+  const res = await client.messages.create(
     {
       model,
       max_tokens: UPSTREAM.maxTokens,
@@ -63,7 +80,7 @@ export async function extractTrip(
 
   // Model output is untrusted: repair the two harmless slips, then re-validate strictly before it
   // reaches the client.
-  const raw = ModelTripSchema.safeParse(res.parsed_output);
+  const raw = ModelTripSchema.safeParse(parseJson(firstText(res.content)));
   if (!raw.success) {
     return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed, meta };
   }

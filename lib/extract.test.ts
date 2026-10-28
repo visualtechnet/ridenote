@@ -2,6 +2,7 @@
 
 import { HTTP, UPSTREAM } from "./config";
 import { extractTrip } from "./extract";
+import { jsonContent } from "@/tests/model-reply";
 
 const goodTrip = {
   passenger_name: "Mrs. Lee",
@@ -20,13 +21,13 @@ const USAGE = {
 };
 
 function clientReturning(res: Record<string, unknown>) {
-  return { messages: { parse: jest.fn().mockResolvedValue(res) } } as never;
+  return { messages: { create: jest.fn().mockResolvedValue(res) } } as never;
 }
 
 describe("extractTrip meta", () => {
   it("reports tokens, stop reason, model and latency on success", async () => {
     const result = await extractTrip(
-      clientReturning({ stop_reason: "end_turn", parsed_output: goodTrip, usage: USAGE }),
+      clientReturning({ stop_reason: "end_turn", content: jsonContent(goodTrip), usage: USAGE }),
       "note",
     );
     expect(result.ok).toBe(true);
@@ -43,7 +44,7 @@ describe("extractTrip meta", () => {
 
   it("still reports meta when the model refuses", async () => {
     const result = await extractTrip(
-      clientReturning({ stop_reason: "refusal", parsed_output: null, usage: USAGE }),
+      clientReturning({ stop_reason: "refusal", content: [], usage: USAGE }),
       "note",
     );
     expect(result).toMatchObject({ ok: false, status: HTTP.unprocessable });
@@ -52,7 +53,7 @@ describe("extractTrip meta", () => {
 
   it("still reports meta when the answer is cut off at max_tokens", async () => {
     const result = await extractTrip(
-      clientReturning({ stop_reason: "max_tokens", parsed_output: null, usage: USAGE }),
+      clientReturning({ stop_reason: "max_tokens", content: [], usage: USAGE }),
       "note",
     );
     expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
@@ -61,18 +62,69 @@ describe("extractTrip meta", () => {
 
   it("still reports meta when the output fails validation", async () => {
     const result = await extractTrip(
-      clientReturning({ stop_reason: "end_turn", parsed_output: { nope: 1 }, usage: USAGE }),
+      clientReturning({ stop_reason: "end_turn", content: jsonContent({ nope: 1 }), usage: USAGE }),
       "note",
     );
     expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
     expect(result.meta.inputTokens).toBe(120);
   });
 
+  it.each([
+    ["truncated JSON", '{"passenger_name": "Mrs. Le'],
+    ["plain prose", "Sorry, I could not read that."],
+    ["an empty string", ""],
+  ])("keeps the usage when the text is %s instead of throwing", async (_label, text) => {
+    const result = await extractTrip(
+      clientReturning({
+        stop_reason: "max_tokens",
+        content: [{ type: "text", text }],
+        usage: USAGE,
+      }),
+      "note",
+    );
+    expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
+    expect(result.meta).toMatchObject({ outputTokens: 160, stopReason: "max_tokens" });
+  });
+
+  it("keeps the usage when an end_turn answer is not JSON", async () => {
+    const result = await extractTrip(
+      clientReturning({
+        stop_reason: "end_turn",
+        content: [{ type: "text", text: "not json at all" }],
+        usage: USAGE,
+      }),
+      "note",
+    );
+    expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
+    expect(result.meta.outputTokens).toBe(160);
+  });
+
+  it("keeps the usage when the reply has no text block at all", async () => {
+    const result = await extractTrip(
+      clientReturning({ stop_reason: "end_turn", content: [], usage: USAGE }),
+      "note",
+    );
+    expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
+    expect(result.meta.inputTokens).toBe(120);
+  });
+
+  it("reads the first text block when thinking blocks come first", async () => {
+    const result = await extractTrip(
+      clientReturning({
+        stop_reason: "end_turn",
+        content: [{ type: "thinking", thinking: "hmm" }, ...jsonContent(goodTrip)],
+        usage: USAGE,
+      }),
+      "note",
+    );
+    expect(result.ok).toBe(true);
+  });
+
   it("logs missing cache counts as 0, not null", async () => {
     const result = await extractTrip(
       clientReturning({
         stop_reason: "end_turn",
-        parsed_output: goodTrip,
+        content: jsonContent(goodTrip),
         usage: {
           input_tokens: 1,
           output_tokens: 2,
