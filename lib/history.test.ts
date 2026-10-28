@@ -81,6 +81,20 @@ describe("toRecord", () => {
     ).toBeNull();
   });
 
+  it("returns null when what is left is only removed markers, punctuation and spaces", () => {
+    expect(toRecord(emptyTrip({ passenger_name: "jane@x.com / 555-123-4567" }))).toBeNull();
+    expect(
+      toRecord(emptyTrip({ passenger_name: "ann@example.com", pickup_location: " - [removed], " })),
+    ).toBeNull();
+  });
+
+  it("returns null for blank strings, and saves a blank field as null next to real text", () => {
+    expect(toRecord(emptyTrip({ passenger_name: "", pickup_location: "   " }))).toBeNull();
+    const record = toRecord(trip({ dropoff_location: "  " }))!;
+    expect(record.dropoff_location).toBeNull();
+    expect(record.pickup_location).toBe("12 Oak St");
+  });
+
   it("returns null for a trip with only a pickup time", () => {
     expect(toRecord(emptyTrip({ pickup_time: "09:30" }))).toBeNull();
   });
