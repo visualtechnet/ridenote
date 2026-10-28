@@ -170,9 +170,9 @@ export default function RequirementsPage() {
             </li>
             <li>
               <strong>Privacy:</strong> notes may contain personal details; the note itself is never
-              saved or logged. The parsed trip (name, addresses, time, aids) is saved and shown
-              publicly on the History page for 7 days on the live site, with phone numbers and
-              emails removed.
+              saved or logged. The parsed trip (name, addresses, time, aids, plus token counts and
+              latency) is saved and shown publicly on the History page for 7 days on the live site,
+              with phone numbers and emails removed.
             </li>
             <li>
               <strong>Security:</strong> HTML, scripts and hidden characters are rejected; the

@@ -60,7 +60,11 @@ describe("POST /api/parse history save", () => {
     expect(res.status).toBe(200);
     expect(mockAfter).toHaveBeenCalledTimes(1);
     expect(mockSaveEntry).toHaveBeenCalledTimes(1);
-    expect(mockSaveEntry).toHaveBeenCalledWith(goodTrip);
+    expect(mockSaveEntry).toHaveBeenCalledWith(goodTrip, {
+      inputTokens: expect.any(Number),
+      outputTokens: expect.any(Number),
+      latencyMs: expect.any(Number),
+    });
   });
 
   it("saves once for identical notes submitted at the same moment", async () => {
@@ -78,6 +82,15 @@ describe("POST /api/parse history save", () => {
     const results = await Promise.all(pending);
     expect(results.map((r) => r.status)).toEqual([200, 200, 200]);
     expect(mockSaveEntry).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes the call's usage to saveEntry", async () => {
+    await POST(request({ note: "Pick up Mrs. Lee at 12 Oak St" }));
+    expect(mockSaveEntry.mock.calls[0][1]).toEqual({
+      inputTokens: expect.any(Number),
+      outputTokens: expect.any(Number),
+      latencyMs: expect.any(Number),
+    });
   });
 
   it("never passes the raw note to saveEntry", async () => {

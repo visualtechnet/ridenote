@@ -3,14 +3,19 @@ import { getMemoryStore } from "./history-memory";
 import { createPostgresStore } from "./history-postgres";
 import { REMOVED, scrubText } from "./scrub";
 import type { Trip } from "./trip";
+import type { Usage } from "./usage";
 
-/** The only fields ever saved. The raw note, notes and missing_fields are never stored. */
+/** The only fields ever saved. The raw note, notes and missing_fields are never stored. The usage
+ * columns hold counts and milliseconds only; they are null on rows saved before they existed. */
 export type HistoryRecord = {
   passenger_name: string | null;
   pickup_location: string | null;
   dropoff_location: string | null;
   pickup_time: string | null;
   mobility: Trip["mobility"];
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  latency_ms?: number | null;
 };
 
 export type HistoryRow = HistoryRecord & { id: number; created_at: Date };
@@ -41,13 +46,16 @@ const hasContent = (text: string | null) =>
   text !== null && /[\p{L}\p{N}]/u.test(text.replaceAll(REMOVED, ""));
 
 /** Maps a trip to what may be saved, or null when there is nothing worth saving. */
-export function toRecord(trip: Trip): HistoryRecord | null {
+export function toRecord(trip: Trip, usage?: Usage): HistoryRecord | null {
   const record: HistoryRecord = {
     passenger_name: orNull(scrubText(trip.passenger_name)),
     pickup_location: orNull(scrubText(trip.pickup_location)),
     dropoff_location: orNull(scrubText(trip.dropoff_location)),
     pickup_time: trip.pickup_time,
     mobility: trip.mobility,
+    input_tokens: usage?.inputTokens ?? null,
+    output_tokens: usage?.outputTokens ?? null,
+    latency_ms: usage?.latencyMs ?? null,
   };
   const hasText = [record.passenger_name, record.pickup_location, record.dropoff_location].some(
     hasContent,
@@ -56,10 +64,10 @@ export function toRecord(trip: Trip): HistoryRecord | null {
 }
 
 /** Saves a parsed trip. Never throws: a broken history must not change a parse. */
-export async function saveEntry(trip: Trip, store?: HistoryStore): Promise<void> {
+export async function saveEntry(trip: Trip, usage?: Usage, store?: HistoryStore): Promise<void> {
   try {
     if (!historyEnabled()) return;
-    const record = toRecord(trip);
+    const record = toRecord(trip, usage);
     if (!record) return;
     await (store ?? getStore()).insert(record, HISTORY.dailySaveCap);
   } catch (err) {
