@@ -5,7 +5,35 @@ import { MESSAGES } from "./messages";
 import { SYSTEM, wrapNote } from "./prompt";
 import { ModelTripSchema, TripSchema, missingFields, normalizeModelTrip, type Trip } from "./trip";
 
-export type Extraction = { ok: true; trip: Trip } | { ok: false; status: number; error: string };
+/** What one paid model call cost and how it ended. Numbers and labels only, never note content. */
+export type CallMeta = {
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheRead: number;
+  cacheWrite: number;
+  stopReason: string | null;
+  latencyMs: number;
+};
+
+export type Extraction = (
+  { ok: true; trip: Trip } | { ok: false; status: number; error: string }
+) & { meta: CallMeta };
+
+/** The first text block of a reply, or "" when it has none (it may open with thinking blocks). */
+function firstText(content: Anthropic.ContentBlock[]): string {
+  const block = content.find((b): b is Anthropic.TextBlock => b.type === "text");
+  return block?.text ?? "";
+}
+
+/** Parsed JSON, or undefined when the text is not JSON (the schema check then rejects it). */
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * The one model call, shared by the API route and the eval suite so both test the same prompt,
@@ -16,9 +44,13 @@ export async function extractTrip(
   note: string,
   options: { signal?: AbortSignal } = {},
 ): Promise<Extraction> {
-  const res = await client.messages.parse(
+  const model = process.env[UPSTREAM.modelEnvVar] ?? UPSTREAM.defaultModel;
+  const started = performance.now();
+  // create(), not parse(): parse() throws on a cut-off or invalid answer before we can read the
+  // usage, and those are the calls that cost the most. We read and validate the JSON ourselves.
+  const res = await client.messages.create(
     {
-      model: process.env[UPSTREAM.modelEnvVar] ?? UPSTREAM.defaultModel,
+      model,
       max_tokens: UPSTREAM.maxTokens,
       thinking: UPSTREAM.thinking,
       system: SYSTEM,
@@ -29,19 +61,33 @@ export async function extractTrip(
     { timeout: UPSTREAM.timeoutMs, maxRetries: UPSTREAM.maxRetries, signal: options.signal },
   );
 
+  const meta: CallMeta = {
+    model,
+    inputTokens: res.usage?.input_tokens ?? 0,
+    outputTokens: res.usage?.output_tokens ?? 0,
+    cacheRead: res.usage?.cache_read_input_tokens ?? 0,
+    cacheWrite: res.usage?.cache_creation_input_tokens ?? 0,
+    stopReason: res.stop_reason,
+    latencyMs: Math.round(performance.now() - started),
+  };
+
   if (res.stop_reason === "refusal") {
-    return { ok: false, status: HTTP.unprocessable, error: MESSAGES.modelDeclined };
+    return { ok: false, status: HTTP.unprocessable, error: MESSAGES.modelDeclined, meta };
   }
   if (res.stop_reason !== "end_turn") {
-    return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed };
+    return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed, meta };
   }
 
   // Model output is untrusted: repair the two harmless slips, then re-validate strictly before it
   // reaches the client.
-  const raw = ModelTripSchema.safeParse(res.parsed_output);
-  if (!raw.success) return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed };
+  const raw = ModelTripSchema.safeParse(parseJson(firstText(res.content)));
+  if (!raw.success) {
+    return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed, meta };
+  }
   const trip = TripSchema.safeParse({ ...normalizeModelTrip(raw.data), missing_fields: [] });
-  if (!trip.success) return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed };
+  if (!trip.success) {
+    return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed, meta };
+  }
 
-  return { ok: true, trip: { ...trip.data, missing_fields: missingFields(trip.data) } };
+  return { ok: true, trip: { ...trip.data, missing_fields: missingFields(trip.data) }, meta };
 }

@@ -64,6 +64,9 @@ test.describe("History", () => {
       }),
     );
     await expect(page.getByRole("region", { name: "Parsed trip" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Parsed trip" })).toContainText(
+      /0 in · 0 out · \d+ ms/,
+    );
 
     await expectOnHistory(page, name);
     const entry = card(page, name);
@@ -71,6 +74,8 @@ test.describe("History", () => {
     await expect(entry).toContainText("County Hospital");
     await expect(entry).toContainText("2:05 PM");
     await expect(entry).toContainText("Wheelchair");
+    // The stubbed model reports 0 tokens; the latency is the real time the call took.
+    await expect(entry).toContainText(/0 in · 0 out · \d+ ms/);
     const text = (await page.getByRole("main").textContent()) ?? "";
     expect(text).not.toContain("555-123-4567");
     expect(text).not.toContain("lee@example.com");

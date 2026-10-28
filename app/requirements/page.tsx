@@ -170,9 +170,9 @@ export default function RequirementsPage() {
             </li>
             <li>
               <strong>Privacy:</strong> notes may contain personal details; the note itself is never
-              saved or logged. The parsed trip (name, addresses, time, aids) is saved and shown
-              publicly on the History page for 7 days on the live site, with phone numbers and
-              emails removed.
+              saved or logged. The parsed trip (name, addresses, time, aids, plus token counts and
+              latency) is saved and shown publicly on the History page for 7 days on the live site,
+              with phone numbers and emails removed.
             </li>
             <li>
               <strong>Security:</strong> HTML, scripts and hidden characters are rejected; the
@@ -487,6 +487,14 @@ export default function RequirementsPage() {
             Success means a well-formed trip came back. It does not mean every field is filled: a
             short note succeeds with null fields and a populated{" "}
             <code className={code}>missing_fields</code>.
+          </p>
+          <p className={p}>
+            A successful response is <code className={code}>{`{ "trip": …, "usage": … }`}</code>.
+            The <code className={code}>usage</code> object reports what that one AI call cost:{" "}
+            <code className={code}>inputTokens</code>, <code className={code}>outputTokens</code>{" "}
+            and <code className={code}>latencyMs</code> (milliseconds spent waiting for the AI
+            service). It is shown on the result card and saved with the trip on the History page,
+            where each call is rated against the others. Errors carry no usage.
           </p>
         </section>
       </main>

@@ -17,7 +17,11 @@ CREATE TABLE IF NOT EXISTS history (
   pickup_location  text,
   dropoff_location text,
   pickup_time      text,
-  mobility         text[] NOT NULL DEFAULT '{}'
+  mobility         text[] NOT NULL DEFAULT '{}',
+  -- Per-call usage; null on rows saved before these columns existed.
+  input_tokens     integer,
+  output_tokens    integer,
+  latency_ms       integer
 );
 
 CREATE INDEX IF NOT EXISTS history_created_at_idx ON history (created_at);
