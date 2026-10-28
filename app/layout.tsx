@@ -8,11 +8,14 @@ import "./globals.css";
 const atkinson = Atkinson_Hyperlegible_Next({
   variable: "--font-atkinson",
   subsets: ["latin"],
+  // Next has no fallback metrics for this font; it warns on every request and skips the step anyway.
+  adjustFontFallback: false,
 });
 
 const atkinsonMono = Atkinson_Hyperlegible_Mono({
   variable: "--font-atkinson-mono",
   subsets: ["latin"],
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
