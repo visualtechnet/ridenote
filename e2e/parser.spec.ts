@@ -24,6 +24,8 @@ test.describe("happy path", () => {
     await expect(card.getByText("9:30 AM")).toBeVisible();
     await expect(card.getByText("Wheelchair")).toBeVisible();
     await expect(card.getByText(/verify before dispatching/i)).toBeVisible();
+    // Usage is optional in the response (this mock sends none), so no usage line appears.
+    await expect(card.getByText("Usage", { exact: true })).toHaveCount(0);
     // A card, not raw JSON:
     await expect(page.locator("body")).not.toContainText('"passenger_name"');
     expect(calls).toEqual([
