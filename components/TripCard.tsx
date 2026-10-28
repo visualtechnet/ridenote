@@ -3,6 +3,7 @@ import { formatTime12h, mobilityLabel } from "@/lib/format";
 import { MISSING_MOBILITY } from "@/lib/config";
 import { COPY } from "@/lib/messages";
 import type { Trip } from "@/lib/trip";
+import type { Usage } from "@/lib/usage";
 
 const BLANK =
   "inline-block min-w-28 border-b-2 border-dashed border-etch-2 text-base text-zinc-400 italic";
@@ -24,7 +25,7 @@ function Field({ label, value }: { label: string; value: ReactNode | null }) {
   );
 }
 
-export function TripCard({ trip }: { trip: Trip }) {
+export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
   // Mobility is flagged by the server (see missingFields), but as a quiet line beside the mobility
   // field rather than a chip: most notes name no aid, and a warning on nearly every card would be
   // ignored, including the ones that matter.
@@ -74,6 +75,13 @@ export function TripCard({ trip }: { trip: Trip }) {
         {trip.notes && <p className="mt-5 text-sm break-words text-zinc-300">{trip.notes}</p>}
 
         <p className="mt-5 text-xs text-zinc-400">{COPY.verifyReminder}</p>
+
+        {usage && (
+          <p className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="lab">{COPY.usageLabel}</span>
+            <span className="font-mono text-xs text-zinc-400">{COPY.usageValue(usage)}</span>
+          </p>
+        )}
 
         {chips.length > 0 && (
           <div className="mt-5 flex flex-wrap items-center gap-2">

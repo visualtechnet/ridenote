@@ -88,6 +88,17 @@ describe("Home page", () => {
     expect(await screen.findByRole("heading", { level: 2, name: "Mrs. Lee" })).toBeInTheDocument();
   });
 
+  it("shows the tokens and latency of the parse on the card", async () => {
+    fetchMock.mockReturnValue(
+      json({ trip, usage: { inputTokens: 120, outputTokens: 160, latencyMs: 842 } }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<Home />);
+    await user.type(note(), "Pick up Lee");
+    await user.click(parseBtn());
+    expect(await screen.findByText("120 in · 160 out · 842 ms")).toBeInTheDocument();
+  });
+
   it("clears the note and the previous result, and returns focus to the textarea", async () => {
     fetchMock.mockReturnValue(json({ trip }));
     const user = userEvent.setup();

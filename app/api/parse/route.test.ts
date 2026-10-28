@@ -71,11 +71,6 @@ describe("POST /api/parse", () => {
     expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
-  it("does not return token usage to the client", async () => {
-    const body = await (await POST(request({ note: VALID_NOTE }))).json();
-    expect(body.usage).toBeUndefined();
-  });
-
   it("asks the SDK for structured output via output_config.format", async () => {
     await POST(request({ note: VALID_NOTE }));
     const arg = mockParse.mock.calls[0][0];
@@ -454,6 +449,30 @@ describe("POST /api/parse", () => {
     const res = await POST(request({ note: VALID_NOTE }));
     expect(res.status).toBe(502);
     expect(loggedText()).toContain("unknown error");
+  });
+});
+
+describe("POST /api/parse usage in the response", () => {
+  it("returns input tokens, output tokens and latency next to the trip, and nothing more", async () => {
+    mockParse.mockResolvedValue({
+      stop_reason: "end_turn",
+      parsed_output: goodTrip,
+      usage: { input_tokens: 120, output_tokens: 160, cache_read_input_tokens: 5 },
+    });
+    const res = await POST(request({ note: VALID_NOTE }));
+    const body = await res.json();
+    expect(body.usage).toEqual({
+      inputTokens: 120,
+      outputTokens: 160,
+      latencyMs: expect.any(Number),
+    });
+    expect(JSON.stringify(body)).not.toContain(UPSTREAM.defaultModel);
+  });
+
+  it("sends no usage with an error", async () => {
+    mockParse.mockResolvedValue({ stop_reason: "refusal", parsed_output: null });
+    const body = await (await POST(request({ note: VALID_NOTE }))).json();
+    expect(body.usage).toBeUndefined();
   });
 });
 

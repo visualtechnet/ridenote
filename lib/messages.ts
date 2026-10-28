@@ -1,4 +1,5 @@
 import { LIMITS } from "./config";
+import type { Usage } from "./usage";
 
 /** User-facing validation and error text. Written for dispatchers, not developers. */
 export const MESSAGES = {
@@ -77,6 +78,8 @@ export const COPY = {
   confirmMobility: "Mobility not stated. Confirm before dispatching.",
   missingListLabel: "Missing fields",
   staleResult: "The note has changed since this was parsed. Parse again to update it.",
+  usageLabel: "Usage",
+  usageValue: (u: Usage) => `${u.inputTokens} in · ${u.outputTokens} out · ${u.latencyMs} ms`,
   verifyReminder: "AI-extracted from the note. Verify before dispatching.",
   skipToContent: "Skip to main content",
   tryAgain: "Try again",
