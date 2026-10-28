@@ -682,7 +682,8 @@ export default function DocsPage() {
               Notes may contain personal details. They are sent to the AI service to be parsed. The
               note itself is never saved, but the parsed trip is shown publicly on the History page
               for 7 days on the live site, with phone numbers and emails removed. Server logs record
-              only an error type.
+              an error type, plus token counts, stop reason and latency per model call, never the
+              note.
             </li>
             <li>Use fictional names and addresses in examples, tests and bug reports.</li>
             <li>
