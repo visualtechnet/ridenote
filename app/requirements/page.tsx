@@ -488,6 +488,14 @@ export default function RequirementsPage() {
             short note succeeds with null fields and a populated{" "}
             <code className={code}>missing_fields</code>.
           </p>
+          <p className={p}>
+            A successful response is <code className={code}>{`{ "trip": …, "usage": … }`}</code>.
+            The <code className={code}>usage</code> object reports what that one AI call cost:{" "}
+            <code className={code}>inputTokens</code>, <code className={code}>outputTokens</code>{" "}
+            and <code className={code}>latencyMs</code> (milliseconds spent waiting for the AI
+            service). It is shown on the result card and saved with the trip on the History page,
+            where each call is rated against the others. Errors carry no usage.
+          </p>
         </section>
       </main>
     </div>

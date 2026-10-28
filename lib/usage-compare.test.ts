@@ -37,6 +37,13 @@ describe("rateCalls", () => {
     expect(ratings.get(7)).toBe("problematic");
   });
 
+  it("does not call anything problematic when the median is zero", () => {
+    const rows = [1, 2, 3, 4, 5, 6].map((id) => row(id, 100, 0));
+    rows[5] = { ...row(6, 100, 3) };
+    const { ratings } = rateCalls(rows);
+    expect(ratings.get(6)).not.toBe("problematic");
+  });
+
   it("skips rows with missing usage and reports the medians", () => {
     const old = { id: 9, input_tokens: null, output_tokens: null, latency_ms: null };
     const result = rateCalls([...base, old]);

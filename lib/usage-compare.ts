@@ -43,7 +43,11 @@ export function rateCalls(rows: RatedRow[]): Comparison {
   const medianLatencyMs = median(usable.map((u) => u.latency));
   const limit = USAGE_RATING.problematicFactor;
   for (const u of usable) {
-    if (u.tokens > medianTokens * limit || u.latency > medianLatencyMs * limit) {
+    // A median of zero (stubbed or empty calls) gives nothing to be "over", so it flags nothing.
+    const over =
+      (medianTokens > 0 && u.tokens > medianTokens * limit) ||
+      (medianLatencyMs > 0 && u.latency > medianLatencyMs * limit);
+    if (over) {
       ratings.set(u.id, "problematic");
     } else if (u.tokens <= medianTokens && u.latency <= medianLatencyMs) {
       ratings.set(u.id, "efficient");
