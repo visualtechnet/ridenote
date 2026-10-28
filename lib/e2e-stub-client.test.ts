@@ -46,3 +46,15 @@ describe("createStubClient", () => {
     await expect(parse(wrapNote("E2E:{nope"))).rejects.toThrow();
   });
 });
+
+describe("stubActive on a production build", () => {
+  const original = process.env.NODE_ENV;
+  afterEach(() => {
+    Object.assign(process.env, { NODE_ENV: original });
+  });
+
+  it("is off when the real process.env says production, whatever env is passed", () => {
+    Object.assign(process.env, { NODE_ENV: "production" });
+    expect(stubActive({ NODE_ENV: "test", E2E_STUB_PARSE: "1" })).toBe(false);
+  });
+});
