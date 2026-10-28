@@ -35,7 +35,7 @@ checked. Log one line per paid model call: tokens, stop reason, latency.
 ## Design
 
 - `lib/extract.ts`: add `meta: CallMeta` (`model, inputTokens, outputTokens, cacheRead, cacheWrite,
-stopReason, latencyMs`) to both arms of `Extraction`. Latency is timed around `client.messages.parse` only.
+stopReason, latencyMs`) to both arms of `Extraction`. Latency is timed around `client.messages.create` only (it switched from `parse`, which throws on a cut-off or invalid answer before `usage` can be read).
 - `app/api/parse/route.ts`: `callModel` logs `console.info("parse usage:", meta)` after `extractTrip`
   returns.
 - `lib/e2e-stub-client.ts`: stub responses carry fake `usage` so the path is exercised.

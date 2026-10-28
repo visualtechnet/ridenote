@@ -4,13 +4,14 @@ const mockParse = jest.fn();
 jest.mock("@anthropic-ai/sdk", () => ({
   __esModule: true,
   default: class {
-    messages = { parse: mockParse };
+    messages = { create: mockParse };
   },
 }));
 
 import { HTTP, LIMITS, OUTPUT_LIMITS, UPSTREAM } from "@/lib/config";
 import { MESSAGES } from "@/lib/messages";
 import { POST } from "./route";
+import { jsonContent } from "@/tests/model-reply";
 
 const VALID_NOTE = "Pick up Mrs. Lee at 12 Oak St";
 
@@ -52,7 +53,7 @@ beforeEach(() => {
   mockParse.mockReset();
   mockParse.mockResolvedValue({
     stop_reason: "end_turn",
-    parsed_output: goodTrip,
+    content: jsonContent(goodTrip),
     usage: { input_tokens: 1, output_tokens: 1 },
   });
   jest.spyOn(console, "error").mockImplementation(() => {});
@@ -89,7 +90,7 @@ describe("POST /api/parse", () => {
   it("computes missing_fields from the nulls instead of trusting the model", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
-      parsed_output: { ...goodTrip, pickup_time: null, missing_fields: ["bogus", "bogus"] },
+      content: jsonContent({ ...goodTrip, pickup_time: null, missing_fields: ["bogus", "bogus"] }),
     });
     const body = await (await POST(request({ note: VALID_NOTE }))).json();
     expect(body.trip.missing_fields).toEqual(["pickup_time"]);
@@ -98,14 +99,14 @@ describe("POST /api/parse", () => {
   it("flags mobility as missing when the AI names no aid, and not when it does", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
-      parsed_output: { ...goodTrip, mobility: [], missing_fields: [] },
+      content: jsonContent({ ...goodTrip, mobility: [], missing_fields: [] }),
     });
     const none = await (await POST(request({ note: VALID_NOTE }))).json();
     expect(none.trip.missing_fields).toEqual(["mobility"]);
 
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
-      parsed_output: { ...goodTrip, mobility: ["cane"], missing_fields: ["mobility"] },
+      content: jsonContent({ ...goodTrip, mobility: ["cane"], missing_fields: ["mobility"] }),
     });
     const some = await (await POST(request({ note: VALID_NOTE }))).json();
     expect(some.trip.missing_fields).toEqual([]); // the server decides, not the model's own list
@@ -114,7 +115,7 @@ describe("POST /api/parse", () => {
   it("shortens an over-long notes line instead of failing a good note", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
-      parsed_output: { ...goodTrip, notes: "a".repeat(5000) },
+      content: jsonContent({ ...goodTrip, notes: "a".repeat(5000) }),
     });
     const res = await POST(request({ note: VALID_NOTE }));
     expect(res.status).toBe(200);
@@ -126,7 +127,7 @@ describe("POST /api/parse", () => {
   it("removes a repeated mobility aid instead of failing", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
-      parsed_output: { ...goodTrip, mobility: ["cane", "cane", "walker"] },
+      content: jsonContent({ ...goodTrip, mobility: ["cane", "cane", "walker"] }),
     });
     const res = await POST(request({ note: VALID_NOTE }));
     expect(res.status).toBe(200);
@@ -137,7 +138,7 @@ describe("POST /api/parse", () => {
     for (const field of ["passenger_name", "pickup_location", "dropoff_location"]) {
       mockParse.mockResolvedValue({
         stop_reason: "end_turn",
-        parsed_output: { ...goodTrip, [field]: "a".repeat(5000) },
+        content: jsonContent({ ...goodTrip, [field]: "a".repeat(5000) }),
       });
       expect((await POST(request({ note: VALID_NOTE }))).status).toBe(502);
     }
@@ -146,13 +147,13 @@ describe("POST /api/parse", () => {
   it("still rejects an impossible combination such as unaided plus an aid", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
-      parsed_output: { ...goodTrip, mobility: ["ambulatory", "cane"] },
+      content: jsonContent({ ...goodTrip, mobility: ["ambulatory", "cane"] }),
     });
     expect((await POST(request({ note: VALID_NOTE }))).status).toBe(502);
   });
 
   it("returns 422 with a distinct message when the model refuses", async () => {
-    mockParse.mockResolvedValue({ stop_reason: "refusal", parsed_output: null });
+    mockParse.mockResolvedValue({ stop_reason: "refusal", content: [] });
     const res = await POST(request({ note: VALID_NOTE }));
     expect(res.status).toBe(422);
     expect((await res.json()).error).toMatch(/couldn.t process/i);
@@ -337,19 +338,19 @@ describe("POST /api/parse", () => {
   });
 
   it("returns 502 when the model stops early", async () => {
-    mockParse.mockResolvedValue({ stop_reason: "max_tokens", parsed_output: null });
+    mockParse.mockResolvedValue({ stop_reason: "max_tokens", content: [] });
     expect((await POST(request({ note: VALID_NOTE }))).status).toBe(502);
   });
 
   it("returns 502 when the model output is missing", async () => {
-    mockParse.mockResolvedValue({ stop_reason: "end_turn", parsed_output: null });
+    mockParse.mockResolvedValue({ stop_reason: "end_turn", content: [] });
     expect((await POST(request({ note: VALID_NOTE }))).status).toBe(502);
   });
 
   it("returns 502 when the model output fails schema validation", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
-      parsed_output: { ...goodTrip, mobility: ["flying"] },
+      content: jsonContent({ ...goodTrip, mobility: ["flying"] }),
     });
     expect((await POST(request({ note: VALID_NOTE }))).status).toBe(502);
   });
@@ -411,7 +412,8 @@ describe("POST /api/parse", () => {
     mockParse.mockImplementation(
       () =>
         new Promise((resolve) => {
-          finish = () => resolve({ stop_reason: "end_turn", parsed_output: goodTrip, usage: {} });
+          finish = () =>
+            resolve({ stop_reason: "end_turn", content: jsonContent(goodTrip), usage: {} });
         }),
     );
     const note = "Pick up the Garcia family at 5 Birch Ln";
@@ -456,7 +458,7 @@ describe("POST /api/parse usage in the response", () => {
   it("returns input tokens, output tokens and latency next to the trip, and nothing more", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
-      parsed_output: goodTrip,
+      content: jsonContent(goodTrip),
       usage: { input_tokens: 120, output_tokens: 160, cache_read_input_tokens: 5 },
     });
     const res = await POST(request({ note: VALID_NOTE }));
@@ -470,7 +472,7 @@ describe("POST /api/parse usage in the response", () => {
   });
 
   it("sends no usage with an error", async () => {
-    mockParse.mockResolvedValue({ stop_reason: "refusal", parsed_output: null });
+    mockParse.mockResolvedValue({ stop_reason: "refusal", content: [] });
     const body = await (await POST(request({ note: VALID_NOTE }))).json();
     expect(body.usage).toBeUndefined();
   });
@@ -482,7 +484,7 @@ describe("POST /api/parse usage log", () => {
   it("logs one numbers-only usage line per paid call", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "end_turn",
-      parsed_output: goodTrip,
+      content: jsonContent(goodTrip),
       usage: { input_tokens: 120, output_tokens: 160 },
     });
     await POST(request({ note: "Mrs. Lee 12 Oak St wheelchair" }));
@@ -505,12 +507,27 @@ describe("POST /api/parse usage log", () => {
   it("still logs usage when the model refuses", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "refusal",
-      parsed_output: null,
+      content: [],
       usage: { input_tokens: 50, output_tokens: 3 },
     });
     const res = await POST(request({ note: VALID_NOTE }));
     expect(res.status).toBe(HTTP.unprocessable);
     expect(JSON.parse(infoCalls()[0][1])).toMatchObject({ stopReason: "refusal", outputTokens: 3 });
+  });
+
+  it("logs usage when the answer is cut off mid-JSON, which used to be lost", async () => {
+    mockParse.mockResolvedValue({
+      stop_reason: "max_tokens",
+      content: [{ type: "text", text: '{"passenger_name": "Mrs. Le' }],
+      usage: { input_tokens: 200, output_tokens: 600 },
+    });
+    const res = await POST(request({ note: VALID_NOTE }));
+    expect(res.status).toBe(HTTP.badGateway);
+    expect(JSON.parse(infoCalls()[0][1])).toMatchObject({
+      stopReason: "max_tokens",
+      inputTokens: 200,
+      outputTokens: 600,
+    });
   });
 
   it("logs no usage line when the call itself throws, and keeps the error-type log", async () => {
@@ -528,7 +545,7 @@ describe("POST /api/parse usage log", () => {
           finish = () =>
             resolve({
               stop_reason: "end_turn",
-              parsed_output: goodTrip,
+              content: jsonContent(goodTrip),
               usage: { input_tokens: 1, output_tokens: 1 },
             });
         }),

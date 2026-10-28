@@ -14,11 +14,12 @@ const mockParse = jest.fn();
 jest.mock("@anthropic-ai/sdk", () => ({
   __esModule: true,
   default: class {
-    messages = { parse: mockParse };
+    messages = { create: mockParse };
   },
 }));
 
 import { POST } from "./route";
+import { jsonContent } from "@/tests/model-reply";
 
 const goodTrip = {
   passenger_name: "Mrs. Lee",
@@ -38,7 +39,7 @@ const request = (note: string) =>
     body: JSON.stringify({ note }),
   });
 
-const ok = () => ({ stop_reason: "end_turn", parsed_output: goodTrip, usage: {} });
+const ok = () => ({ stop_reason: "end_turn", content: jsonContent(goodTrip), usage: {} });
 
 beforeEach(() => {
   mockParse.mockReset();

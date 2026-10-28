@@ -7,7 +7,7 @@ const mockParse = jest.fn();
 jest.mock("@anthropic-ai/sdk", () => ({
   __esModule: true,
   default: class {
-    messages = { parse: mockParse };
+    messages = { create: mockParse };
   },
 }));
 jest.mock("next/server", () => ({
@@ -23,6 +23,7 @@ import { HistoryList } from "@/components/HistoryList";
 import { COPY } from "@/lib/messages";
 import { loadHistory } from "@/lib/history";
 import { getMemoryStore } from "@/lib/history-memory";
+import { jsonContent } from "@/tests/model-reply";
 
 const pending: Promise<unknown>[] = [];
 
@@ -50,7 +51,7 @@ const answer = (name: string, output: number, ms: number) => async () => {
   await new Promise((r) => setTimeout(r, ms));
   return {
     stop_reason: "end_turn",
-    parsed_output: trip(name),
+    content: jsonContent(trip(name)),
     usage: { input_tokens: 300, output_tokens: output },
   };
 };
@@ -127,7 +128,7 @@ describe("usage from the API to the History page", () => {
   it("saves nothing, and returns an error with no usage, when the model refuses", async () => {
     mockParse.mockResolvedValue({
       stop_reason: "refusal",
-      parsed_output: null,
+      content: [],
       usage: { input_tokens: 10, output_tokens: 1 },
     });
     const res = await post("Pick up someone");
