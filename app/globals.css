@@ -1,26 +1,82 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f3f6fa;
+  --foreground: #172130;
+  --rail: #0a4a94;
+  --rail-ink: #ffffff;
+  --plate: #0a4a94;
+  --plate-ink: #ffffff;
+  --primary: #0a4a94;
+  --primary-hover: #083b78;
+  --primary-ink: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0c121b;
+    --foreground: #e8edf4;
+    --rail: #071c38;
+    --plate: #0f5cb0;
+    --primary: #8fb8e8;
+    --primary-hover: #bbd4f1;
+    --primary-ink: #071c38;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-rail: var(--rail);
+  --color-rail-ink: var(--rail-ink);
+  --color-plate: var(--plate);
+  --color-plate-ink: var(--plate-ink);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-ink: var(--primary-ink);
+  --font-sans: var(--font-atkinson);
+  --font-mono: var(--font-atkinson-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Cool blue-grey neutrals replace Tailwind's zinc so every existing class takes the palette. */
+@theme {
+  --color-zinc-50: #f3f6fa;
+  --color-zinc-100: #e8edf4;
+  --color-zinc-200: #d5dde8;
+  --color-zinc-300: #b9c5d4;
+  --color-zinc-400: #8b9aaf;
+  --color-zinc-500: #5b6b82;
+  --color-zinc-600: #4a5a70;
+  --color-zinc-700: #3a4859;
+  --color-zinc-800: #263241;
+  --color-zinc-900: #172130;
+  --color-zinc-950: #0c121b;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-atkinson), system-ui, sans-serif;
+}
+
+::selection {
+  background: #bbd4f1;
+  color: #071c38;
+}
+
+@media (prefers-color-scheme: dark) {
+  ::selection {
+    background: #0f5cb0;
+    color: #ffffff;
+  }
+}
+
+textarea {
+  caret-color: var(--primary);
+}
+
+/* Times and counts line up in columns. */
+time,
+#note-help {
+  font-variant-numeric: tabular-nums;
 }

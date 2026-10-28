@@ -69,7 +69,7 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
           <button
             type="submit"
             disabled={pending}
-            className={`bg-foreground text-background h-11 rounded-full px-6 font-medium transition-colors hover:bg-[#383838] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[#ccc] ${BUTTON_FOCUS}`}
+            className={`bg-primary text-primary-ink hover:bg-primary-hover h-11 rounded-full px-6 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_FOCUS}`}
           >
             {pending ? COPY.parsing : COPY.parse}
           </button>

@@ -24,10 +24,9 @@ const DOC_SECTIONS = [
 ] as const;
 
 const LINK_CLASS =
-  "block rounded-md px-3 py-2.5 text-zinc-700 hover:bg-zinc-100 aria-[current=page]:bg-zinc-100 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:aria-[current=page]:bg-zinc-900 dark:aria-[current=page]:text-zinc-50";
+  "block rounded-md px-3 py-2.5 text-rail-ink/90 hover:bg-white/10 aria-[current=page]:bg-white aria-[current=page]:font-semibold aria-[current=page]:text-[#0a4a94] dark:aria-[current=page]:text-[#071c38]";
 
-const FOCUS =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-50";
+const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
 /**
  * Site navigation. A vertical sidebar on the left from the `md` breakpoint up; on a phone it
@@ -59,18 +58,16 @@ export function SideNav() {
   }, [isOpen]);
 
   return (
-    <header className="border-b border-zinc-200 bg-white md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:overflow-y-auto md:border-r md:border-b-0 dark:border-zinc-800 dark:bg-zinc-950">
+    <header className="bg-rail text-rail-ink md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:overflow-y-auto">
       <div className="flex items-center justify-between px-4 py-3 md:block md:px-5 md:py-6">
         <div>
           <Link
             href={Routes.page("home")}
-            className={`text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 ${FOCUS}`}
+            className={`text-rail-ink text-xl font-bold tracking-tight ${FOCUS}`}
           >
             {COPY.appName}
           </Link>
-          <p className="mt-1 hidden text-sm text-zinc-600 md:block dark:text-zinc-400">
-            {COPY.tagline}
-          </p>
+          <p className="text-rail-ink/85 mt-1 hidden text-sm md:block">{COPY.tagline}</p>
         </div>
         <button
           ref={buttonRef}
@@ -81,7 +78,7 @@ export function SideNav() {
             setOpenedAt(pathname);
             setOpen(!isOpen);
           }}
-          className={`rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-900 md:hidden dark:border-zinc-700 dark:text-zinc-50 ${FOCUS}`}
+          className={`text-rail-ink rounded-md border border-white/50 px-3 py-2 text-sm font-medium md:hidden ${FOCUS}`}
         >
           <span aria-hidden="true">{isOpen ? "✕ " : "☰ "}</span>
           {COPY.menu}
@@ -90,7 +87,7 @@ export function SideNav() {
       <nav
         id="site-menu"
         aria-label={COPY.navLabel}
-        className={`border-t border-zinc-200 md:block md:border-t-0 dark:border-zinc-800 ${isOpen ? "block" : "hidden"}`}
+        className={`border-t border-white/20 md:block md:border-t-0 ${isOpen ? "block" : "hidden"}`}
       >
         <ul className="flex flex-col gap-1 px-2 py-2 md:px-3">
           {LINKS.map(({ label, href }) => (
