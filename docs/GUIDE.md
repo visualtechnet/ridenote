@@ -200,7 +200,7 @@ API guarantees the reply matches it.
 2. In `app/api/parse/route.ts` we send it to the API:
 
    ```ts
-   client.messages.parse({
+   client.messages.create({
      model: ...,
      system: SYSTEM,                                  // the AI's instructions
      messages: [{ role: "user", content: wrapNote(note) }],
@@ -209,7 +209,9 @@ API guarantees the reply matches it.
    ```
 
 3. The SDK (a ready-made code library from Anthropic) converts our Zod schema into the format the API
-   understands, sends the request, and converts the reply back into a typed object.
+   understands and sends the request. We use `create()` rather than the SDK's `parse()` and check the
+   JSON in the reply ourselves: `parse()` throws on a cut-off or invalid answer before we can read how
+   many tokens it used, and those are the calls whose cost we most need to see.
 
 **Why the details matter.**
 

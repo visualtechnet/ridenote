@@ -14,6 +14,20 @@ const full: Trip = {
   notes: "Confirm ramp access.",
 };
 
+describe("TripCard usage", () => {
+  it("shows input tokens, output tokens and latency", () => {
+    render(
+      <TripCard trip={full} usage={{ inputTokens: 120, outputTokens: 160, latencyMs: 842 }} />,
+    );
+    expect(screen.getByText("120 in · 160 out · 842 ms")).toBeInTheDocument();
+  });
+
+  it("shows no usage line when there is no usage", () => {
+    render(<TripCard trip={full} />);
+    expect(screen.queryByText(COPY.usageLabel)).not.toBeInTheDocument();
+  });
+});
+
 describe("TripCard", () => {
   it("shows every field with its label", () => {
     render(<TripCard trip={full} />);

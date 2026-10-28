@@ -82,7 +82,8 @@ export default function Home() {
           <ResultPanel
             pending={parse.isPending}
             error={parse.error?.message ?? null}
-            trip={parse.data}
+            trip={parse.data?.trip}
+            usage={parse.data?.usage}
             stale={stale}
           />
         </div>

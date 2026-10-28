@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { axe } from "jest-axe";
 import { HTTP } from "@/lib/config";
+import { UsageSchema } from "@/lib/usage";
 import RequirementsPage from "./page";
 
 describe("Requirements page", () => {
@@ -63,5 +64,12 @@ describe("Requirements page", () => {
   it("has no accessibility violations", async () => {
     const { container } = render(<RequirementsPage />);
     expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+describe("Requirements page usage", () => {
+  it("documents the usage object that comes back with a successful parse", () => {
+    const { container } = render(<RequirementsPage />);
+    for (const key of Object.keys(UsageSchema.shape)) expect(container.textContent).toContain(key);
   });
 });

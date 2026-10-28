@@ -7,6 +7,9 @@ const record: HistoryRecord = {
   dropoff_location: "Clinic",
   pickup_time: "09:30",
   mobility: ["wheelchair"],
+  input_tokens: 120,
+  output_tokens: 160,
+  latency_ms: 842,
 };
 
 function fakeQuery(rows: unknown[]) {
@@ -23,7 +26,17 @@ describe("createPostgresStore.insert", () => {
     const { query, calls } = fakeQuery([{ id: "1" }]);
     await createPostgresStore("postgres://unused", query).insert(record, 2000);
     expect(calls).toHaveLength(1);
-    expect(calls[0].params).toEqual(["Ann", "1 Main St", "Clinic", "09:30", ["wheelchair"], 2000]);
+    expect(calls[0].params).toEqual([
+      "Ann",
+      "1 Main St",
+      "Clinic",
+      "09:30",
+      ["wheelchair"],
+      120,
+      160,
+      842,
+      2000,
+    ]);
     expect(calls[0].text).toContain("now() - interval '1 day'");
     expect(calls[0].text).toMatch(/created_at > now\(\)/);
   });
@@ -47,6 +60,9 @@ describe("createPostgresStore.list", () => {
         dropoff_location: null,
         pickup_time: null,
         mobility: null,
+        input_tokens: 120,
+        output_tokens: "160",
+        latency_ms: 842,
       },
       {
         id: 6,
@@ -62,7 +78,15 @@ describe("createPostgresStore.list", () => {
     expect(calls[0].params).toEqual([200, 7]);
     expect(calls[0].text).toMatch(/created_at >= now\(\)/);
     expect(calls[0].text).toMatch(/ORDER BY created_at DESC/i);
-    expect(rows[0]).toMatchObject({ id: 7, mobility: [], pickup_location: "A" });
+    expect(rows[0]).toMatchObject({
+      id: 7,
+      mobility: [],
+      pickup_location: "A",
+      input_tokens: 120,
+      output_tokens: 160,
+      latency_ms: 842,
+    });
+    expect(rows[1]).toMatchObject({ input_tokens: null, output_tokens: null, latency_ms: null });
     expect(rows[0].created_at).toEqual(new Date("2026-10-27T10:00:00.000Z"));
     expect(rows[1]).toMatchObject({ id: 6, mobility: ["walker"] });
     expect(rows[1].created_at).toEqual(new Date("2026-10-26T10:00:00.000Z"));

@@ -320,7 +320,8 @@ and it exists only on the production deployment: in development and preview it s
 saved.
 
 **What is saved.** After a successful parse the app saves the parsed trip's name, pickup and dropoff
-location, pickup time and mobility aids. It never saves the note you typed, the `notes` sentence or the
+location, pickup time and mobility aids, plus the call's input tokens, output tokens and latency in
+milliseconds (shown on its History card). It never saves the note you typed, the `notes` sentence or the
 missing list. A trip with nothing in it (no name, no address, no aid) is not saved.
 
 **Who can see it, and for how long.** Anyone can open `/history`. Entries are deleted after 7 days by a daily
@@ -359,7 +360,9 @@ by a per-address rule; layers 1, 4 and 5 bound the damage.
 Do these once, in order, before enabling the variables.
 
 1. In the Vercel project open **Storage**, add the **Neon** Marketplace integration and create a database.
-2. Open the Neon console SQL editor and run the whole of `db/schema.sql` as the owner. It creates the table
+2. Open the Neon console SQL editor and run the whole of `db/schema.sql` as the owner. (An existing
+   database from before the usage columns needs `db/migrations/2026-10-28-history-usage.sql` run once
+   instead, **before** deploying the code that writes them.) It creates the table
    and the two roles (`history_app`, `history_purge`) and checks that neither holds more than its grants.
 3. In the Neon console open **Roles**, set a password for each role, and build two connection strings from
    them (pooled host for `history_app`). Never put a password in the repository or in chat.

@@ -1,10 +1,17 @@
 import { TripCard, TripCardSkeleton } from "./TripCard";
 import { COPY } from "@/lib/messages";
 import type { Trip } from "@/lib/trip";
+import type { Usage } from "@/lib/usage";
 
-type Props = { pending: boolean; error: string | null; trip: Trip | undefined; stale?: boolean };
+type Props = {
+  pending: boolean;
+  error: string | null;
+  trip: Trip | undefined;
+  usage?: Usage;
+  stale?: boolean;
+};
 
-export function ResultPanel({ pending, error, trip, stale = false }: Props) {
+export function ResultPanel({ pending, error, trip, usage, stale = false }: Props) {
   return (
     <>
       {/* Errors use role="alert", so they sit outside the polite live region to avoid double announcements. */}
@@ -21,7 +28,7 @@ export function ResultPanel({ pending, error, trip, stale = false }: Props) {
         {trip && stale && (
           <p className="mb-2 text-sm text-amber-800 dark:text-amber-300">{COPY.staleResult}</p>
         )}
-        {trip && <TripCard trip={trip} />}
+        {trip && <TripCard trip={trip} usage={usage} />}
       </div>
     </>
   );
