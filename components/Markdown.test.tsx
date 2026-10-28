@@ -58,4 +58,15 @@ describe("Markdown", () => {
     expect(container.querySelector("a")).toBeNull();
     expect(screen.getByText("x")).toBeInTheDocument();
   });
+
+  it("renders a table with column headers instead of a run of pipes", () => {
+    render(<Markdown source={"| Word | Means |\n| --- | --- |\n| **Agent** | does things |"} />);
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
+      "Word",
+      "Means",
+    ]);
+    expect(screen.getByRole("cell", { name: "Agent" }).querySelector("strong")).not.toBeNull();
+    expect(screen.queryByText(/\|/)).toBeNull();
+  });
 });

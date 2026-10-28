@@ -92,6 +92,38 @@ function renderBlock(block: Block, key: number): ReactNode {
           {block.text}
         </pre>
       );
+    case "table":
+      return (
+        // Focusable so a wide table can be scrolled with the keyboard.
+        <div key={key} className="mt-3 overflow-x-auto" tabIndex={0}>
+          <table className="w-full text-left text-sm text-zinc-200">
+            <thead>
+              <tr>
+                {block.header.map((cell, c) => (
+                  <th
+                    key={c}
+                    scope="col"
+                    className="border-b border-zinc-700 px-3 py-2 text-left font-medium"
+                  >
+                    {renderInline(cell)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, r) => (
+                <tr key={r}>
+                  {row.map((cell, c) => (
+                    <td key={c} className="border-b border-zinc-800 px-3 py-2 align-top">
+                      {renderInline(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
     case "rule":
       return <hr key={key} className="mt-10 border-zinc-700" />;
   }
