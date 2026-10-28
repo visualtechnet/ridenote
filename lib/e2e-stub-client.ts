@@ -9,6 +9,9 @@ const PREFIX = "E2E:";
 export function stubActive(
   env: { NODE_ENV?: string; E2E_STUB_PARSE?: string } = process.env,
 ): boolean {
+  // The literal process.env.NODE_ENV is replaced by Next when it builds, so a production build
+  // is refused whatever the environment says at run time. The env argument is only for tests.
+  if (process.env.NODE_ENV === "production") return false;
   return (env.NODE_ENV === "development" || env.NODE_ENV === "test") && env.E2E_STUB_PARSE === "1";
 }
 
