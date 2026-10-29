@@ -25,8 +25,8 @@ export default function EvalPage() {
         <p className="mt-3 text-zinc-300">
           {CASES.length} notes, {critical} of them critical. A run needs every critical case and{" "}
           {Math.round(PASS_RATE_FLOOR * 100)}% of all cases to pass. This list is read from{" "}
-          <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-sm">evals/cases.ts</code>,
-          so it always matches what runs.
+          <code className="bg-zinc-800 px-1 py-0.5 font-mono text-sm">evals/cases.ts</code>, so it
+          always matches what runs.
         </p>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-sm text-zinc-200">

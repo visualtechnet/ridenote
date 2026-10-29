@@ -64,7 +64,7 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
                 <>
                   <span className={BLANK}>{COPY.notStated}</span>
                   {flagMobility && (
-                    <p className="mt-1.5 text-xs text-amber-300">{COPY.confirmMobility}</p>
+                    <p className="text-missing mt-1.5 text-xs">{COPY.confirmMobility}</p>
                   )}
                 </>
               )}
@@ -88,7 +88,7 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
             <span className="lab">{COPY.missingHeading}</span>
             <ul aria-label={COPY.missingListLabel} className="flex flex-wrap gap-2">
               {chips.map((f) => (
-                <li key={f} className={`${TAG} border-amber-400 text-amber-300`}>
+                <li key={f} className={`${TAG} border-missing-edge text-missing`}>
                   {f}
                 </li>
               ))}

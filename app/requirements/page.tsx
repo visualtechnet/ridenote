@@ -21,9 +21,9 @@ const h2 = "mt-10 scroll-mt-4 text-xl font-semibold text-zinc-50";
 const h3 = "mt-6 text-base font-semibold text-zinc-50";
 const p = "mt-2 text-zinc-300";
 const ul = "mt-2 list-disc space-y-1 pl-6 text-zinc-300";
-const code = "rounded px-1 py-0.5 font-mono text-sm bg-zinc-800";
+const code = "px-1 py-0.5 font-mono text-sm bg-zinc-800";
 const pre =
-  "mt-2 overflow-x-auto rounded-lg bg-zinc-900 p-3 font-mono text-sm text-zinc-50 whitespace-pre-wrap break-words";
+  "mt-2 overflow-x-auto bg-zinc-900 p-3 font-mono text-sm text-zinc-50 whitespace-pre-wrap break-words";
 const th = "border-b px-3 py-2 text-left font-medium border-zinc-700";
 const td = "border-b px-3 py-2 align-top border-zinc-800";
 const table = "w-full text-left text-sm text-zinc-200";
@@ -85,7 +85,9 @@ export default function RequirementsPage() {
               ["success", "What makes a parse succeed"],
             ].map(([id, label]) => (
               <li key={id}>
-                <a href={`#${id}`}>{label}</a>
+                <a href={`#${id}`} className="inline-flex min-h-11 items-center">
+                  {label}
+                </a>
               </li>
             ))}
           </ul>

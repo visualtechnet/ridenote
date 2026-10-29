@@ -14,7 +14,7 @@ const SITE_PAGE: Record<string, string> = {
 };
 
 const BODY = "text-zinc-300";
-const CODE = "rounded px-1 py-0.5 font-mono text-sm bg-zinc-800";
+const CODE = "px-1 py-0.5 font-mono text-sm bg-zinc-800";
 
 function renderInline(nodes: Inline[]): ReactNode {
   return nodes.map((node, i) => {
@@ -87,7 +87,7 @@ function renderBlock(block: Block, key: number): ReactNode {
       return (
         <pre
           key={key}
-          className="mt-3 overflow-x-auto rounded-lg bg-zinc-900 p-3 font-mono text-sm break-words whitespace-pre-wrap text-zinc-50"
+          className="mt-3 overflow-x-auto bg-zinc-900 p-3 font-mono text-sm break-words whitespace-pre-wrap text-zinc-50"
         >
           {block.text}
         </pre>

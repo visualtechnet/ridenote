@@ -57,21 +57,17 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? "note-help note-error" : "note-help"}
         placeholder={COPY.notePlaceholder}
-        className={`bg-well w-full resize-y border p-3 font-mono text-[15px] text-zinc-50 transition-[border-color,box-shadow] placeholder:text-zinc-500 focus-visible:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_18%,transparent)] focus-visible:outline-none ${
+        className={`bg-well w-full resize-y border p-3 font-mono text-[15px] text-zinc-50 transition-[border-color,box-shadow] duration-180 ease-(--ease) placeholder:text-zinc-500 focus-visible:shadow-(--shadow-focus) focus-visible:outline-none ${
           error
-            ? "border-red-400 focus-visible:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-red-400)_20%,transparent)]"
+            ? "border-danger focus-visible:shadow-(--shadow-focus-danger)"
             : "border-edge focus-visible:border-accent"
         }`}
       />
 
-      <div aria-hidden="true" className="bg-etch-2 relative mx-1 h-0.5">
+      <div aria-hidden="true" className="bg-etch-2 h-0.5">
         <div
-          className={`h-full ${overLimit ? "bg-red-400" : "bg-accent"}`}
+          className={`h-full ${overLimit ? "bg-danger" : "bg-accent"}`}
           style={{ width: `${Math.min(100, (length / LIMITS.noteMax) * 100)}%` }}
-        />
-        <div
-          className={`absolute -top-2 h-[18px] w-2.5 -translate-x-1/2 ${overLimit ? "bg-red-400" : "bg-accent"}`}
-          style={{ left: `${Math.min(100, (length / LIMITS.noteMax) * 100)}%` }}
         />
       </div>
 
@@ -88,7 +84,7 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
             type="button"
             onClick={loadExample}
             disabled={pending}
-            className={`key h-11 px-5 text-[15px] disabled:opacity-50 ${BUTTON_FOCUS}`}
+            className={`key h-11 px-5 text-[15px] disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_FOCUS}`}
           >
             {COPY.useExample}
           </button>
@@ -101,14 +97,14 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
                 onClear();
                 textareaRef.current?.focus();
               }}
-              className={`caps hover:text-accent h-11 px-4 text-[15px] text-zinc-300 underline-offset-4 hover:underline disabled:opacity-50 ${BUTTON_FOCUS}`}
+              className={`caps hover:text-accent h-11 px-4 text-[15px] text-zinc-300 underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_FOCUS}`}
             >
               {COPY.clear}
             </button>
           )}
         </div>
         <p id="note-help" className="lab">
-          <span className={overLimit ? "font-medium text-red-300" : undefined}>
+          <span className={overLimit ? "text-danger-ink font-medium" : undefined}>
             {`${length} / ${LIMITS.noteMax}`}
           </span>
           <span className="hidden sm:inline"> · {COPY.shortcutHint}</span>
@@ -117,7 +113,7 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
 
       <div aria-live="polite">
         {error && (
-          <p id="note-error" className="text-sm font-medium text-red-300">
+          <p id="note-error" className="text-danger-ink text-sm font-medium">
             {error}
           </p>
         )}

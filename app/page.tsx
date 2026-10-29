@@ -57,7 +57,7 @@ export default function Home() {
             <a
               key={id}
               href={`#${id}`}
-              className="caps hover:text-accent focus-visible:outline-accent text-sm text-zinc-400 focus-visible:outline-2 focus-visible:outline-offset-4"
+              className="caps hover:text-accent focus-visible:outline-accent inline-flex min-h-11 items-center text-sm text-zinc-400 focus-visible:outline-2 focus-visible:outline-offset-4"
             >
               {label}
             </a>

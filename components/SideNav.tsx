@@ -63,7 +63,7 @@ export function SideNav() {
         <div className="flex items-baseline gap-4">
           <Link
             href={Routes.page("home")}
-            className={`caps text-accent text-2xl leading-none font-extrabold tracking-[0.12em] ${FOCUS}`}
+            className={`caps text-accent inline-flex min-h-11 items-center text-2xl leading-none font-extrabold tracking-[0.12em] ${FOCUS}`}
           >
             {COPY.appName}
           </Link>
