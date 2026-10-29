@@ -357,28 +357,20 @@ by a per-address rule; layers 1, 4 and 5 bound the damage.
 
 ### Setting up History on Vercel
 
-Do these once, in order, before enabling the variables.
+The full beginner walkthrough, with the exact Neon and Vercel clicks, the connection-string recipe, the
+Firewall rule and the troubleshooting table, is in **[docs/HISTORY-SETUP.md](docs/HISTORY-SETUP.md)**. In
+short, once and in order:
 
-1. In the Vercel project open **Storage**, add the **Neon** Marketplace integration and create a database.
-2. Open the Neon console SQL editor and run the whole of `db/schema.sql` as the owner. (An existing
-   database from before the usage columns needs `db/migrations/2026-10-28-history-usage.sql` run once
-   instead, **before** deploying the code that writes them.) It creates the table
-   and the two roles (`history_app`, `history_purge`) and checks that neither holds more than its grants.
-3. In the Neon console open **Roles**, set a password for each role, and build two connection strings from
-   them (pooled host for `history_app`). Never put a password in the repository or in chat.
-4. **Try it before enabling:** in the SQL editor run one `insert` and one `select` against `history` to
-   confirm the table works (the SQL has not been run against a real database by the automated tests), then
-   delete your test row as the owner.
-5. In **Settings, Environment Variables** add `HISTORY_DATABASE_URL`, `HISTORY_PURGE_DATABASE_URL` and
-   `CRON_SECRET` (a long random string) for **Production** only, all marked **Sensitive**. Redeploy.
-6. In **Settings, Cron Jobs** confirm the `/api/history/purge` job is listed. Vercel's documentation does not
-   say which time zone the schedule uses or whether previews run it, so check the page and note what it shows.
-7. Create the edge rule. In the project open **Firewall**, then **New Rule**. Match **Request Path** equals
-   `/api/parse` and **Method** equals `POST`. Choose rate limiting with the key **IP address**, a
-   **fixed window** of **60 seconds** and a limit of **3** requests. Set the action to **Log** first. Click
-   **Review Changes**, then **Publish**. (Field names can change; follow the dashboard.)
-8. After a few days of real traffic in the Firewall overview, edit the rule and change the action to **Deny**
-   (or the default 429), then publish again.
+1. Add the **Neon** integration under Vercel **Storage**.
+2. Run `db/schema.sql` as the owner in the Neon SQL editor (table, two roles, self-check). A database from
+   before the usage columns needs `db/migrations/2026-10-28-history-usage.sql` run once instead, **before**
+   deploying the code that writes them. Optionally prove the grants with `db/verify.sql`.
+3. Set each role's password with `alter role`, then build the two connection strings from the owner's pooled
+   string (swap user and password, drop `&channel_binding=require`).
+4. Add `HISTORY_DATABASE_URL`, `HISTORY_PURGE_DATABASE_URL` and `CRON_SECRET` in **Settings, Environment
+   Variables** (Production only, Sensitive), then redeploy.
+5. Add the Firewall rule on `POST /api/parse` (IP key, 60 s window, limit 3), action Log first, Deny later.
+6. Check **Settings, Cron Jobs** and the logs for the 04:00 purge run.
 
 **Check after each deploy:** from one machine send five quick parses (the example note, Parse, five times
 within a minute). The fourth should be refused with "You're going a bit fast", and `/history` should list
@@ -531,6 +523,7 @@ is not in git.
 | [docs/FAQ.md](docs/FAQ.md)                                                | See common questions and **the bugs we hit and what they taught us**                                                       |
 | [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md)                          | Learn the habits this code is built on                                                                                     |
 | [docs/SUBAGENTS.md](docs/SUBAGENTS.md)                                    | Learn, step by step, how a feature was planned and built with a team of AI subagents (also on the site under Docs, Agents) |
+| [docs/HISTORY-SETUP.md](docs/HISTORY-SETUP.md)                            | Set up the History database on Neon and Vercel, step by step, with troubleshooting                                         |
 | [The History design](docs/superpowers/specs/2026-10-27-history-design.md) | Read the approved design of the History feature, with the options weighed                                                  |
 | [The History plan](docs/superpowers/plans/2026-10-27-history.md)          | Read the task-by-task plan that was executed to build it                                                                   |
 | [SECURITY.md](SECURITY.md)                                                | Report a problem, and see what is protected and the known limits                                                           |
@@ -541,12 +534,13 @@ This repository uses Next.js 16, which differs from older versions. See `AGENTS.
 
 ## Troubleshooting
 
-| Symptom                                       | Likely cause and fix                                                                                                                 |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| "This demo has used up its AI budget"         | The demo's fixed monthly limit is spent. It stays off until the limit renews. Run RideNote yourself with your own key (Quick start). |
-| "We couldn't parse that note" every time      | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`.                                                |
-| 429 while testing by hand                     | You passed the per-client limit (3 a minute on the live site, 10 a minute locally). Wait for `Retry-After` seconds.                  |
-| Everyone shares one rate limit locally        | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.                                                          |
-| `npm run test:e2e` cannot launch a browser    | Run `npx playwright install chromium` once.                                                                                          |
-| `npm run dev:key` says it only works on a Mac | It uses the macOS Keychain. Use `.env.local` and `npm run dev` instead.                                                              |
-| Tests page says it found no test files        | The build must run where the source files exist. See the FAQ.                                                                        |
+| Symptom                                       | Likely cause and fix                                                                                                                               |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "This demo has used up its AI budget"         | The demo's fixed monthly limit is spent. It stays off until the limit renews. Run RideNote yourself with your own key (Quick start).               |
+| "We couldn't parse that note" every time      | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`.                                                              |
+| 429 while testing by hand                     | You passed the per-client limit (3 a minute on the live site, 10 a minute locally). Wait for `Retry-After` seconds.                                |
+| Everyone shares one rate limit locally        | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.                                                                        |
+| `npm run test:e2e` cannot launch a browser    | Run `npx playwright install chromium` once.                                                                                                        |
+| `npm run dev:key` says it only works on a Mac | It uses the macOS Keychain. Use `.env.local` and `npm run dev` instead.                                                                            |
+| History page is empty, or purge does not run  | See the troubleshooting table in [docs/HISTORY-SETUP.md](docs/HISTORY-SETUP.md): usually a variable set for the wrong environment, or no redeploy. |
+| Tests page says it found no test files        | The build must run where the source files exist. See the FAQ.                                                                                      |
