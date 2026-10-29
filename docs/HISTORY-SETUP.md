@@ -125,6 +125,32 @@ can select and delete but its insert is refused.
 3. Go to **Deployments**, open the latest production deployment's menu and choose **Redeploy**. Variables
    only reach a deployment that is built after they are saved.
 
+**Project or team level.** A variable can be created on the project, or at team level as a _Shared
+Environment Variable_ and then linked to the project. Both work the same for the app. Shared variables are
+created under the team's **Settings**, then **Environment Variables**, and appear on the project under a
+separate **Shared Environment Variables** heading, so a quick look at the project's own list can miss them
+([Shared environment variables](https://vercel.com/docs/environment-variables/shared-environment-variables)).
+If a project-level and a shared variable have the same name and environment, the project-level one wins.
+
+**"Sensitive" is now called "Secret".** Vercel stores values you must not read back as _Secret_ variables:
+write-only after saving, so you can replace a value but never view it. Variables created as Sensitive earlier
+are treated as Secrets
+([Config and Secret environment variables](https://vercel.com/docs/environment-variables/sensitive-environment-variables)).
+This guide keeps the older word because the CLI flag is still `--sensitive`.
+
+**From the command line.** The same variable can be added without the dashboard. `vercel env add` reads the
+value from standard input, and `--sensitive` stores it as a Secret. Vercel warns that echoing a value into the
+command saves it in shell history, so that is not recommended for secrets. Piping from a generator avoids
+that, because the value is never typed:
+
+```bash
+openssl rand -hex 32 | vercel env add CRON_SECRET production --sensitive
+```
+
+Redeploy afterwards with `vercel redeploy <deployment-url>`. A deployment only picks up variables saved
+before it was built
+([`vercel env`](https://vercel.com/docs/cli/env), [`vercel redeploy`](https://vercel.com/docs/cli/redeploy)).
+
 ## 7. Test it
 
 1. Open the live site and parse the example note once. Then open `/history`: the trip should appear as a
@@ -148,6 +174,41 @@ The app limits each address in code, but the edge rule stops abuse before it rea
 Dashboard field names change from time to time. Follow what the page shows; the settings above are what
 matter.
 
+**The same rule from the command line.** This is how the live rule was created. The CLI stages the rule as
+a draft, and nothing changes in production until you publish
+([`vercel firewall`](https://vercel.com/docs/cli/firewall)):
+
+```bash
+vercel firewall rules add "Rate limit parse" \
+  --condition '{"type":"path","op":"eq","value":"/api/parse"}' \
+  --condition '{"type":"method","op":"eq","value":"POST"}' \
+  --action rate_limit \
+  --rate-limit-keys ip --rate-limit-algo fixed_window \
+  --rate-limit-window 60 --rate-limit-requests 3 \
+  --rate-limit-action log --yes
+
+vercel firewall diff              # review the staged draft
+vercel firewall publish --yes     # make it live
+```
+
+Later, switch from Log to Deny with `vercel firewall rules edit "Rate limit parse" --rate-limit-action deny
+--yes`, then `vercel firewall diff` and `vercel firewall publish --yes` again.
+
+What the official documentation says about this feature
+([WAF Rate Limiting](https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting)):
+
+- Rate limiting is available on all plans. On the Hobby plan a project can have **one** rate-limit rule, and
+  the counting window can be from 10 seconds to 10 minutes.
+- The **Log** action blocks nothing; it is there to watch the effect before enforcing.
+- Counters are kept **per region**, so traffic from one source arriving in several regions can exceed the
+  limit you set for any single region. Treat the edge rule as a coarse guard. The exact per-address limit is
+  enforced by the app itself (`lib/rate-limit.ts`).
+- For a walkthrough with screenshots, see Vercel's guide
+  [Add Rate Limiting with Vercel](https://vercel.com/kb/guide/add-rate-limiting-vercel).
+
+The app limits per address as well (see the README, "Limits"), so the edge rule is a second layer, not the
+only one.
+
 ## 9. Check the daily clean-up ran
 
 The clean-up deletes rows older than 7 days. It is a Vercel cron job (`vercel.json`) that calls
@@ -165,6 +226,23 @@ The clean-up deletes rows older than 7 days. It is a Vercel cron job (`vercel.js
 If the clean-up does not run (a missing `CRON_SECRET` or `HISTORY_PURGE_DATABASE_URL`), nothing breaks
 visibly: rows simply live for about 8 days or more. Check the logs rather than assuming.
 
+What the official documentation says about cron jobs
+([Managing Cron Jobs](https://vercel.com/docs/cron-jobs/manage-cron-jobs)):
+
+- **Securing the call.** If the project has an environment variable named `CRON_SECRET`, Vercel sends its
+  value in an `Authorization: Bearer <value>` header on every cron invocation. The route compares the header
+  with the variable and answers `401` otherwise. That is what `app/api/history/purge/route.ts` does; with no
+  `CRON_SECRET` set the route refuses every call, including Vercel's own. Vercel recommends at least 16
+  random characters.
+- **Hobby timing.** On the Hobby plan a cron job runs at most once a day and may start any time within the
+  scheduled hour, so `0 4 * * *` can fire between 04:00 and 04:59.
+- **No retries, redirects ignored.** A failed run is not retried, and a redirect response is the end of that
+  run. Delivery is best effort, so the job is written to be safe to run twice or to miss a day (deleting rows
+  older than 7 days is both).
+- **Logs.** In **Settings**, then **Cron Jobs**, **View Logs** opens the runtime logs filtered to the path.
+- **Previews.** The documentation page above does not say whether preview deployments run crons, so do not
+  rely on it.
+
 ## 10. Reset the owner password if it was ever exposed
 
 If the owner (`neondb_owner`) password was pasted anywhere it should not have been (a chat, a ticket, a
@@ -172,16 +250,78 @@ screenshot), reset it: in the Neon console open **Roles**, choose `neondb_owner`
 The two app logins are unaffected, because they have their own passwords. If Vercel has any variables that
 Neon's integration injected (for example `DATABASE_URL`), refresh them from the Storage tab afterwards.
 
+## 11. Production, previews and the Neon connection
+
+**What decides production or preview.** Vercel builds a **production** deployment when you push or merge to
+the production branch (here `main`) and a **preview** deployment for every other branch and pull request.
+Production uses the Production environment variables; previews use the Preview ones
+([Environments](https://vercel.com/docs/deployments/environments)). In this repository that means:
+
+- A pull request gets a preview URL, and the GitHub Actions job `check` (`npm run check`) must pass before
+  merging.
+- Merging to `main` deploys to production by itself. No manual deploy is needed. `vercel redeploy` is only for
+  rebuilding with changed variables.
+- The three History variables are Production only, and the code additionally requires `VERCEL_ENV=production`
+  (`historyEnabled()` in `lib/history.ts`), so previews never open a database connection.
+
+**Which environments the Neon resource feeds.** A Marketplace resource adds its variables (`DATABASE_URL`,
+`POSTGRES_*`, `PG*` and so on) to the environments it is connected to. Connecting from the CLI without
+`--environment` connects production, preview and development. `--environment` can be repeated to choose
+([Storage on Vercel Marketplace](https://vercel.com/docs/marketplace-storage),
+[`vercel integration`](https://vercel.com/docs/cli/integration)). Deployments built earlier do not get changed
+variables, so redeploy after changing the scope. Neon's own integration can also create a database branch for
+each preview deployment, and lets you choose which environments get one
+([Neon: Vercel-managed integration](https://neon.com/docs/guides/vercel-managed-integration)).
+
+RideNote does not use the integration's variables at all (it reads only the three `HISTORY_*`/`CRON_SECRET`
+variables), so the resource only needs to be connected to Production. To limit it to Production:
+
+```bash
+vercel integration resource disconnect <resource-name> <project-name> --yes
+vercel integration resource connect <resource-name> <project-name> --environment production --yes
+```
+
+Disconnecting does not delete the database. In our project the shared `HISTORY_*` variables were untouched,
+and the integration's own variables came back for Production only.
+
+**What we observed, not documented by Vercel or Neon.** While the resource was connected to Preview too,
+preview deployments of pull requests failed immediately, before any build, with the error
+`Resource provisioning failed`. After reconnecting the resource to Production only, the next pull request's preview
+built normally. We did not find Vercel or Neon documentation naming this error, so the cause is not
+confirmed. If you see it, check which environments the Marketplace resource is connected to.
+
+## Official references
+
+Everything above that describes how Vercel or Neon behaves comes from these pages. Where the pages and the
+dashboard disagree, trust the pages and report the difference to Vercel.
+
+| Topic                                                             | Source                                                                                                                           |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| WAF rate limiting (steps, plans, Log action, per-region counters) | [Vercel: WAF Rate Limiting](https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting)                                    |
+| Rate limiting walkthrough                                         | [Vercel guide: Add Rate Limiting with Vercel](https://vercel.com/kb/guide/add-rate-limiting-vercel)                              |
+| Firewall rules from the CLI (draft, diff, publish)                | [Vercel CLI: `vercel firewall`](https://vercel.com/docs/cli/firewall)                                                            |
+| Cron jobs (`CRON_SECRET`, Hobby timing, logs, retries)            | [Vercel: Managing Cron Jobs](https://vercel.com/docs/cron-jobs/manage-cron-jobs)                                                 |
+| Shared (team-level) environment variables                         | [Vercel: Shared environment variables](https://vercel.com/docs/environment-variables/shared-environment-variables)               |
+| Config and Secret (formerly Sensitive) variables                  | [Vercel: Config and Secret environment variables](https://vercel.com/docs/environment-variables/sensitive-environment-variables) |
+| Adding variables from the CLI                                     | [Vercel CLI: `vercel env`](https://vercel.com/docs/cli/env)                                                                      |
+| Redeploying                                                       | [Vercel CLI: `vercel redeploy`](https://vercel.com/docs/cli/redeploy)                                                            |
+| Production and preview deployments                                | [Vercel: Environments](https://vercel.com/docs/deployments/environments)                                                         |
+| Marketplace storage and its environment variables                 | [Vercel: Storage on Vercel Marketplace](https://vercel.com/docs/marketplace-storage)                                             |
+| Connecting and disconnecting a resource                           | [Vercel CLI: `vercel integration`](https://vercel.com/docs/cli/integration)                                                      |
+| Neon preview branches and injected variables                      | [Neon: Vercel-managed integration](https://neon.com/docs/guides/vercel-managed-integration)                                      |
+
 ## Troubleshooting
 
-| Symptom                                                             | Likely cause and fix                                                                                                                             |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Schema script ends with `history roles have more than their grants` | A login was made in the console (it joins `neon_superuser`) or someone granted extra powers. Drop the login with SQL, then run the script again. |
-| New logins missing from Neon's Roles page                           | Normal. Check with `select rolname from pg_roles ...` in the SQL Editor.                                                                         |
-| `set role history_app` says `permission denied to set role`         | The owner is not a superuser on Neon. `grant history_app to neondb_owner;` first, and `revoke history_app from neondb_owner;` afterwards.        |
-| `password authentication failed for user "history_app"`             | The password in the URL does not match the one set in step 3, or it needs percent-encoding. Set it again with `alter role`.                      |
-| Connection error mentioning channel binding                         | Remove `&channel_binding=require` from the string.                                                                                               |
-| `/history` empty although you parsed notes                          | Variables set for the wrong environment, or no redeploy after saving them. Set for Production, redeploy.                                         |
-| Parsing works but nothing is saved                                  | `HISTORY_DATABASE_URL` points to a login without `INSERT`, or the table is missing. Re-run the schema.                                           |
-| Old rows never disappear                                            | Clean-up not running: check `CRON_SECRET`, `HISTORY_PURGE_DATABASE_URL`, and the cron job's logs (step 9).                                       |
-| Purge returns 401                                                   | `CRON_SECRET` in Vercel differs from what the cron sends. Re-save it and redeploy.                                                               |
+| Symptom                                                              | Likely cause and fix                                                                                                                             |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Schema script ends with `history roles have more than their grants`  | A login was made in the console (it joins `neon_superuser`) or someone granted extra powers. Drop the login with SQL, then run the script again. |
+| New logins missing from Neon's Roles page                            | Normal. Check with `select rolname from pg_roles ...` in the SQL Editor.                                                                         |
+| `set role history_app` says `permission denied to set role`          | The owner is not a superuser on Neon. `grant history_app to neondb_owner;` first, and `revoke history_app from neondb_owner;` afterwards.        |
+| `password authentication failed for user "history_app"`              | The password in the URL does not match the one set in step 3, or it needs percent-encoding. Set it again with `alter role`.                      |
+| Connection error mentioning channel binding                          | Remove `&channel_binding=require` from the string.                                                                                               |
+| `/history` empty although you parsed notes                           | Variables set for the wrong environment, or no redeploy after saving them. Set for Production, redeploy.                                         |
+| Parsing works but nothing is saved                                   | `HISTORY_DATABASE_URL` points to a login without `INSERT`, or the table is missing. Re-run the schema.                                           |
+| Old rows never disappear                                             | Clean-up not running: check `CRON_SECRET`, `HISTORY_PURGE_DATABASE_URL`, and the cron job's logs (step 9).                                       |
+| Purge returns 401                                                    | `CRON_SECRET` in Vercel differs from what the cron sends. Re-save it and redeploy.                                                               |
+| `HISTORY_*` variables missing from the project's variable list       | They may be Shared Environment Variables: look under the team's Settings, and under "Shared Environment Variables" on the project.               |
+| Preview deployment fails at once with `Resource provisioning failed` | The Neon resource is connected to Preview. Connect it to Production only (step 11).                                                              |

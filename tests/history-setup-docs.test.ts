@@ -53,6 +53,35 @@ describe("History setup documentation", () => {
     }
   });
 
+  it("cites only official Vercel and Neon documentation", () => {
+    const urls = [...setup.matchAll(/\]\((https?:\/\/[^)\s]+)\)/g)].map((m) => new URL(m[1]));
+    expect(urls.length).toBeGreaterThan(10);
+    for (const url of urls) {
+      expect(["vercel.com", "neon.com"]).toContain(url.hostname);
+      expect(url.protocol).toBe("https:");
+    }
+  });
+
+  it.each([
+    "https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting",
+    "https://vercel.com/docs/cli/firewall",
+    "https://vercel.com/docs/cron-jobs/manage-cron-jobs",
+    "https://vercel.com/docs/environment-variables/shared-environment-variables",
+    "https://vercel.com/docs/environment-variables/sensitive-environment-variables",
+    "https://vercel.com/docs/deployments/environments",
+    "https://vercel.com/docs/cli/integration",
+    "https://neon.com/docs/guides/vercel-managed-integration",
+  ])("the setup guide links to %s", (url) => {
+    expect(setup).toContain(url);
+  });
+
+  it("the setup guide holds no real connection string or secret", () => {
+    for (const [, credentials] of setup.matchAll(/postgres(?:ql)?:\/\/([^@\s/]+)@/g)) {
+      expect(credentials).toMatch(/[A-Z]{3,}|PASSWORD/);
+    }
+    expect(setup).not.toMatch(/(?:sk-ant-|npg_|gho_)[A-Za-z0-9]/);
+  });
+
   it("the README points to the setup guide", () => {
     expect(readme).toContain("docs/HISTORY-SETUP.md");
   });
