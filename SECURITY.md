@@ -5,8 +5,10 @@ and to keep the one secret it holds (an Anthropic API key) out of the code, the 
 
 ## Reporting a problem
 
-If you find a security problem, please email **5761860+visualtechnet@users.noreply.github.com** with the word "security" in the
-subject. Include what you found, how to reproduce it, and what you think the impact is. Please give a
+If you find a security problem, please report it privately through GitHub: open the repository's
+**Security** tab and choose **Report a vulnerability**
+([direct link](https://github.com/visualtechnet/ridenote/security/advisories/new)). Please do not open
+a public issue for it. Include what you found, how to reproduce it, and what you think the impact is. Please give a
 reasonable amount of time to fix it before sharing it publicly.
 
 **Never include a real API key, password or other secret in a report, issue or pull request**, even

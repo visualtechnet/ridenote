@@ -248,15 +248,15 @@ piece of user-facing text in **`lib/messages.ts`**. Change them there, not in th
 
 The site has five sections, reachable from the navigation on the left (a **Menu** button on phones):
 
-| Page             | Path            | What it is                                                                 |
-| ---------------- | --------------- | -------------------------------------------------------------------------- |
-| **Parser**       | `/`             | The tool itself.                                                           |
-| **Requirements** | `/requirements` | The PRD, required input, expected JSON output and what valid JSON is.      |
-| **Docs**         | `/docs`         | Setup, accepted and rejected inputs, JSON pitfalls, every error explained. |
-| Docs: **Eval**   | `/docs/eval`    | How the live accuracy eval works, with every case listed.                  |
-| Docs: **FAQ**    | `/docs/faq`     | Common questions, and the bugs found along the way with their lessons.     |
-| **Contact**      | `/contact`      | How to email the owner with questions or feedback (keys are not provided). |
-| **Tests**        | `/tests`        | Every automated test name, read from the real test files at build time.    |
+| Page             | Path            | What it is                                                                           |
+| ---------------- | --------------- | ------------------------------------------------------------------------------------ |
+| **Parser**       | `/`             | The tool itself.                                                                     |
+| **Requirements** | `/requirements` | The PRD, required input, expected JSON output and what valid JSON is.                |
+| **Docs**         | `/docs`         | Setup, accepted and rejected inputs, JSON pitfalls, every error explained.           |
+| Docs: **Eval**   | `/docs/eval`    | How the live accuracy eval works, with every case listed.                            |
+| Docs: **FAQ**    | `/docs/faq`     | Common questions, and the bugs found along the way with their lessons.               |
+| **Contact**      | `/contact`      | How to reach the owner on GitHub with questions or feedback (keys are not provided). |
+| **Tests**        | `/tests`        | Every automated test name, read from the real test files at build time.              |
 
 What to type, in short: who, where from, where to, when, and mobility: name every aid the passenger
 uses (a wheelchair, a cane, a walker, and so on) and all of them are returned as a list. The card shows

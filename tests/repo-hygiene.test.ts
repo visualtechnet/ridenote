@@ -109,7 +109,8 @@ describe("security policy", () => {
   it("SECURITY.md says how to report a problem and what not to include", () => {
     const policy = text("SECURITY.md");
     expect(policy).toMatch(/report/i);
-    expect(policy).toContain("5761860+visualtechnet@users.noreply.github.com");
+    expect(policy).toContain("security/advisories/new");
+    expect(policy).not.toMatch(/\S+@\S+\.\S+/);
     expect(policy).toMatch(/never include .*key/i);
   });
 });
