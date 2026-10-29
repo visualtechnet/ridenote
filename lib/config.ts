@@ -116,8 +116,19 @@ export const HISTORY = {
   revalidateSec: 60,
 } as const;
 
-/** Where visitors write with questions or feedback. Shown on the Contact page. API keys are not provided. */
+/** How History rates calls against each other (see lib/usage-compare.ts). */
+export const USAGE_RATING = {
+  /** Fewer rows than this have no meaningful median, so nothing is rated. */
+  minRows: 5,
+  /** A call above this many times the median tokens or latency is called problematic. */
+  problematicFactor: 1.5,
+} as const;
+
+/**
+ * Where visitors send questions or feedback. Shown on the Contact page. API keys are not provided.
+ * A GitHub link rather than an email address, so no personal address is published.
+ */
 export const CONTACT = {
-  email: "5761860+visualtechnet@users.noreply.github.com",
-  subject: "RideNote",
+  label: "open an issue on GitHub",
+  url: "https://github.com/visualtechnet/ridenote/issues/new",
 } as const;

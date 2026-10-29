@@ -7,22 +7,19 @@ export const metadata: Metadata = {
   description: "How to reach the owner, and how to run RideNote with your own API key.",
 };
 
-const h2 = "mt-10 scroll-mt-4 text-xl font-semibold text-zinc-900 dark:text-zinc-50";
-const p = "mt-2 text-zinc-700 dark:text-zinc-300";
+const h2 = "mt-10 scroll-mt-4 text-xl font-semibold text-zinc-50";
+const p = "mt-2 text-zinc-300";
 const link = "underline underline-offset-4";
 
 export default function ContactPage() {
-  const mailto = `mailto:${CONTACT.email}?subject=${encodeURIComponent(CONTACT.subject)}`;
   return (
-    <div className="flex flex-1 justify-center bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex flex-1 justify-center font-sans">
       <main id="main" className="w-full max-w-3xl px-4 py-10 sm:px-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Contact
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Contact</h1>
         <p className={p}>
-          Questions or feedback about RideNote? Write to{" "}
-          <a href={mailto} className={link}>
-            {CONTACT.email}
+          Questions or feedback about RideNote? You can{" "}
+          <a href={CONTACT.url} className={link}>
+            {CONTACT.label}
           </a>
           . API keys are not provided or shared, so please don&rsquo;t ask for one. See below for
           how to try it with your own.
@@ -50,7 +47,7 @@ export default function ContactPage() {
             To run RideNote on your own computer you need your own Anthropic API key. It takes about
             five minutes and you pay only for what you use, a fraction of a cent per parse.
           </p>
-          <ol className="mt-2 list-decimal space-y-1 pl-6 text-zinc-700 dark:text-zinc-300">
+          <ol className="mt-2 list-decimal space-y-1 pl-6 text-zinc-300">
             <li>Download the project from its repository and run npm install.</li>
             <li>Create an API key in your own Anthropic account.</li>
             <li>

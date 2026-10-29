@@ -13,7 +13,7 @@ type Props = {
 };
 
 const BUTTON_FOCUS =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:focus-visible:outline-zinc-50";
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 export function NoteForm({ pending, onSubmit, onClear }: Props) {
   const { note, touched, setNote, touch, loadExample, reset } = useParserStore();
@@ -38,7 +38,7 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
 
   return (
     <form className="flex flex-col gap-3" onSubmit={submit} noValidate>
-      <label htmlFor="note" className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+      <label htmlFor="note" className="lab">
         {COPY.noteLabel}
       </label>
       <textarea
@@ -57,19 +57,30 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? "note-help note-error" : "note-help"}
         placeholder={COPY.notePlaceholder}
-        className={`w-full resize-y rounded-lg border bg-white p-3 text-base text-zinc-900 placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-offset-2 dark:bg-zinc-900 dark:text-zinc-50 ${
+        className={`bg-well w-full resize-y border p-3 font-mono text-[15px] text-zinc-50 transition-[border-color,box-shadow] placeholder:text-zinc-500 focus-visible:shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_18%,transparent)] focus-visible:outline-none ${
           error
-            ? "border-red-600 focus-visible:outline-red-600 dark:border-red-400"
-            : "border-zinc-300 focus-visible:outline-zinc-900 dark:border-zinc-700 dark:focus-visible:outline-zinc-50"
+            ? "border-red-400 focus-visible:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-red-400)_20%,transparent)]"
+            : "border-edge focus-visible:border-accent"
         }`}
       />
+
+      <div aria-hidden="true" className="bg-etch-2 relative mx-1 h-0.5">
+        <div
+          className={`h-full ${overLimit ? "bg-red-400" : "bg-accent"}`}
+          style={{ width: `${Math.min(100, (length / LIMITS.noteMax) * 100)}%` }}
+        />
+        <div
+          className={`absolute -top-2 h-[18px] w-2.5 -translate-x-1/2 ${overLimit ? "bg-red-400" : "bg-accent"}`}
+          style={{ left: `${Math.min(100, (length / LIMITS.noteMax) * 100)}%` }}
+        />
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           <button
             type="submit"
             disabled={pending}
-            className={`bg-primary text-primary-ink hover:bg-primary-hover h-11 rounded-full px-6 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_FOCUS}`}
+            className={`key run h-11 px-7 disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_FOCUS}`}
           >
             {pending ? COPY.parsing : COPY.parse}
           </button>
@@ -77,7 +88,7 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
             type="button"
             onClick={loadExample}
             disabled={pending}
-            className={`h-11 rounded-full border border-zinc-300 px-4 text-sm font-medium text-zinc-900 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-50 dark:hover:bg-zinc-800 ${BUTTON_FOCUS}`}
+            className={`key h-11 px-5 text-[15px] disabled:opacity-50 ${BUTTON_FOCUS}`}
           >
             {COPY.useExample}
           </button>
@@ -90,14 +101,14 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
                 onClear();
                 textareaRef.current?.focus();
               }}
-              className={`h-11 rounded-full px-4 text-sm font-medium text-zinc-700 underline-offset-4 hover:underline disabled:opacity-50 dark:text-zinc-300 ${BUTTON_FOCUS}`}
+              className={`caps hover:text-accent h-11 px-4 text-[15px] text-zinc-300 underline-offset-4 hover:underline disabled:opacity-50 ${BUTTON_FOCUS}`}
             >
               {COPY.clear}
             </button>
           )}
         </div>
-        <p id="note-help" className="text-sm text-zinc-600 dark:text-zinc-400">
-          <span className={overLimit ? "font-medium text-red-700 dark:text-red-300" : undefined}>
+        <p id="note-help" className="lab">
+          <span className={overLimit ? "font-medium text-red-300" : undefined}>
             {`${length} / ${LIMITS.noteMax}`}
           </span>
           <span className="hidden sm:inline"> · {COPY.shortcutHint}</span>
@@ -106,7 +117,7 @@ export function NoteForm({ pending, onSubmit, onClear }: Props) {
 
       <div aria-live="polite">
         {error && (
-          <p id="note-error" className="text-sm font-medium text-red-700 dark:text-red-300">
+          <p id="note-error" className="text-sm font-medium text-red-300">
             {error}
           </p>
         )}

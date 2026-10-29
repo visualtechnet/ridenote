@@ -40,6 +40,7 @@ describe("accessibility (axe)", () => {
           missing_fields: ["dropoff_location"],
           notes: "Confirm ramp.",
         },
+        usage: { inputTokens: 120, outputTokens: 160, latencyMs: 842 },
       }),
     ) as unknown as typeof fetch;
     const user = userEvent.setup();
@@ -88,6 +89,24 @@ describe("accessibility (axe)", () => {
         ]}
       />,
     );
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it("history list with usage, ratings and the summary line", async () => {
+    const rows = [300, 400, 500, 400, 400, 900].map((tokens, i) => ({
+      id: i + 1,
+      passenger_name: `Rider ${i + 1}`,
+      pickup_location: "12 Oak St",
+      dropoff_location: null,
+      pickup_time: "09:30",
+      mobility: [] as ("wheelchair" | "walker")[],
+      input_tokens: tokens - 100,
+      output_tokens: 100,
+      latency_ms: i === 5 ? 900 : 800 + i * 100,
+      created_at: new Date("2026-10-27T14:05:00Z"),
+    }));
+    const { container } = render(<HistoryList rows={rows} />);
+    expect(container.textContent).toMatch(/Problematic/);
     expect(await axe(container)).toHaveNoViolations();
   });
 });

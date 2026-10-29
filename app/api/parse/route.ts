@@ -11,6 +11,7 @@ import { createRateLimiter, maxRequestsFor } from "@/lib/rate-limit";
 import { isOutOfCredit } from "@/lib/upstream-errors";
 import { readLimitedText } from "@/lib/read-body";
 import type { Trip } from "@/lib/trip";
+import { toUsage, type Usage } from "@/lib/usage";
 import { validateRequestBody } from "@/lib/validation";
 
 // Layer 1: per client, counts every request (valid or not).
@@ -67,11 +68,11 @@ function checkRate(key: string) {
  * note. Nothing here may change the response: `after` can throw (no request scope) and the save
  * itself never throws, but both are guarded so a broken History cannot break a parse.
  */
-function saveAfterResponse(trip: Trip) {
+function saveAfterResponse(trip: Trip, usage: Usage) {
   try {
     after(async () => {
       try {
-        await saveEntry(trip);
+        await saveEntry(trip, usage);
       } catch {
         // Already logged by saveEntry (error name only); never rethrow.
       }
@@ -100,9 +101,12 @@ async function callModel(note: string, signal: AbortSignal): Promise<Outcome> {
   try {
     client ??= stubActive() ? createStubClient() : new Anthropic();
     const result = await extractTrip(client, note, { signal });
+    // Numbers, model name and stop reason only: never the note or anything parsed from it.
+    console.info("parse usage:", JSON.stringify(result.meta));
     if (!result.ok) return { status: result.status, body: { error: result.error } };
-    saveAfterResponse(result.trip);
-    return { status: HTTP.ok, body: { trip: result.trip } };
+    const usage = toUsage(result.meta);
+    saveAfterResponse(result.trip, usage);
+    return { status: HTTP.ok, body: { trip: result.trip, usage } };
   } catch (err) {
     // The one failure a person can act on. It is logged as its own kind so the owner sees it.
     if (isOutOfCredit(err)) {

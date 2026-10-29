@@ -24,6 +24,8 @@ test.describe("happy path", () => {
     await expect(card.getByText("9:30 AM")).toBeVisible();
     await expect(card.getByText("Wheelchair")).toBeVisible();
     await expect(card.getByText(/verify before dispatching/i)).toBeVisible();
+    // Usage is optional in the response (this mock sends none), so no usage line appears.
+    await expect(card.getByText("Usage", { exact: true })).toHaveCount(0);
     // A card, not raw JSON:
     await expect(page.locator("body")).not.toContainText('"passenger_name"');
     expect(calls).toEqual([
@@ -171,9 +173,14 @@ test.describe("usability", () => {
 
     await page.keyboard.press("Tab"); // skip link comes first
     await expect(page.getByRole("link", { name: "Skip to main content" })).toBeFocused();
-    await page.keyboard.press("Enter"); // the skip link jumps past the navigation...
+    await page.keyboard.press("Enter"); // the skip link jumps past the site navigation...
+    const jumps = page.getByRole("navigation", { name: "On this page" }).getByRole("link");
+    for (let i = 0; i < (await jumps.count()); i++) {
+      await page.keyboard.press("Tab"); // ...into the page's own jump links
+      await expect(jumps.nth(i)).toBeFocused();
+    }
     await page.keyboard.press("Tab");
-    await expect(note(page)).toBeFocused(); // ...so the next Tab lands on the note
+    await expect(note(page)).toBeFocused(); // ...and the Tab after them lands on the note
 
     await page.keyboard.type("Pick up Mrs. Lee at 12 Oak St");
     await page.keyboard.press("Control+Enter");

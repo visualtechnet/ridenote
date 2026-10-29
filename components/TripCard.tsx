@@ -3,18 +3,20 @@ import { formatTime12h, mobilityLabel } from "@/lib/format";
 import { MISSING_MOBILITY } from "@/lib/config";
 import { COPY } from "@/lib/messages";
 import type { Trip } from "@/lib/trip";
+import type { Usage } from "@/lib/usage";
+
+const BLANK =
+  "inline-block min-w-28 border-b-2 border-dashed border-edge text-base text-zinc-400 italic";
+
+const TAG = "font-mono border px-2 py-0.5 text-xs tracking-[0.14em] uppercase";
 
 function Field({ label, value }: { label: string; value: ReactNode | null }) {
   return (
-    <div className="min-w-0">
-      <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-        {label}
-      </dt>
+    <div className="bg-panel min-w-0 p-4">
+      <dt className="lab">{label}</dt>
       <dd
         className={
-          value
-            ? "mt-0.5 text-base break-words text-zinc-900 dark:text-zinc-50"
-            : "mt-0.5 inline-block min-w-28 border-b-2 border-dashed border-zinc-300 text-base text-zinc-500 italic dark:border-zinc-600 dark:text-zinc-400"
+          value ? "mt-1.5 font-mono text-base break-words text-zinc-50" : `mt-1.5 ${BLANK}`
         }
       >
         {value ?? COPY.notStated}
@@ -23,23 +25,20 @@ function Field({ label, value }: { label: string; value: ReactNode | null }) {
   );
 }
 
-export function TripCard({ trip }: { trip: Trip }) {
+export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
   // Mobility is flagged by the server (see missingFields), but as a quiet line beside the mobility
   // field rather than a chip: most notes name no aid, and a warning on nearly every card would be
   // ignored, including the ones that matter.
   const flagMobility = trip.missing_fields.includes(MISSING_MOBILITY);
   const chips = trip.missing_fields.filter((f) => f !== MISSING_MOBILITY);
   return (
-    <section
-      aria-label={COPY.resultLabel}
-      className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-    >
-      <h2 className="bg-plate text-plate-ink px-6 py-4 text-2xl font-bold break-words">
+    <section aria-label={COPY.resultLabel} className="bezel">
+      <h2 className="caps border-etch border-b px-5 py-3.5 text-2xl break-words text-zinc-50">
         {trip.passenger_name ?? COPY.unknownPassenger}
       </h2>
 
-      <div className="p-6">
-        <dl className="grid gap-4 sm:grid-cols-2">
+      <div className="p-5">
+        <dl className="border-etch bg-etch grid gap-px border sm:grid-cols-2">
           <Field label={COPY.fieldPickup} value={trip.pickup_location} />
           <Field label={COPY.fieldDropoff} value={trip.dropoff_location} />
           <Field
@@ -50,31 +49,22 @@ export function TripCard({ trip }: { trip: Trip }) {
               )
             }
           />
-          <div className="min-w-0">
-            <dt className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-              {COPY.fieldMobility}
-            </dt>
-            <dd className="mt-1">
+          <div className="bg-panel min-w-0 p-4">
+            <dt className="lab">{COPY.fieldMobility}</dt>
+            <dd className="mt-1.5">
               {trip.mobility.length > 0 ? (
                 <ul aria-label={COPY.mobilityListLabel} className="flex flex-wrap gap-2">
                   {trip.mobility.map((aid) => (
-                    <li
-                      key={aid}
-                      className="bg-plate text-plate-ink rounded-md px-3 py-1 text-sm font-semibold"
-                    >
+                    <li key={aid} className={`${TAG} border-accent text-accent`}>
                       {mobilityLabel(aid)}
                     </li>
                   ))}
                 </ul>
               ) : (
                 <>
-                  <span className="inline-block min-w-28 border-b-2 border-dashed border-zinc-300 text-base text-zinc-500 italic dark:border-zinc-600 dark:text-zinc-400">
-                    {COPY.notStated}
-                  </span>
+                  <span className={BLANK}>{COPY.notStated}</span>
                   {flagMobility && (
-                    <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
-                      {COPY.confirmMobility}
-                    </p>
+                    <p className="mt-1.5 text-xs text-amber-300">{COPY.confirmMobility}</p>
                   )}
                 </>
               )}
@@ -82,23 +72,23 @@ export function TripCard({ trip }: { trip: Trip }) {
           </div>
         </dl>
 
-        {trip.notes && (
-          <p className="mt-5 text-sm break-words text-zinc-600 dark:text-zinc-400">{trip.notes}</p>
-        )}
+        {trip.notes && <p className="mt-5 text-sm break-words text-zinc-300">{trip.notes}</p>}
 
-        <p className="mt-5 text-xs text-zinc-600 dark:text-zinc-400">{COPY.verifyReminder}</p>
+        <p className="mt-5 text-xs text-zinc-400">{COPY.verifyReminder}</p>
+
+        {usage && (
+          <p className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="lab">{COPY.usageLabel}</span>
+            <span className="font-mono text-xs text-zinc-400">{COPY.usageValue(usage)}</span>
+          </p>
+        )}
 
         {chips.length > 0 && (
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-              {COPY.missingHeading}
-            </span>
+            <span className="lab">{COPY.missingHeading}</span>
             <ul aria-label={COPY.missingListLabel} className="flex flex-wrap gap-2">
               {chips.map((f) => (
-                <li
-                  key={f}
-                  className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200"
-                >
+                <li key={f} className={`${TAG} border-amber-400 text-amber-300`}>
                   {f}
                 </li>
               ))}
@@ -115,12 +105,12 @@ export function TripCardSkeleton() {
     <div
       role="status"
       aria-label={COPY.loadingLabel}
-      className="animate-pulse rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
+      className="bezel p-5 motion-safe:animate-pulse"
     >
-      <div className="h-6 w-1/3 rounded bg-zinc-200 dark:bg-zinc-800" />
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="bg-etch h-7 w-1/3" />
+      <div className="mt-5 grid gap-px sm:grid-cols-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-10 rounded bg-zinc-100 dark:bg-zinc-800" />
+          <div key={i} className="bg-etch h-14" />
         ))}
       </div>
     </div>

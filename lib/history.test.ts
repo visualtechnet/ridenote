@@ -50,12 +50,30 @@ describe("historyEnabled", () => {
   });
 });
 
+describe("toRecord usage", () => {
+  it("carries input tokens, output tokens and latency", () => {
+    const record = toRecord(trip(), { inputTokens: 120, outputTokens: 160, latencyMs: 842 })!;
+    expect(record).toMatchObject({ input_tokens: 120, output_tokens: 160, latency_ms: 842 });
+  });
+
+  it("saves null usage when there is none", () => {
+    expect(toRecord(trip())).toMatchObject({
+      input_tokens: null,
+      output_tokens: null,
+      latency_ms: null,
+    });
+  });
+});
+
 describe("toRecord", () => {
-  it("keeps exactly the five saved fields", () => {
+  it("keeps exactly the five trip fields plus the three usage counts", () => {
     const record = toRecord(trip())!;
     expect(Object.keys(record).sort()).toEqual([
       "dropoff_location",
+      "input_tokens",
+      "latency_ms",
       "mobility",
+      "output_tokens",
       "passenger_name",
       "pickup_location",
       "pickup_time",
@@ -106,6 +124,9 @@ describe("toRecord", () => {
       dropoff_location: null,
       pickup_time: null,
       mobility: ["cane"],
+      input_tokens: null,
+      output_tokens: null,
+      latency_ms: null,
     });
   });
 });
@@ -122,27 +143,27 @@ describe("saveEntry", () => {
 
   it("inserts the record once with the daily cap", async () => {
     const store = fakeStore();
-    await saveEntry(trip(), store);
+    await saveEntry(trip(), undefined, store);
     expect(store.insert).toHaveBeenCalledTimes(1);
     expect(store.insert).toHaveBeenCalledWith(toRecord(trip()), HISTORY.dailySaveCap);
   });
 
   it("does nothing when there is nothing worth saving", async () => {
     const store = fakeStore();
-    await saveEntry(emptyTrip(), store);
+    await saveEntry(emptyTrip(), undefined, store);
     expect(store.insert).not.toHaveBeenCalled();
   });
 
   it("does nothing for a trip with only a pickup time", async () => {
     const store = fakeStore();
-    await saveEntry(emptyTrip({ pickup_time: "09:30" }), store);
+    await saveEntry(emptyTrip({ pickup_time: "09:30" }), undefined, store);
     expect(store.insert).not.toHaveBeenCalled();
   });
 
   it("does nothing when history is disabled", async () => {
     process.env.VERCEL_ENV = "preview";
     const store = fakeStore();
-    await saveEntry(trip(), store);
+    await saveEntry(trip(), undefined, store);
     expect(store.insert).not.toHaveBeenCalled();
   });
 
@@ -151,7 +172,7 @@ describe("saveEntry", () => {
     const err = new Error("boom Ann Lee");
     err.name = "PgError";
     const store = fakeStore({ insert: jest.fn().mockRejectedValue(err) });
-    await expect(saveEntry(trip(), store)).resolves.toBeUndefined();
+    await expect(saveEntry(trip(), undefined, store)).resolves.toBeUndefined();
     expect(spy).toHaveBeenCalledWith("history save failed:", "PgError");
     expect(JSON.stringify(spy.mock.calls)).not.toContain("Ann");
   });

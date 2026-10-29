@@ -248,15 +248,15 @@ piece of user-facing text in **`lib/messages.ts`**. Change them there, not in th
 
 The site has five sections, reachable from the navigation on the left (a **Menu** button on phones):
 
-| Page             | Path            | What it is                                                                 |
-| ---------------- | --------------- | -------------------------------------------------------------------------- |
-| **Parser**       | `/`             | The tool itself.                                                           |
-| **Requirements** | `/requirements` | The PRD, required input, expected JSON output and what valid JSON is.      |
-| **Docs**         | `/docs`         | Setup, accepted and rejected inputs, JSON pitfalls, every error explained. |
-| Docs: **Eval**   | `/docs/eval`    | How the live accuracy eval works, with every case listed.                  |
-| Docs: **FAQ**    | `/docs/faq`     | Common questions, and the bugs found along the way with their lessons.     |
-| **Contact**      | `/contact`      | How to email the owner with questions or feedback (keys are not provided). |
-| **Tests**        | `/tests`        | Every automated test name, read from the real test files at build time.    |
+| Page             | Path            | What it is                                                                           |
+| ---------------- | --------------- | ------------------------------------------------------------------------------------ |
+| **Parser**       | `/`             | The tool itself.                                                                     |
+| **Requirements** | `/requirements` | The PRD, required input, expected JSON output and what valid JSON is.                |
+| **Docs**         | `/docs`         | Setup, accepted and rejected inputs, JSON pitfalls, every error explained.           |
+| Docs: **Eval**   | `/docs/eval`    | How the live accuracy eval works, with every case listed.                            |
+| Docs: **FAQ**    | `/docs/faq`     | Common questions, and the bugs found along the way with their lessons.               |
+| **Contact**      | `/contact`      | How to reach the owner on GitHub with questions or feedback (keys are not provided). |
+| **Tests**        | `/tests`        | Every automated test name, read from the real test files at build time.              |
 
 What to type, in short: who, where from, where to, when, and mobility: name every aid the passenger
 uses (a wheelchair, a cane, a walker, and so on) and all of them are returned as a list. The card shows
@@ -320,7 +320,8 @@ and it exists only on the production deployment: in development and preview it s
 saved.
 
 **What is saved.** After a successful parse the app saves the parsed trip's name, pickup and dropoff
-location, pickup time and mobility aids. It never saves the note you typed, the `notes` sentence or the
+location, pickup time and mobility aids, plus the call's input tokens, output tokens and latency in
+milliseconds (shown on its History card). It never saves the note you typed, the `notes` sentence or the
 missing list. A trip with nothing in it (no name, no address, no aid) is not saved.
 
 **Who can see it, and for how long.** Anyone can open `/history`. Entries are deleted after 7 days by a daily
@@ -361,8 +362,9 @@ Firewall rule and the troubleshooting table, is in **[docs/HISTORY-SETUP.md](doc
 short, once and in order:
 
 1. Add the **Neon** integration under Vercel **Storage**.
-2. Run `db/schema.sql` as the owner in the Neon SQL editor (table, two roles, self-check). Optionally prove
-   the grants with `db/verify.sql`.
+2. Run `db/schema.sql` as the owner in the Neon SQL editor (table, two roles, self-check). A database from
+   before the usage columns needs `db/migrations/2026-10-28-history-usage.sql` run once instead, **before**
+   deploying the code that writes them. Optionally prove the grants with `db/verify.sql`.
 3. Set each role's password with `alter role`, then build the two connection strings from the owner's pooled
    string (swap user and password, drop `&channel_binding=require`).
 4. Add `HISTORY_DATABASE_URL`, `HISTORY_PURGE_DATABASE_URL` and `CRON_SECRET` in **Settings, Environment

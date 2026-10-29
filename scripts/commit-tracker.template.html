@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Commit &amp; attribution tracker</title>
+    <link rel="icon" href="data:," />
+    <style>
+      #commits td:nth-child(3) {
+        min-width: 320px;
+      }
+      #commits td:first-child,
+      #people td:last-child {
+        white-space: nowrap;
+      }
+      :root {
+        --glass: #0b0f14;
+        --panel: #111720;
+        --raised: #172030;
+        --well: #070b10;
+        --etch: #232c38;
+        --etch-strong: #334152;
+        --ink: #d5dee9;
+        --dim: #93a1b3;
+        --bright: #f1f5f9;
+        --accent: #59b8ff;
+        --warn: #fcd34d;
+        --danger: #f87171;
+        --danger-wash: #450a0a;
+        --ok: #6ee7a8;
+        --mono: "Sometype Mono", ui-monospace, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        border-radius: 0;
+      }
+      body {
+        margin: 0;
+        background: var(--glass);
+        color: var(--ink);
+        font:
+          15px/1.5 "Atkinson Hyperlegible Next",
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+      h1 {
+        margin: 0;
+        font:
+          800 2rem/1 "Barlow Condensed",
+          "Arial Narrow",
+          sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--bright);
+      }
+      h2 {
+        margin: 40px 0 12px;
+        font: 400 0.6875rem var(--mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      .sub {
+        margin: 8px 0 24px;
+        color: var(--dim);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+      .verdict {
+        padding: 16px 20px;
+        border: 1px solid var(--etch-strong);
+        border-left-width: 6px;
+        background: var(--panel);
+        font-size: 1.05rem;
+      }
+      .verdict strong {
+        color: var(--bright);
+      }
+      .verdict.ok {
+        border-left-color: var(--ok);
+      }
+      .verdict.warn {
+        border-left-color: var(--warn);
+      }
+      .verdict.bad {
+        border-left-color: var(--danger);
+        background: var(--danger-wash);
+      }
+      .verdict small {
+        display: block;
+        margin-top: 4px;
+        color: var(--dim);
+        font-size: 0.85rem;
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .tile {
+        padding: 14px 16px;
+        background: var(--panel);
+        border: 1px solid var(--etch);
+      }
+      .tile b {
+        display: block;
+        font: 700 2rem/1.1 var(--mono);
+        color: var(--bright);
+      }
+      .tile span {
+        font: 400 0.6875rem var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      .tile.bad b {
+        color: var(--danger);
+      }
+      .tile.warn b {
+        color: var(--warn);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--panel);
+        border: 1px solid var(--etch);
+      }
+      th {
+        padding: 8px 12px;
+        text-align: left;
+        font: 400 0.6875rem var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--dim);
+        background: var(--well);
+      }
+      td {
+        padding: 8px 12px;
+        border-top: 1px solid var(--etch);
+        vertical-align: top;
+      }
+      td.num,
+      th.num {
+        text-align: right;
+        font-family: var(--mono);
+      }
+      .mono {
+        font-family: var(--mono);
+        font-size: 0.85rem;
+      }
+      .dim {
+        color: var(--dim);
+        font-size: 0.8rem;
+      }
+      .chip {
+        display: inline-block;
+        margin: 0 4px 4px 0;
+        padding: 0 8px;
+        border: 1px solid var(--etch-strong);
+        font: 400 0.7rem/1.6 var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .chip.you {
+        color: var(--ok);
+        border-color: var(--ok);
+      }
+      .chip.bot,
+      .chip.github,
+      .chip.mention,
+      .chip.warn {
+        color: var(--warn);
+        border-color: var(--warn);
+      }
+      .chip.other,
+      .chip.ai,
+      .chip.attributed {
+        color: var(--danger);
+        border-color: var(--danger);
+        font-weight: 700;
+      }
+      .chip.clean {
+        color: var(--ok);
+        border-color: var(--etch-strong);
+      }
+      .chip.main {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px 28px;
+        align-items: end;
+        margin-bottom: 12px;
+      }
+      fieldset {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+      legend {
+        padding: 0;
+        margin-bottom: 4px;
+        font: 400 0.6875rem var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      button,
+      input {
+        font: inherit;
+        color: var(--ink);
+      }
+      .seg button {
+        padding: 6px 12px;
+        margin-right: -1px;
+        background: var(--panel);
+        border: 1px solid var(--etch-strong);
+        cursor: pointer;
+      }
+      .seg button[aria-pressed="true"] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #04121f;
+        font-weight: 700;
+      }
+      input[type="search"] {
+        min-width: 260px;
+        padding: 6px 10px;
+        background: var(--well);
+        border: 1px solid var(--etch-strong);
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .row-toggle {
+        display: block;
+        width: 100%;
+        padding: 0;
+        background: none;
+        border: 0;
+        text-align: left;
+        cursor: pointer;
+        color: var(--bright);
+      }
+      .row-toggle:hover {
+        text-decoration: underline;
+      }
+      tr.flag-attributed > td:first-child {
+        box-shadow: inset 4px 0 var(--danger);
+      }
+      tr.flag-mention > td:first-child {
+        box-shadow: inset 4px 0 var(--warn);
+      }
+      tr.detail td {
+        background: var(--well);
+      }
+      pre.msg {
+        margin: 0 0 12px;
+        padding: 12px;
+        overflow-x: auto;
+        background: var(--glass);
+        border: 1px solid var(--etch);
+        font: 0.85rem/1.5 var(--mono);
+        white-space: pre-wrap;
+      }
+      .msg .hit-attributed {
+        display: block;
+        background: var(--danger-wash);
+        color: var(--danger);
+        font-weight: 700;
+      }
+      .msg .hit-mention {
+        display: block;
+        background: #3a2e05;
+        color: var(--warn);
+      }
+      .msg .ln {
+        display: block;
+        min-height: 1.5em;
+      }
+      ul.why {
+        margin: 0 0 8px;
+        padding-left: 20px;
+      }
+      .empty {
+        padding: 24px;
+        text-align: center;
+        color: var(--dim);
+      }
+      .scroll {
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Commit &amp; attribution tracker</h1>
+      <p class="sub" id="sub"></p>
+      <div id="verdict" role="status"></div>
+      <div class="tiles" id="tiles"></div>
+
+      <h2>People committing</h2>
+      <div class="scroll"><table id="people"></table></div>
+
+      <h2>Commits</h2>
+      <div class="filters" id="filters"></div>
+      <p class="dim" id="count" aria-live="polite"></p>
+      <div class="scroll"><table id="commits"></table></div>
+    </main>
+
+    <script>
+      const DATA = /*__DATA__*/ null;
+
+      const el = (tag, props = {}, ...kids) => {
+        const node = document.createElement(tag);
+        for (const [key, value] of Object.entries(props)) {
+          if (key === "class") node.className = value;
+          else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+          else node.setAttribute(key, value);
+        }
+        node.append(...kids.flat().filter((kid) => kid !== null && kid !== undefined));
+        return node;
+      };
+      const chip = (cls, text) => el("span", { class: `chip ${cls}` }, text);
+      const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+      const fmtDate = (iso) => iso.slice(0, 10);
+      const commits = DATA.commits;
+      const attributed = commits.filter((c) => c.status === "attributed");
+      const mentions = commits.filter((c) => c.status === "mention");
+      const unexpected = commits.filter((c) => c.unexpected);
+      const attributedInMain = attributed.filter((c) => c.inMain);
+      const unexpectedInMain = unexpected.filter((c) => c.inMain);
+
+      document.getElementById("sub").textContent =
+        `${DATA.repo} · ${plural(commits.length, "commit")} across all branches · "${DATA.main}" is the main branch · generated ${DATA.generated.replace("T", " ").slice(0, 16)} UTC`;
+
+      // Verdict
+      const verdict = document.getElementById("verdict");
+      const offMain = [...new Set(attributed.filter((c) => !c.inMain).flatMap((c) => c.branches))];
+      if (attributedInMain.length || unexpectedInMain.length) {
+        verdict.className = "verdict bad";
+        verdict.append(
+          el(
+            "strong",
+            {},
+            `${DATA.main} has ${plural(attributedInMain.length, "commit")} with attribution and ${plural(unexpectedInMain.length, "commit")} by someone else.`,
+          ),
+          el("small", {}, "Filter the list below to see which."),
+        );
+      } else if (attributed.length) {
+        verdict.className = "verdict warn";
+        verdict.append(
+          el(
+            "strong",
+            {},
+            `${DATA.main} is clean, but ${plural(attributed.length, "commit")} elsewhere carry attribution.`,
+          ),
+          el("small", {}, `Only on: ${offMain.join(", ") || "unreachable commits"}.`),
+        );
+      } else {
+        verdict.className = "verdict ok";
+        verdict.append(
+          el("strong", {}, "No commit carries attribution and every author is expected."),
+        );
+      }
+
+      // Tiles
+      const tile = (n, label, cls = "") =>
+        el(
+          "div",
+          { class: `tile ${n && cls ? cls : ""}` },
+          el("b", {}, String(n)),
+          el("span", {}, label),
+        );
+      document
+        .getElementById("tiles")
+        .append(
+          tile(commits.length, "Commits"),
+          tile(attributed.length, "With attribution", "bad"),
+          tile(attributedInMain.length, `…of those in ${DATA.main}`, "bad"),
+          tile(mentions.length, "Mention only (review)", "warn"),
+          tile(unexpected.length, "By someone else", "bad"),
+        );
+
+      // People
+      const people = new Map();
+      const person = (name) => {
+        if (!people.has(name))
+          people.set(name, {
+            name,
+            authored: 0,
+            committed: 0,
+            flagged: 0,
+            first: "9999",
+            last: "",
+          });
+        return people.get(name);
+      };
+      for (const c of commits) {
+        const a = person(c.author);
+        a.authored++;
+        if (c.status === "attributed") a.flagged++;
+        if (c.date < a.first) a.first = c.date;
+        if (c.date > a.last) a.last = c.date;
+        person(c.committer).committed++;
+      }
+      const peopleTable = document.getElementById("people");
+      peopleTable.append(
+        el(
+          "thead",
+          {},
+          el(
+            "tr",
+            {},
+            el("th", {}, "Name"),
+            ...["Authored", "Committed", "With attribution"].map((h) =>
+              el("th", { class: "num" }, h),
+            ),
+            el("th", {}, "Active"),
+          ),
+        ),
+        el(
+          "tbody",
+          {},
+          ...[...people.values()]
+            .sort((a, b) => b.authored + b.committed - (a.authored + a.committed))
+            .map((p) =>
+              el(
+                "tr",
+                {},
+                el("td", {}, p.name),
+                el("td", { class: "num" }, String(p.authored)),
+                el("td", { class: "num" }, String(p.committed)),
+                el("td", { class: "num" }, String(p.flagged)),
+                el(
+                  "td",
+                  { class: "dim" },
+                  p.authored ? `${fmtDate(p.first)} → ${fmtDate(p.last)}` : "committer only",
+                ),
+              ),
+            ),
+        ),
+      );
+
+      // Filters
+      const state = { status: "all", scope: "all", who: "all", q: "" };
+      const groups = [
+        [
+          "status",
+          "Attribution",
+          [
+            ["all", "All"],
+            ["attributed", "Attributed"],
+            ["mention", "Mentions"],
+            ["clean", "Clean"],
+          ],
+        ],
+        [
+          "scope",
+          "Branches",
+          [
+            ["all", "All branches"],
+            ["main", `${DATA.main} only`],
+          ],
+        ],
+        [
+          "who",
+          "Author",
+          [
+            ["all", "Anyone"],
+            ["other", "Someone else"],
+          ],
+        ],
+      ];
+      const filters = document.getElementById("filters");
+      for (const [key, label, options] of groups) {
+        const seg = el("div", { class: "seg" });
+        for (const [value, text] of options) {
+          seg.append(
+            el(
+              "button",
+              {
+                type: "button",
+                "aria-pressed": String(state[key] === value),
+                onclick: () => {
+                  state[key] = value;
+                  for (const b of seg.children)
+                    b.setAttribute("aria-pressed", String(b === event.currentTarget));
+                  render();
+                },
+              },
+              text,
+            ),
+          );
+        }
+        filters.append(el("fieldset", {}, el("legend", {}, label), seg));
+      }
+      filters.append(
+        el(
+          "label",
+          {},
+          el("span", { class: "dim", style: "display:block" }, "SEARCH"),
+          el("input", {
+            type: "search",
+            placeholder: "subject, author, hash, branch",
+            oninput: (e) => {
+              state.q = e.target.value.toLowerCase();
+              render();
+            },
+          }),
+        ),
+      );
+
+      const matches = (c) => {
+        if (state.status !== "all" && c.status !== state.status) return false;
+        if (state.scope === "main" && !c.inMain) return false;
+        if (state.who === "other" && !c.unexpected) return false;
+        if (!state.q) return true;
+        return [c.hash, c.subject, c.author, ...c.branches]
+          .join(" ")
+          .toLowerCase()
+          .includes(state.q);
+      };
+
+      const detail = (c) => {
+        const hits = new Map(c.findings.filter((f) => f.line >= 0).map((f) => [f.line, f.level]));
+        const lines = c.message
+          .split("\n")
+          .map((text, i) =>
+            el("span", { class: `ln ${hits.has(i) ? `hit-${hits.get(i)}` : ""}` }, text || " "),
+          );
+        return el(
+          "td",
+          { colspan: "5" },
+          c.findings.length
+            ? el(
+                "ul",
+                { class: "why" },
+                ...c.findings.map((f) =>
+                  el(
+                    "li",
+                    {},
+                    chip(f.level, f.level),
+                    f.label,
+                    f.line >= 0 ? ` (line ${f.line + 1})` : "",
+                  ),
+                ),
+              )
+            : el("p", { class: "dim" }, "No attribution found in the message or the identities."),
+          el("pre", { class: "msg" }, ...lines),
+          el(
+            "p",
+            { class: "dim" },
+            `Full hash ${c.hash} · committed by ${c.committer} · on ${c.branches.join(", ") || "no branch"}`,
+          ),
+        );
+      };
+
+      const table = document.getElementById("commits");
+      const render = () => {
+        const shown = commits.filter(matches);
+        document.getElementById("count").textContent =
+          `Showing ${shown.length} of ${commits.length}.`;
+        const body = el("tbody");
+        for (const c of shown) {
+          const open = el("tr", { class: "detail", hidden: "" }, detail(c));
+          const toggle = el(
+            "button",
+            {
+              type: "button",
+              class: "row-toggle",
+              "aria-expanded": "false",
+              onclick: (e) => {
+                const isOpen = open.hidden;
+                open.hidden = !isOpen;
+                e.currentTarget.setAttribute("aria-expanded", String(isOpen));
+              },
+            },
+            c.subject,
+          );
+          body.append(
+            el(
+              "tr",
+              { class: `flag-${c.status}` },
+              el(
+                "td",
+                { class: "mono" },
+                fmtDate(c.date),
+                el("br"),
+                el("span", { class: "dim" }, c.hash.slice(0, 7)),
+              ),
+              el(
+                "td",
+                {},
+                c.author,
+                c.unexpected ? el("div", {}, chip("other", "unexpected author")) : null,
+              ),
+              el("td", {}, toggle),
+              el("td", {}, chip(c.status, c.status)),
+              el(
+                "td",
+                {},
+                c.inMain ? chip("main", DATA.main) : chip("warn", "not in main"),
+                c.branches.filter((b) => b !== DATA.main).length
+                  ? el(
+                      "span",
+                      { class: "chip", title: c.branches.join(", ") },
+                      `+${c.branches.filter((b) => b !== DATA.main).length} more`,
+                    )
+                  : null,
+              ),
+            ),
+            open,
+          );
+        }
+        table.replaceChildren(
+          el(
+            "thead",
+            {},
+            el(
+              "tr",
+              {},
+              ...[
+                "Date / hash",
+                "Author",
+                "Subject (click to read)",
+                "Attribution",
+                "Branches",
+              ].map((h) => el("th", {}, h)),
+            ),
+          ),
+          body,
+        );
+        if (!shown.length)
+          table.append(
+            el(
+              "tbody",
+              {},
+              el("tr", {}, el("td", { colspan: "5", class: "empty" }, "No commits match.")),
+            ),
+          );
+      };
+      render();
+    </script>
+  </body>
+</html>

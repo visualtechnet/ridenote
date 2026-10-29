@@ -20,11 +20,12 @@ It never guesses. Anything the note does not say is marked **Missing**, includin
 
 ## Operating Context
 
-Visitors use a public demo with no accounts. Input is a note up to 1,000 characters. Parsing calls the Claude API behind per-client rate limits, a shared monthly budget (about $5, fixed) and a 600-token answer cap. A History of parsed results is public, per the approved design in `docs/superpowers/specs/2026-10-27-history-design.md`.
+Visitors use a public demo with no accounts. Input is a note up to 1,000 characters. Parsing calls the Claude API behind per-client rate limits, a shared monthly budget (about $5, fixed) and a 600-token answer cap. A History of parsed results is public and live, per the approved design in `docs/superpowers/specs/2026-10-27-history-design.md`.
 
 ## Capabilities and Constraints
 
-- Parser page (`/`), Requirements, Docs (guide, FAQ, eval), Contact; History in progress.
+- Parser page (`/`), Requirements, Docs (guide, FAQ, eval), Contact, and History (`/history`): public, read only, production only, entries kept 7 days and saved without the raw note or contact details.
+- Each parse reports its usage (input and output tokens, latency) on the result card; History saves the same figures per row and rates calls against the median of the others.
 - Stack: Next.js 16, React 19, Claude API, Zod, React Query, Zustand.
 - Missing fields are never filled in; the UI must show absence as Missing, never a placeholder that looks like data.
 - No accounts or login.

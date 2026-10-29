@@ -13,13 +13,11 @@ describe("Contact page", () => {
     ).toBeInTheDocument();
   });
 
-  it("links the owner's email for questions and feedback", () => {
-    render(<ContactPage />);
-    const mail = screen.getByRole("link", { name: CONTACT.email });
-    expect(mail).toHaveAttribute(
-      "href",
-      `mailto:${CONTACT.email}?subject=${encodeURIComponent(CONTACT.subject)}`,
-    );
+  it("links GitHub issues for questions and feedback, and shows no email address", () => {
+    const { container } = render(<ContactPage />);
+    expect(screen.getByRole("link", { name: CONTACT.label })).toHaveAttribute("href", CONTACT.url);
+    expect(container.querySelector('a[href^="mailto:"]')).toBeNull();
+    expect(container.textContent).not.toMatch(/\S+@\S+\.\S+/);
   });
 
   it("says keys are not provided, and does not offer to send one", () => {

@@ -5,7 +5,7 @@ import { Routes } from "../lib/routes";
 import { mockParseApi } from "./fixtures";
 
 test.describe("contact", () => {
-  test("the Contact item opens a page with the owner's email and the key request", async ({
+  test("the Contact item opens a page with the GitHub issues link and the key request", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -16,8 +16,8 @@ test.describe("contact", () => {
       .click();
     await expect(page).toHaveURL(Routes.page("contact"));
     await expect(page.getByRole("heading", { level: 1, name: "Contact" })).toBeVisible();
-    const mail = page.getByRole("main").getByRole("link", { name: CONTACT.email, exact: true });
-    await expect(mail).toHaveAttribute("href", new RegExp(`^mailto:${CONTACT.email}\\?subject=`));
+    const issues = page.getByRole("main").getByRole("link", { name: CONTACT.label, exact: true });
+    await expect(issues).toHaveAttribute("href", CONTACT.url);
     await expect(page.getByRole("main")).toContainText("API keys are not provided or shared");
   });
 

@@ -4,7 +4,7 @@ const mockParse = jest.fn();
 jest.mock("@anthropic-ai/sdk", () => ({
   __esModule: true,
   default: class {
-    messages = { parse: mockParse };
+    messages = { create: mockParse };
   },
 }));
 
@@ -19,6 +19,7 @@ jest.mock("next/server", () => ({
 }));
 
 import { HTTP, RATE_LIMIT } from "@/lib/config";
+import { jsonContent } from "@/tests/model-reply";
 
 const goodTrip = {
   passenger_name: "Mrs. Lee",
@@ -54,7 +55,11 @@ afterAll(() => {
 
 beforeEach(() => {
   mockParse.mockReset();
-  mockParse.mockResolvedValue({ stop_reason: "end_turn", parsed_output: goodTrip, usage: {} });
+  mockParse.mockResolvedValue({
+    stop_reason: "end_turn",
+    content: jsonContent(goodTrip),
+    usage: {},
+  });
   mockSaveEntry.mockReset();
   mockSaveEntry.mockResolvedValue(undefined);
   jest.spyOn(console, "error").mockImplementation(() => {});

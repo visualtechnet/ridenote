@@ -10,3 +10,4 @@ tsconfig.tsbuildinfo
 test-results
 playwright-report
 .superpowers
+.impeccable/hook.cache.json

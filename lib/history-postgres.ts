@@ -17,13 +17,13 @@ export function neonQuery(url: string): QueryFn {
 
 // ONE statement: the cap check and the insert cannot be separated by a concurrent save.
 // The cap counts rows strictly newer than 24 hours (created_at > ...).
-const INSERT_SQL = `INSERT INTO history (passenger_name, pickup_location, dropoff_location, pickup_time, mobility)
-SELECT $1::text, $2::text, $3::text, $4::text, $5::text[]
-WHERE (SELECT count(*) FROM history WHERE created_at > now() - interval '1 day') < $6::bigint
+const INSERT_SQL = `INSERT INTO history (passenger_name, pickup_location, dropoff_location, pickup_time, mobility, input_tokens, output_tokens, latency_ms)
+SELECT $1::text, $2::text, $3::text, $4::text, $5::text[], $6::int, $7::int, $8::int
+WHERE (SELECT count(*) FROM history WHERE created_at > now() - interval '1 day') < $9::bigint
 RETURNING id`;
 
 // Inclusive cut-off (>=): the purge deletes only strictly older rows.
-const LIST_SQL = `SELECT id, created_at, passenger_name, pickup_location, dropoff_location, pickup_time, mobility
+const LIST_SQL = `SELECT id, created_at, passenger_name, pickup_location, dropoff_location, pickup_time, mobility, input_tokens, output_tokens, latency_ms
 FROM history
 WHERE created_at >= now() - make_interval(days => $2::int)
 ORDER BY created_at DESC, id DESC
@@ -37,7 +37,12 @@ type DbRow = {
   dropoff_location: string | null;
   pickup_time: string | null;
   mobility: HistoryRow["mobility"] | null;
+  input_tokens: number | string | null;
+  output_tokens: number | string | null;
+  latency_ms: number | string | null;
 };
+
+const count = (v: number | string | null | undefined) => (v == null ? null : Number(v));
 
 export function createPostgresStore(
   url: string = process.env.HISTORY_DATABASE_URL!,
@@ -51,6 +56,9 @@ export function createPostgresStore(
         record.dropoff_location,
         record.pickup_time,
         record.mobility,
+        record.input_tokens ?? null,
+        record.output_tokens ?? null,
+        record.latency_ms ?? null,
         dailyCap,
       ]);
       return rows.length > 0;
@@ -65,6 +73,9 @@ export function createPostgresStore(
         dropoff_location: r.dropoff_location,
         pickup_time: r.pickup_time,
         mobility: r.mobility ?? [],
+        input_tokens: count(r.input_tokens),
+        output_tokens: count(r.output_tokens),
+        latency_ms: count(r.latency_ms),
       }));
     },
   };

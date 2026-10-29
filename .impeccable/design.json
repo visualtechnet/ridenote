@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-28T22:33:52Z",
+  "title": "Design System: RideNote",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#59b8ff",
+        "tonalRamp": [
+          "#000732",
+          "#00265f",
+          "#004887",
+          "#006cad",
+          "#2c90d5",
+          "#57b6fd",
+          "#81d7ff",
+          "#b2f7ff"
+        ]
+      },
+      "glass": {
+        "role": "neutral",
+        "displayName": "Glass",
+        "canonical": "#0b0f14",
+        "tonalRamp": [
+          "#090b0f",
+          "#23272c",
+          "#41454c",
+          "#61676d",
+          "#848a91",
+          "#a9aeb6",
+          "#c9ced5",
+          "#eaeff5"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel",
+        "canonical": "#111720",
+        "tonalRamp": [
+          "#070b12",
+          "#212730",
+          "#3e4650",
+          "#5f6772",
+          "#828a96",
+          "#a6afbb",
+          "#c6ceda",
+          "#e8eff9"
+        ]
+      },
+      "edge": {
+        "role": "neutral",
+        "displayName": "Edge",
+        "canonical": "#63758b",
+        "tonalRamp": [
+          "#030c18",
+          "#192739",
+          "#36465b",
+          "#56687d",
+          "#788ba2",
+          "#9db0c8",
+          "#bdd0e6",
+          "#e1f0ff"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#d5dee9",
+        "tonalRamp": [
+          "#070c11",
+          "#21272f",
+          "#3e464f",
+          "#5f6770",
+          "#828a94",
+          "#a6afb9",
+          "#c6cfd9",
+          "#e8eff8"
+        ]
+      },
+      "missing": {
+        "role": "semantic",
+        "displayName": "Missing Amber",
+        "canonical": "#fcd34d",
+        "tonalRamp": [
+          "#1c0300",
+          "#401d00",
+          "#633d00",
+          "#866000",
+          "#ab8400",
+          "#d1a900",
+          "#efca53",
+          "#ffec90"
+        ]
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "Danger Red",
+        "canonical": "#f87171",
+        "tonalRamp": [
+          "#2f0000",
+          "#5e0000",
+          "#880016",
+          "#b12f37",
+          "#db5759",
+          "#ff7e7d",
+          "#ffa3a0",
+          "#ffccc8"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The RideNote title on the parser page."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Passenger name on result and History cards."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading text and docs."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Field values and the note text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field names, counts and the usage line."
+      }
+    },
+    "shadows": [
+      {
+        "name": "key-rest",
+        "value": "inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 6px rgba(0,0,0,0.5)",
+        "purpose": "A raised key at rest."
+      },
+      {
+        "name": "key-pressed",
+        "value": "inset 0 2px 4px rgba(0,0,0,0.6)",
+        "purpose": "A key while pressed."
+      },
+      {
+        "name": "input-focus",
+        "value": "0 0 0 4px rgba(89,184,255,0.18)",
+        "purpose": "Focus glow on the note field."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "All key and input transitions (0.12s to 0.18s)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Run Key",
+      "kind": "button",
+      "refersTo": "key-run",
+      "description": "The primary action; one per screen.",
+      "html": "<button class=\"ds-key ds-key-run\">PARSE</button>",
+      "css": ".ds-key{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 28px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:800;font-size:17px;letter-spacing:.2em;text-transform:uppercase;border:1px solid #334152;background:#172030;color:#d5dee9;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 2px 6px rgba(0,0,0,.5);transition:background .18s,border-color .18s,transform .12s}.ds-key-run{background:#59b8ff;border-color:#59b8ff;color:#04121f}.ds-key-run:hover{background:#8dd0ff;border-color:#8dd0ff}.ds-key:active{transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(0,0,0,.6)}.ds-key:focus-visible{outline:2px solid #59b8ff;outline-offset:2px}"
+    },
+    {
+      "name": "Key",
+      "kind": "button",
+      "refersTo": "key",
+      "description": "Secondary action such as Use an example.",
+      "html": "<button class=\"ds-key ds-key-2\">USE AN EXAMPLE</button>",
+      "css": ".ds-key-2{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 20px;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:800;font-size:15px;letter-spacing:.2em;text-transform:uppercase;border:1px solid #334152;background:#172030;color:#d5dee9;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 2px 6px rgba(0,0,0,.5)}.ds-key-2:hover{border-color:#93a1b3;color:#f1f5f9}.ds-key-2:focus-visible{outline:2px solid #59b8ff;outline-offset:2px}"
+    },
+    {
+      "name": "Note Field",
+      "kind": "input",
+      "refersTo": "field-input",
+      "description": "The recessed textarea where a note is pasted.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-lab\">DISPATCHER NOTE</label><textarea rows=\"3\">Pick up Mrs. Lee at 12 Oak St, wheelchair</textarea></div>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:12px;width:320px}.ds-lab{font-family:'Sometype Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#93a1b3}.ds-field textarea{background:#070b10;border:1px solid #63758b;color:#f1f5f9;font-family:'Sometype Mono',ui-monospace,monospace;font-size:15px;padding:12px;resize:vertical}.ds-field textarea:focus-visible{outline:none;border-color:#59b8ff;box-shadow:0 0 0 4px rgba(89,184,255,.18)}"
+    },
+    {
+      "name": "Aid Chip",
+      "kind": "chip",
+      "refersTo": "chip-aid",
+      "description": "An identified mobility aid.",
+      "html": "<span class=\"ds-chip\">WHEELCHAIR</span>",
+      "css": ".ds-chip{display:inline-block;font-family:'Sometype Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #59b8ff;color:#59b8ff;padding:2px 8px}"
+    },
+    {
+      "name": "Missing Chip",
+      "kind": "chip",
+      "refersTo": "chip-missing",
+      "description": "A field the note did not state.",
+      "html": "<span class=\"ds-chip-missing\">pickup_time</span>",
+      "css": ".ds-chip-missing{display:inline-block;font-family:'Sometype Mono',ui-monospace,monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;border:1px solid #fbbf24;color:#fcd34d;padding:2px 8px}"
+    },
+    {
+      "name": "Trip Card",
+      "kind": "card",
+      "refersTo": "bezel",
+      "description": "The result readout: ruled fields with dashed blanks for what was not stated.",
+      "html": "<section class=\"ds-card\"><h2>MRS. LEE</h2><dl><div><dt>PICKUP</dt><dd>12 Oak St</dd></div><div><dt>DROPOFF</dt><dd class=\"ds-blank\">Not stated</dd></div></dl></section>",
+      "css": ".ds-card{background:#111720;border:1px solid #334152;width:320px}.ds-card h2{margin:0;padding:14px 20px;border-bottom:1px solid #232c38;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;font-size:24px;letter-spacing:.14em;color:#f1f5f9}.ds-card dl{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#232c38;border:1px solid #232c38;margin:20px}.ds-card dl>div{background:#111720;padding:16px}.ds-card dt{font-family:'Sometype Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.14em;color:#93a1b3}.ds-card dd{margin:6px 0 0;font-family:'Sometype Mono',ui-monospace,monospace;color:#f1f5f9}.ds-blank{display:inline-block;min-width:112px;border-bottom:2px dashed #63758b;color:#93a1b3;font-style:italic}"
+    },
+    {
+      "name": "Nav Link",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Top-bar link; current page gets an accent underline.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\" aria-current=\"page\">PARSER</a><a href=\"#\">HISTORY</a></nav>",
+      "css": ".ds-nav{display:flex;gap:32px}.ds-nav a{display:flex;align-items:center;min-height:44px;border-bottom:1px solid transparent;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:700;letter-spacing:.14em;font-size:15px;color:#93a1b3;text-decoration:none}.ds-nav a:hover{color:#59b8ff}.ds-nav a[aria-current=page]{color:#59b8ff;border-color:#59b8ff}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Dispatch Console",
+    "overview": "RideNote looks like a control-room desk at night. The page is a near-black glass; every group of information sits in a flat, etched panel; labels are small mono capitals; values are mono; and one lit blue marks what you can act on. Each field has a label, a value, or an honest blank.",
+    "keyCharacteristics": [
+      "Square corners, 1px etched borders, flat panels.",
+      "Three voices: condensed caps for headings and keys, mono for data and labels, a humanist sans for reading text.",
+      "One accent. Amber and red are reserved for Missing and errors.",
+      "Unstated fields are dashed blank slots reading Not stated, never styled like data.",
+      "Every interactive target is 44px tall."
+    ],
+    "rules": [
+      {
+        "name": "The Blank Is Not Data Rule",
+        "body": "An unstated field is a dashed Edge underline and the words Not stated in italic dim text. It never takes the value style, a placeholder dash, or the accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Lit Colour Rule",
+        "body": "Blue is the only colour that says this is live or chosen. Amber and red say missing and failed and are never used for emphasis.",
+        "section": "colors"
+      },
+      {
+        "name": "The Edge Rule",
+        "body": "Anything a person must see to find or operate a control uses Edge (3:1 or better); Etch tones are scenery.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Is For Measurements Rule",
+        "body": "Mono carries entered text, field values, times, counts and labels; reading copy never uses it.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat At Rest Rule",
+        "body": "Panels never cast shadows. If something looks raised, it is a key.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep every corner square and every panel flat.",
+      "Do use Edge (#63758b) for any border that identifies an input or an empty slot.",
+      "Do show absence as the dashed Not stated slot.",
+      "Do use the accent for action, selection and identified aids only.",
+      "Do keep all controls at least 44px tall and give them a 2px accent focus outline.",
+      "Do wrap decorative motion in motion-safe:; the loading skeleton is the model."
+    ],
+    "donts": [
+      "Don't use rounded corners, pills or white card surfaces; that is the retired earlier design.",
+      "Don't put a light/dark class pair on an element; the app is dark-only, so use the dark value directly.",
+      "Don't use Etch or Etch Strong for a border a person needs to see.",
+      "Don't colour a Missing field in the accent, or style a blank like a value.",
+      "Don't add shadows to panels; only keys have them.",
+      "Don't use the mono face for reading paragraphs.",
+      "Don't hard-code a colour in a component; add or reuse a token in app/globals.css."
+    ]
+  }
+}

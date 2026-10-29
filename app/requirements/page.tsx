@@ -17,16 +17,16 @@ export const metadata: Metadata = {
     "The product requirements, required input, expected JSON output and what valid JSON is.",
 };
 
-const h2 = "mt-10 scroll-mt-4 text-xl font-semibold text-zinc-900 dark:text-zinc-50";
-const h3 = "mt-6 text-base font-semibold text-zinc-900 dark:text-zinc-50";
-const p = "mt-2 text-zinc-700 dark:text-zinc-300";
-const ul = "mt-2 list-disc space-y-1 pl-6 text-zinc-700 dark:text-zinc-300";
-const code = "rounded bg-zinc-200 px-1 py-0.5 font-mono text-sm dark:bg-zinc-800";
+const h2 = "mt-10 scroll-mt-4 text-xl font-semibold text-zinc-50";
+const h3 = "mt-6 text-base font-semibold text-zinc-50";
+const p = "mt-2 text-zinc-300";
+const ul = "mt-2 list-disc space-y-1 pl-6 text-zinc-300";
+const code = "rounded px-1 py-0.5 font-mono text-sm bg-zinc-800";
 const pre =
   "mt-2 overflow-x-auto rounded-lg bg-zinc-900 p-3 font-mono text-sm text-zinc-50 whitespace-pre-wrap break-words";
-const th = "border-b border-zinc-300 px-3 py-2 text-left font-medium dark:border-zinc-700";
-const td = "border-b border-zinc-200 px-3 py-2 align-top dark:border-zinc-800";
-const table = "w-full text-left text-sm text-zinc-800 dark:text-zinc-200";
+const th = "border-b px-3 py-2 text-left font-medium border-zinc-700";
+const td = "border-b px-3 py-2 align-top border-zinc-800";
+const table = "w-full text-left text-sm text-zinc-200";
 
 const jsonRules = [
   [
@@ -67,18 +67,16 @@ const jsonRules = [
 export default function RequirementsPage() {
   const required = REQUIRED_TRIP_FIELDS.join(", ");
   return (
-    <div className="flex flex-1 justify-center bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex flex-1 justify-center font-sans">
       <main id="main" className="w-full max-w-3xl px-4 py-10 sm:px-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Requirements
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Requirements</h1>
         <p className={p}>
           What the product must do, what it needs as input, and exactly what it returns. Written
           from what the app does today, and the examples on this page are checked by automated
           tests.
         </p>
         <nav aria-label="On this page" className="mt-4">
-          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-900 underline underline-offset-4 dark:text-zinc-50">
+          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-50 underline underline-offset-4">
             {[
               ["prd", "Product requirements"],
               ["input", "Required input"],
@@ -112,7 +110,7 @@ export default function RequirementsPage() {
             Dispatchers and coordinators, not developers. All messages are written for them.
           </p>
           <h3 className={h3}>Functional requirements</h3>
-          <ol className="mt-2 list-decimal space-y-1 pl-6 text-zinc-700 dark:text-zinc-300">
+          <ol className="mt-2 list-decimal space-y-1 pl-6 text-zinc-300">
             <li>Accept a pasted note and parse it on request (button or Ctrl/⌘ + Enter).</li>
             <li>
               Extract passenger, pickup, dropoff, pickup time and every mobility aid named (a list).
@@ -170,9 +168,9 @@ export default function RequirementsPage() {
             </li>
             <li>
               <strong>Privacy:</strong> notes may contain personal details; the note itself is never
-              saved or logged. The parsed trip (name, addresses, time, aids) is saved and shown
-              publicly on the History page for 7 days on the live site, with phone numbers and
-              emails removed.
+              saved or logged. The parsed trip (name, addresses, time, aids, plus token counts and
+              latency) is saved and shown publicly on the History page for 7 days on the live site,
+              with phone numbers and emails removed.
             </li>
             <li>
               <strong>Security:</strong> HTML, scripts and hidden characters are rejected; the
@@ -401,7 +399,7 @@ export default function RequirementsPage() {
           {OUTPUT_EXAMPLES.map((ex) => (
             <div key={ex.title}>
               <h3 className={h3}>{ex.title}</h3>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Note: {ex.note}</p>
+              <p className="mt-1 text-sm text-zinc-400">Note: {ex.note}</p>
               <pre className={pre}>{JSON.stringify({ trip: ex.trip }, null, 2)}</pre>
             </div>
           ))}
@@ -470,7 +468,7 @@ export default function RequirementsPage() {
           <h2 id="success" className={h2}>
             What makes a parse succeed
           </h2>
-          <ol className="mt-2 list-decimal space-y-1 pl-6 text-zinc-700 dark:text-zinc-300">
+          <ol className="mt-2 list-decimal space-y-1 pl-6 text-zinc-300">
             <li>The request is under the size limit and the client is under the rate limit.</li>
             <li>The body is valid JSON.</li>
             <li>
@@ -487,6 +485,14 @@ export default function RequirementsPage() {
             Success means a well-formed trip came back. It does not mean every field is filled: a
             short note succeeds with null fields and a populated{" "}
             <code className={code}>missing_fields</code>.
+          </p>
+          <p className={p}>
+            A successful response is <code className={code}>{`{ "trip": …, "usage": … }`}</code>.
+            The <code className={code}>usage</code> object reports what that one AI call cost:{" "}
+            <code className={code}>inputTokens</code>, <code className={code}>outputTokens</code>{" "}
+            and <code className={code}>latencyMs</code> (milliseconds spent waiting for the AI
+            service). It is shown on the result card and saved with the trip on the History page,
+            where each call is rated against the others. Errors carry no usage.
           </p>
         </section>
       </main>

@@ -84,7 +84,7 @@ and "Missing" rather than inventing a value.
 
 ## 9. Protect personal data by default
 
-- Never log the content of a request that may hold personal details. Log an error _type_.
+- Never log the content of a request that may hold personal details. Log an error _type_, and numbers such as token counts, never the content.
 - Do not store what you do not need. Decide a cache only after a privacy decision.
 - Use fictional data in tests, examples and bug reports.
 - Keep secrets on the server. The browser never sees the API key.

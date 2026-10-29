@@ -1,82 +1,167 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f3f6fa;
-  --foreground: #172130;
-  --rail: #0a4a94;
-  --rail-ink: #ffffff;
-  --plate: #0a4a94;
-  --plate-ink: #ffffff;
-  --primary: #0a4a94;
-  --primary-hover: #083b78;
-  --primary-ink: #ffffff;
-}
+/* The app is dark only: the <html> element carries `dark`, and every `dark:` class follows it. */
+@custom-variant dark (&:where(.dark, .dark *));
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0c121b;
-    --foreground: #e8edf4;
-    --rail: #071c38;
-    --plate: #0f5cb0;
-    --primary: #8fb8e8;
-    --primary-hover: #bbd4f1;
-    --primary-ink: #071c38;
-  }
+:root {
+  color-scheme: dark;
+  --glass: #0b0f14;
+  --panel: #111720;
+  --panel-2: #172030;
+  --etch: #232c38;
+  --etch-2: #334152;
+  /* Edges that identify a control or an empty slot. 3.8:1 on the panel, 4.1:1 on the glass; the
+     etch tones above are decoration only (under 2:1). */
+  --edge: #63758b;
+  --well: #070b10;
+  --ink: #d5dee9;
+  --ink-dim: #93a1b3;
+  --accent: #59b8ff;
+  --accent-hover: #8dd0ff;
+  --accent-ink: #04121f;
+  --amber: #ffb000;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-rail: var(--rail);
-  --color-rail-ink: var(--rail-ink);
-  --color-plate: var(--plate);
-  --color-plate-ink: var(--plate-ink);
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
-  --color-primary-ink: var(--primary-ink);
+  --color-glass: var(--glass);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-etch: var(--etch);
+  --color-etch-2: var(--etch-2);
+  --color-edge: var(--edge);
+  --color-well: var(--well);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
   --font-sans: var(--font-atkinson);
-  --font-mono: var(--font-atkinson-mono);
+  --font-display: var(--font-barlow);
+  --font-mono: var(--font-sometype);
 }
 
 /* Cool blue-grey neutrals replace Tailwind's zinc so every existing class takes the palette. */
 @theme {
-  --color-zinc-50: #f3f6fa;
-  --color-zinc-100: #e8edf4;
-  --color-zinc-200: #d5dde8;
-  --color-zinc-300: #b9c5d4;
-  --color-zinc-400: #8b9aaf;
-  --color-zinc-500: #5b6b82;
-  --color-zinc-600: #4a5a70;
-  --color-zinc-700: #3a4859;
-  --color-zinc-800: #263241;
-  --color-zinc-900: #172130;
-  --color-zinc-950: #0c121b;
+  --color-zinc-50: #f1f5f9;
+  --color-zinc-100: #e1e7ef;
+  --color-zinc-200: #cdd6e1;
+  --color-zinc-300: #b4c0ce;
+  --color-zinc-400: #93a1b3;
+  --color-zinc-500: #7b8a9e;
+  --color-zinc-600: #4a5a6e;
+  --color-zinc-700: #334152;
+  --color-zinc-800: #232c38;
+  --color-zinc-900: #111720;
+  --color-zinc-950: #0b0f14;
+}
+
+html {
+  background: var(--glass);
+  color: var(--ink);
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+  scrollbar-color: var(--etch-2) var(--glass);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--glass);
+  color: var(--ink);
   font-family: var(--font-atkinson), system-ui, sans-serif;
 }
 
 ::selection {
-  background: #bbd4f1;
-  color: #071c38;
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
-@media (prefers-color-scheme: dark) {
-  ::selection {
-    background: #0f5cb0;
-    color: #ffffff;
-  }
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--glass);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--etch-2);
+  border: 2px solid var(--glass);
 }
 
-textarea {
-  caret-color: var(--primary);
+textarea,
+input {
+  caret-color: var(--accent);
 }
 
 /* Times and counts line up in columns. */
 time,
 #note-help {
   font-variant-numeric: tabular-nums;
+}
+
+/* Shared instrument-panel pieces. */
+.caps {
+  font-family: var(--font-barlow), "Arial Narrow", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.lab {
+  font-family: var(--font-sometype), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.bezel {
+  background: var(--panel);
+  border: 1px solid var(--etch-2);
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-barlow), "Arial Narrow", sans-serif;
+  font-weight: 800;
+  font-size: 1.0625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: 1px solid var(--etch-2);
+  background: var(--panel-2);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background 0.18s var(--ease),
+    color 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    transform 0.12s var(--ease);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.key:hover:not(:disabled) {
+  border-color: var(--ink-dim);
+  color: var(--color-zinc-50);
+}
+.key:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+.key.run {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.key.run:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--accent-ink);
 }

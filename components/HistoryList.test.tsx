@@ -15,6 +15,41 @@ const row = (over: Partial<HistoryRow> = {}): HistoryRow => ({
   ...over,
 });
 
+const withUsage = (id: number, tokens: number, latencyMs: number) =>
+  row({ id, input_tokens: tokens - 100, output_tokens: 100, latency_ms: latencyMs });
+
+describe("HistoryList usage", () => {
+  it("shows each call's tokens and latency, and nothing for older rows", () => {
+    render(<HistoryList rows={[withUsage(1, 300, 800), row({ id: 2 })]} />);
+    const [first, second] = screen.getAllByRole("article");
+    expect(within(first).getByText("200 in · 100 out · 800 ms")).toBeInTheDocument();
+    expect(within(second).queryByText(COPY.usageLabel)).not.toBeInTheDocument();
+  });
+
+  it("labels the most efficient and the most problematic calls against the rest", () => {
+    const rows = [
+      withUsage(1, 300, 800),
+      withUsage(2, 400, 1000),
+      withUsage(3, 500, 1200),
+      withUsage(4, 400, 900),
+      withUsage(5, 400, 1100),
+      withUsage(6, 900, 900),
+    ];
+    render(<HistoryList rows={rows} />);
+    const entries = screen.getAllByRole("article");
+    expect(within(entries[0]).getByText(COPY.ratingEfficient)).toBeInTheDocument();
+    expect(within(entries[5]).getByText(COPY.ratingProblematic)).toBeInTheDocument();
+    expect(within(entries[2]).queryByText(COPY.ratingEfficient)).not.toBeInTheDocument();
+    expect(screen.getByText(/median/i)).toBeInTheDocument();
+  });
+
+  it("shows no ratings with fewer than five rows that have usage", () => {
+    render(<HistoryList rows={[withUsage(1, 300, 800), withUsage(2, 900, 5000)]} />);
+    expect(screen.queryByText(COPY.ratingProblematic)).not.toBeInTheDocument();
+    expect(screen.queryByText(/median/i)).not.toBeInTheDocument();
+  });
+});
+
 describe("HistoryList", () => {
   it("lists the rows in the order given, with every field", () => {
     render(<HistoryList rows={[row({ id: 2, passenger_name: "Second" }), row()]} />);

@@ -25,17 +25,17 @@ describe("stubActive", () => {
 
 describe("createStubClient", () => {
   const parse = (content: string) =>
-    createStubClient().messages.parse({
+    createStubClient().messages.create({
       model: "m",
       max_tokens: 1,
       messages: [{ role: "user", content }],
     });
 
-  it("returns the JSON after the E2E: prefix as the parsed output", async () => {
+  it("returns the JSON after the E2E: prefix as the reply text", async () => {
     const trip = { passenger_name: "Mrs. Lee", mobility: [] };
     const res = await parse(wrapNote(`E2E:${JSON.stringify(trip)}`));
     expect(res.stop_reason).toBe("end_turn");
-    expect(res.parsed_output).toEqual(trip);
+    expect(JSON.parse((res.content[0] as { text: string }).text)).toEqual(trip);
   });
 
   it("throws for a note without the prefix, so it can never pass for a real parse", async () => {
