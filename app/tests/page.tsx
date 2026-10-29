@@ -33,14 +33,11 @@ export default function TestsPage() {
           files when the site is built, so it always matches what runs. Only test names are shown.
         </p>
         <p className="mt-2 text-zinc-300">
-          Run them with{" "}
-          <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-sm">npm test</code>.
-          Browser tests in{" "}
-          <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-sm">e2e/</code> run with{" "}
-          <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-sm">
-            npm run test:e2e
-          </code>
-          . The AI is always mocked, so tests are free and repeatable.
+          Run them with <code className="bg-zinc-800 px-1 py-0.5 font-mono text-sm">npm test</code>.
+          Browser tests in <code className="bg-zinc-800 px-1 py-0.5 font-mono text-sm">e2e/</code>{" "}
+          run with{" "}
+          <code className="bg-zinc-800 px-1 py-0.5 font-mono text-sm">npm run test:e2e</code>. The
+          AI is always mocked, so tests are free and repeatable.
         </p>
         <dl className="mt-4 space-y-1 text-sm text-zinc-300">
           {kinds.map((k) => (
@@ -53,8 +50,8 @@ export default function TestsPage() {
 
         <div className="mt-8 space-y-3">
           {files.map((f) => (
-            <details key={f.file} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-              <summary className="cursor-pointer font-mono text-sm break-words text-zinc-50">
+            <details key={f.file} className="bezel p-4">
+              <summary className="-my-3 cursor-pointer py-3 font-mono text-sm break-words text-zinc-50">
                 {f.file}{" "}
                 <span className="font-sans text-zinc-400">
                   ({f.kind}, {f.groups.reduce((n, g) => n + g.tests.length, 0)} tests)

@@ -16,13 +16,13 @@ export function ResultPanel({ pending, error, trip, usage, stale = false }: Prop
     <>
       {/* Errors use role="alert", so they sit outside the polite live region to avoid double announcements. */}
       {error && (
-        <p role="alert" className="border border-red-400 bg-red-950 p-3 text-sm text-red-200">
+        <p role="alert" className="border-danger bg-danger-wash text-danger-ink border p-3 text-sm">
           {error}
         </p>
       )}
       <div data-testid="result-region" aria-live="polite" aria-busy={pending}>
         {pending && <TripCardSkeleton />}
-        {trip && stale && <p className="mb-2 text-sm text-amber-300">{COPY.staleResult}</p>}
+        {trip && stale && <p className="mb-2 text-sm text-zinc-300">{COPY.staleResult}</p>}
         {trip && <TripCard trip={trip} usage={usage} />}
       </div>
     </>

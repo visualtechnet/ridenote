@@ -27,7 +27,7 @@ export async function HistorySection() {
   }
   if (result.status === "error") {
     return (
-      <p role="alert" className="mt-6 text-red-300">
+      <p role="alert" className="text-danger-ink mt-6">
         {COPY.historyError}
       </p>
     );

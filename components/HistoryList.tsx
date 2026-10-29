@@ -51,7 +51,7 @@ export function HistoryList({ rows }: { rows: HistoryRow[] }) {
                   <span
                     className={`${TAG} ${
                       ratings.get(row.id) === "problematic"
-                        ? "border-amber-400 text-amber-300"
+                        ? "border-missing-edge text-missing"
                         : "border-accent text-accent"
                     }`}
                   >

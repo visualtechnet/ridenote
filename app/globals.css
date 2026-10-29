@@ -19,8 +19,17 @@
   --accent: #59b8ff;
   --accent-hover: #8dd0ff;
   --accent-ink: #04121f;
-  --amber: #ffb000;
+  /* Amber says the note did not state it; red says something failed. Never emphasis. */
+  --missing: #fcd34d;
+  --missing-edge: #fbbf24;
+  --danger: #f87171;
+  --danger-ink: #fca5a5;
+  --danger-wash: #450a0a;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-key: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.5);
+  --shadow-key-pressed: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+  --shadow-focus: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+  --shadow-focus-danger: 0 0 0 4px color-mix(in srgb, var(--danger) 20%, transparent);
 }
 
 @theme inline {
@@ -36,6 +45,11 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-ink: var(--accent-ink);
+  --color-missing: var(--missing);
+  --color-missing-edge: var(--missing-edge);
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-wash: var(--danger-wash);
   --font-sans: var(--font-atkinson);
   --font-display: var(--font-barlow);
   --font-mono: var(--font-sometype);
@@ -143,9 +157,7 @@ time,
     color 0.18s var(--ease),
     border-color 0.18s var(--ease),
     transform 0.12s var(--ease);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-key);
 }
 .key:hover:not(:disabled) {
   border-color: var(--ink-dim);
@@ -153,7 +165,7 @@ time,
 }
 .key:active:not(:disabled) {
   transform: translateY(1px);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--shadow-key-pressed);
 }
 .key.run {
   background: var(--accent);

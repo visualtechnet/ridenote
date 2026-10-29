@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 
 const h2 = "mt-10 scroll-mt-4 text-xl font-semibold text-zinc-50";
 const p = "mt-2 text-zinc-300";
-const code = "rounded px-1 py-0.5 font-mono text-sm bg-zinc-800";
+const code = "px-1 py-0.5 font-mono text-sm bg-zinc-800";
 const pre =
-  "mt-2 overflow-x-auto rounded-lg bg-zinc-900 p-3 font-mono text-sm text-zinc-50 whitespace-pre-wrap break-words";
+  "mt-2 overflow-x-auto bg-zinc-900 p-3 font-mono text-sm text-zinc-50 whitespace-pre-wrap break-words";
 const th = "border-b px-3 py-2 text-left font-medium border-zinc-700";
 const td = "border-b px-3 py-2 align-top border-zinc-800";
 
@@ -144,7 +144,9 @@ export default function DocsPage() {
               ["privacy", "Privacy"],
             ].map(([id, label]) => (
               <li key={id}>
-                <a href={`#${id}`}>{label}</a>
+                <a href={`#${id}`} className="inline-flex min-h-11 items-center">
+                  {label}
+                </a>
               </li>
             ))}
           </ul>
@@ -395,7 +397,7 @@ export default function DocsPage() {
           </p>
           <ul className="mt-4 space-y-4">
             {VALID_EXAMPLES.map((ex) => (
-              <li key={ex.title} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+              <li key={ex.title} className="bezel p-4">
                 <h3 className="font-medium text-zinc-50">{ex.title}</h3>
                 <pre className={pre}>{ex.note}</pre>
                 <p className="mt-2 text-sm text-zinc-300">{ex.why}</p>
@@ -447,7 +449,7 @@ export default function DocsPage() {
           </div>
           <ul className="mt-4 space-y-4">
             {INVALID_EXAMPLES.map((ex) => (
-              <li key={ex.title} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+              <li key={ex.title} className="bezel p-4">
                 <h3 className="font-medium text-zinc-50">
                   {ex.title} <span className={code}>{ex.code}</span>
                 </h3>
