@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "condensed\",\"arial narrow\",sans-serif",
+        "createdAt": "2026-10-29T20:58:47.374Z",
+        "reason": "assistant: stack is copied verbatim from DESIGN.md display token (Barlow Condensed, Arial Narrow, sans-serif); detector trips on the quoted form"
+      }
+    ]
+  }
+}
