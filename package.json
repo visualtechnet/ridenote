@@ -28,6 +28,7 @@
     "key:set": "bash scripts/keychain.sh set",
     "key:remove": "bash scripts/keychain.sh remove",
     "test:e2e": "playwright test",
+    "commits": "node scripts/commit-tracker.mjs",
     "test:all": "npm run check && npm run test:e2e"
   },
   "dependencies": {

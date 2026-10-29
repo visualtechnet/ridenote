@@ -101,12 +101,12 @@ describe("usage from the API to the History page", () => {
 
   it("rates the heavy, slow call as problematic and a light, quick one as efficient", async () => {
     const calls: [string, number, number][] = [
-      ["Quick One", 100, 10],
-      ["Typical A", 120, 15],
-      ["Typical B", 120, 15],
-      ["Typical C", 140, 15],
-      ["Typical D", 140, 15],
-      ["Heavy Slow", 450, 120],
+      ["Quick One", 100, 1],
+      ["Typical A", 120, 40],
+      ["Typical B", 120, 40],
+      ["Typical C", 140, 40],
+      ["Typical D", 140, 40],
+      ["Heavy Slow", 450, 300],
     ];
     for (const [name, output, ms] of calls) {
       mockParse.mockImplementationOnce(answer(name, output, ms));
