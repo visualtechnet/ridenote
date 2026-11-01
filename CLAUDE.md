@@ -8,7 +8,7 @@ RideNote turns a dispatcher's free-text note into a structured trip record (pass
 
 ```bash
 npm run dev            # dev server (needs ANTHROPIC_API_KEY in .env.local, or use `npm run dev:key` on a Mac to read it from the Keychain)
-npm run check          # typecheck + lint + prettier --check + jest; same as the pre-commit hook and CI
+npm run check          # typecheck + lint + prettier --check + jest with the coverage floor; same as the pre-commit hook and CI
 npm test               # jest unit/component tests (jsdom)
 npx jest lib/extract   # single test file (path pattern); add -t "name" for one test
 npm run test:coverage  # jest has a coverage floor (98/95/98/98): the run fails if it erodes

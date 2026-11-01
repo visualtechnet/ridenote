@@ -498,7 +498,7 @@ npm test                # unit and component tests (Jest)
 npm run test:coverage   # same, with a coverage report and an enforced floor
 npm run test:e2e        # real-browser tests (first run: npx playwright install chromium)
 npm run eval            # live accuracy check against the real model (needs a key, costs cents)
-npm run check           # types + lint + formatting + unit tests
+npm run check           # types + lint + formatting + unit tests with the coverage floor
 npm run test:all        # everything
 ```
 

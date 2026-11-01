@@ -18,7 +18,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test:coverage",
     "prepare": "git config core.hooksPath .githooks || true",
     "test:coverage": "jest --coverage",
     "eval": "jest --config jest.eval.config.mjs",
