@@ -16,11 +16,21 @@ const full: Trip = {
 };
 
 describe("TripCard usage", () => {
-  it("shows input tokens, output tokens and latency", () => {
+  it("shows input tokens, output tokens and latency behind a Usage toggle, closed by default", () => {
     render(
       <TripCard trip={full} usage={{ inputTokens: 120, outputTokens: 160, latencyMs: 842 }} />,
     );
     expect(screen.getByText("120 in · 160 out · 842 ms")).toBeInTheDocument();
+    const details = screen.getByText(COPY.usageLabel).closest("details")!;
+    expect(details).not.toHaveAttribute("open");
+  });
+
+  it("keeps the verify reminder after the usage toggle, as the last line of the card", () => {
+    const { container } = render(
+      <TripCard trip={full} usage={{ inputTokens: 120, outputTokens: 160, latencyMs: 842 }} />,
+    );
+    const texts = [...container.querySelectorAll("details, p")].map((el) => el.textContent);
+    expect(texts.at(-1)).toBe(COPY.verifyReminder);
   });
 
   it("shows no usage line when there is no usage", () => {
@@ -78,8 +88,8 @@ describe("TripCard", () => {
     it("keeps the date out of the Missing chips even when other fields are missing", () => {
       render(<TripCard trip={makeTrip({ pickup_date: null, pickup_time: null })} />);
       const list = screen.getByRole("list", { name: "Missing fields" });
-      expect(list).toHaveTextContent("pickup_time");
-      expect(list).not.toHaveTextContent("pickup_date");
+      expect(list).toHaveTextContent("Pickup time");
+      expect(list).not.toHaveTextContent(/date/i);
     });
   });
 
@@ -115,8 +125,8 @@ describe("TripCard", () => {
     it("keeps mobility out of the Missing chips even when other fields are missing", () => {
       render(<TripCard trip={makeTrip({ mobility: [], pickup_time: null })} />);
       const list = screen.getByRole("list", { name: "Missing fields" });
-      expect(list).toHaveTextContent("pickup_time");
-      expect(list).not.toHaveTextContent("mobility");
+      expect(list).toHaveTextContent("Pickup time");
+      expect(list).not.toHaveTextContent(/mobility/i);
       expect(screen.getByText(COPY.confirmMobility)).toBeInTheDocument();
     });
 
@@ -131,11 +141,49 @@ describe("TripCard", () => {
     });
   });
 
-  it("lists missing fields as text chips", () => {
+  it("lists missing fields as chips with readable names, never raw keys", () => {
     render(<TripCard trip={{ ...full, missing_fields: ["pickup_time", "dropoff_location"] }} />);
     const list = screen.getByRole("list", { name: "Missing fields" });
-    expect(list).toHaveTextContent("pickup_time");
-    expect(list).toHaveTextContent("dropoff_location");
+    const items = within(list).getAllByRole("listitem");
+    expect(items.map((i) => i.textContent)).toEqual(["Pickup time", "Dropoff"]);
+    expect(list).not.toHaveTextContent("_");
+  });
+
+  describe("inline hints (one rule for every blank)", () => {
+    it("puts a confirm line under each missing pickup, dropoff and time", () => {
+      render(
+        <TripCard
+          trip={{
+            ...full,
+            pickup_location: null,
+            dropoff_location: null,
+            pickup_time: null,
+            missing_fields: ["pickup_location", "dropoff_location", "pickup_time"],
+          }}
+        />,
+      );
+      expect(screen.getByText(COPY.confirmField("Pickup"))).toBeInTheDocument();
+      expect(screen.getByText(COPY.confirmField("Dropoff"))).toBeInTheDocument();
+      expect(screen.getByText(COPY.confirmField("Pickup time"))).toBeInTheDocument();
+    });
+
+    it("puts a confirm line under the heading when the passenger is missing", () => {
+      render(
+        <TripCard trip={{ ...full, passenger_name: null, missing_fields: ["passenger_name"] }} />,
+      );
+      expect(screen.getByText(COPY.confirmField("Passenger"))).toBeInTheDocument();
+    });
+
+    it("shows no confirm line for a field that is present", () => {
+      render(<TripCard trip={{ ...full, pickup_date: "2026-11-06" }} />);
+      expect(screen.queryByText(/confirm before dispatching/i)).not.toBeInTheDocument();
+    });
+
+    it("labels the parser's note so it is not mistaken for part of the trip", () => {
+      render(<TripCard trip={full} />);
+      expect(screen.getByText(COPY.notesLabel)).toBeInTheDocument();
+      expect(screen.getByText("Confirm ramp access.")).toBeInTheDocument();
+    });
   });
 
   it("reminds the dispatcher the data is AI-extracted", () => {

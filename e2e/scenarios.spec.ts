@@ -104,7 +104,13 @@ test.describe("positive: what a successful parse looks like", () => {
     await submit(page, "Pick up Mrs. Lee at 12 Oak St");
     await expect(card(page).getByText("Not stated", { exact: true })).toHaveCount(2);
     const missing = card(page).getByRole("list", { name: "Missing fields" });
-    await expect(missing.getByRole("listitem")).toHaveText(["dropoff_location", "pickup_time"]);
+    await expect(missing.getByRole("listitem")).toHaveText(["Dropoff", "Pickup time"]);
+    await expect(
+      card(page).getByText("Dropoff not stated. Confirm before dispatching."),
+    ).toBeVisible();
+    await expect(
+      card(page).getByText("Pickup time not stated. Confirm before dispatching."),
+    ).toBeVisible();
   });
 
   test("shows the AI's note about an ambiguous request", async ({ page }) => {

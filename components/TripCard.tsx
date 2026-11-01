@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatDate, formatTime12h, mobilityLabel } from "@/lib/format";
+import { formatDate, formatTime12h, missingLabel, mobilityLabel } from "@/lib/format";
 import { MISSING_MOBILITY } from "@/lib/config";
 import { COPY } from "@/lib/messages";
 import type { Trip } from "@/lib/trip";
@@ -35,16 +35,36 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
   // ignored, including the ones that matter.
   const flagMobility = trip.missing_fields.includes(MISSING_MOBILITY);
   const chips = trip.missing_fields.filter((f) => f !== MISSING_MOBILITY);
+  // One rule for every blank: a quiet line under it says so. The chips below are the summary.
+  const hintFor = (field: string, label: string) =>
+    trip.missing_fields.includes(field as Trip["missing_fields"][number])
+      ? COPY.confirmField(label)
+      : undefined;
   return (
     <section aria-label={COPY.resultLabel} className="bezel">
-      <h2 className="caps border-etch border-b px-5 py-3.5 text-2xl break-words text-zinc-50">
-        {trip.passenger_name ?? COPY.unknownPassenger}
-      </h2>
+      <div className="border-etch border-b px-5 py-3.5">
+        <h2 className="caps text-2xl break-words text-zinc-50">
+          {trip.passenger_name ?? COPY.unknownPassenger}
+        </h2>
+        {hintFor("passenger_name", COPY.fieldPassenger) && (
+          <p className="text-missing mt-1 text-xs">
+            {hintFor("passenger_name", COPY.fieldPassenger)}
+          </p>
+        )}
+      </div>
 
       <div className="p-5">
         <dl className="border-etch bg-etch grid gap-px border sm:grid-cols-2">
-          <Field label={COPY.fieldPickup} value={trip.pickup_location} />
-          <Field label={COPY.fieldDropoff} value={trip.dropoff_location} />
+          <Field
+            label={COPY.fieldPickup}
+            value={trip.pickup_location}
+            hint={hintFor("pickup_location", COPY.fieldPickup)}
+          />
+          <Field
+            label={COPY.fieldDropoff}
+            value={trip.dropoff_location}
+            hint={hintFor("dropoff_location", COPY.fieldDropoff)}
+          />
           {/* A missing date is a quiet line, like mobility, not a Missing chip: most notes give no
               date, and a chip on nearly every card would be ignored. */}
           <Field
@@ -58,6 +78,7 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
           />
           <Field
             label={COPY.fieldPickupTime}
+            hint={hintFor("pickup_time", COPY.fieldPickupTime)}
             value={
               trip.pickup_time && (
                 <time dateTime={trip.pickup_time}>{formatTime12h(trip.pickup_time)}</time>
@@ -87,14 +108,10 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
           </div>
         </dl>
 
-        {trip.notes && <p className="mt-5 text-sm break-words text-zinc-300">{trip.notes}</p>}
-
-        <p className="mt-5 text-xs text-zinc-400">{COPY.verifyReminder}</p>
-
-        {usage && (
-          <p className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="lab">{COPY.usageLabel}</span>
-            <span className="font-mono text-xs text-zinc-400">{COPY.usageValue(usage)}</span>
+        {trip.notes && (
+          <p className="mt-5 text-sm break-words text-zinc-300">
+            <span className="lab mr-2">{COPY.notesLabel}</span>
+            <span>{trip.notes}</span>
           </p>
         )}
 
@@ -104,12 +121,25 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
             <ul aria-label={COPY.missingListLabel} className="flex flex-wrap gap-2">
               {chips.map((f) => (
                 <li key={f} className={`${TAG} border-missing-edge text-missing`}>
-                  {f}
+                  {missingLabel(f)}
                 </li>
               ))}
             </ul>
           </div>
         )}
+
+        {/* For reviewers, not dispatchers (PRODUCT.md): folded away so the card reads as a trip. */}
+        {usage && (
+          <details className="mt-5">
+            <summary className="lab focus-visible:outline-accent cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2">
+              {COPY.usageLabel}
+            </summary>
+            <p className="mt-1.5 font-mono text-xs text-zinc-400">{COPY.usageValue(usage)}</p>
+          </details>
+        )}
+
+        {/* Last and most visible: the one line every dispatcher must read. */}
+        <p className="mt-5 text-sm text-zinc-200">{COPY.verifyReminder}</p>
       </div>
     </section>
   );

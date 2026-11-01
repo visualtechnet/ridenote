@@ -36,3 +36,8 @@ export function formatDate(date: string): string {
 export function mobilityLabel(aid: (typeof MOBILITY)[number]): string {
   return COPY.mobilityLabels[aid];
 }
+
+/** "pickup_time" becomes "Pickup time". A field the copy does not know keeps its key, so nothing is hidden. */
+export function missingLabel(field: string): string {
+  return (COPY.fieldLabels as Record<string, string | undefined>)[field] ?? field;
+}

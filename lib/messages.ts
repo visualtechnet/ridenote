@@ -84,10 +84,22 @@ export const COPY = {
     scooter: "Scooter",
     other: "Other aid",
   },
+  fieldPassenger: "Passenger",
+  /** Readable names for the fields the server can mark missing, shown instead of keys like pickup_time. */
+  fieldLabels: {
+    passenger_name: "Passenger",
+    pickup_location: "Pickup",
+    dropoff_location: "Dropoff",
+    pickup_time: "Pickup time",
+    mobility: "Mobility",
+  },
   missingHeading: "Missing",
+  /** The one rule for a blank: a quiet line under it saying so. Mobility and date have their own wording. */
+  confirmField: (label: string) => `${label} not stated. Confirm before dispatching.`,
   confirmMobility: "Mobility not stated. Confirm before dispatching.",
   confirmDate: "Date not stated. Confirm before dispatching.",
   missingListLabel: "Missing fields",
+  notesLabel: "Parser note",
   staleResult: "The note has changed since this was parsed. Parse again to update it.",
   usageLabel: "Usage",
   ratingEfficient: "Efficient",
