@@ -43,3 +43,8 @@ npm run format         # prettier --write
 - Env vars: `ANTHROPIC_API_KEY` (never `NEXT_PUBLIC_`), optional `MODEL`, and the three History variables (production only). See `.env.example`. `.env.local` is git-ignored.
 - Per-call usage is logged as single-line JSON containing numbers, model name and stop reason only, never the note or anything parsed from it.
 - Plans and specs for features are kept in `docs/superpowers/plans/` and `docs/superpowers/specs/`.
+
+## Tokens
+
+- When using model that cost high demand token usage such as Fable 5, always use and run Sonnet 5 model when using sub-agents
+- It is important to use Sonnet 5 for sub-agents when running high demand token usage such as Fable 5. Notify me if this is not the case when running Fable 5 or other high usage, high demand token models.
