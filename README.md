@@ -518,9 +518,18 @@ npm run test:all        # everything
   _critical_ case must pass and at least 90% overall. Run it after changing `lib/prompt.ts`, the
   schema or `MODEL`. It is not part of `npm test` because it costs money.
 
-A pre-commit hook runs `npm run check`. CI runs everything on every push, from a clean checkout: the
-`typecheck` script runs `next typegen` first because Next.js generates some types into `.next/`, which
-is not in git.
+A pre-commit hook runs `npm run check`. CI runs three jobs on every push, from a clean checkout:
+
+- **check**: `npm run check` (with the coverage floor), `npm audit`, and the browser tests against the dev
+  server with the stubbed model. The `typecheck` script runs `next typegen` first because Next.js
+  generates some types into `.next/`, which is not in git.
+- **production**: `next build`, then the browser tests again against `next start`. Only a production
+  build sends the production headers (HSTS, no `'unsafe-eval'`), and a build-time failure used to show
+  only at deploy. The stub cannot exist in a production build, so the tests that parse through it skip
+  themselves there, and no key is set, so nothing can reach the paid API.
+- **database**: a real Postgres. `db/schema.sql` runs twice (it must be safe to re-run), the migrations
+  run against it, `db/verify.sql` proves each login holds only its grants, and `npm run test:db` runs the
+  store's and the purge's SQL through the real driver as the real logins (`tests/db/`).
 
 ## Scripts
 

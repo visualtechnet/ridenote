@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { Routes } from "../lib/routes";
-import { freshClient } from "./fixtures";
+import { freshClient, productionServer } from "./fixtures";
 
 const PAGES = [
   Routes.page("home"),
@@ -26,6 +26,12 @@ test.describe("security headers, as a real browser receives them", () => {
       expect(h["cross-origin-opener-policy"]).toBe("same-origin");
       expect(h["permissions-policy"]).toContain("camera=()");
       expect(h["x-powered-by"]).toBeUndefined();
+      if (productionServer) {
+        // Only a production build sends these: the dev server needs 'unsafe-eval' for its tooling and
+        // must not pin localhost to HTTPS, so they can only be checked here.
+        expect(h["content-security-policy"]).not.toContain("'unsafe-eval'");
+        expect(h["strict-transport-security"]).toBe("max-age=63072000");
+      }
     });
   }
 });

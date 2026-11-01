@@ -10,7 +10,9 @@ permissions:
 
 jobs:
   check:
+    name: Types, lint, formatting, unit tests with coverage, browser tests (dev server)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,9 +20,87 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Types, lint, formatting and unit tests
+      - name: Types, lint, formatting and unit tests with the coverage floor
         run: npm run check
       - run: npm audit --audit-level=high
       - run: npx playwright install --with-deps chromium
-      - name: Browser tests
+      - name: Browser tests against the dev server with the stubbed model
         run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-dev
+          path: playwright-report
+          retention-days: 7
+
+  production:
+    name: Production build, then browser tests against next start
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      # A build-time failure (a missing docs file, a prerender error) only ever showed at deploy.
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      # Production headers (HSTS, no 'unsafe-eval') are only sent by a production build. The model stub
+      # cannot exist in one, so the tests that need it skip themselves, and with no key set nothing can
+      # reach the paid API.
+      - name: Browser tests against the production server
+        run: npm run test:e2e
+        env:
+          E2E_SERVER: production
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-production
+          path: playwright-report
+          retention-days: 7
+
+  database:
+    name: Real Postgres - schema twice, migrations, privilege proof, store SQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ridenote
+          # A throwaway server inside the runner that nothing else can reach, so the two history logins
+          # (created without passwords by db/schema.sql) can connect and be tested as themselves.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGDATABASE: ridenote
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: The schema runs twice (safe to re-run), the migrations run against it, the roles pass their self-check
+        run: |
+          psql -v ON_ERROR_STOP=1 -f db/schema.sql
+          psql -v ON_ERROR_STOP=1 -f db/schema.sql
+          for migration in db/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -f "$migration"; done
+      - name: Each login can do only what it was granted (db/verify.sql)
+        run: psql -v ON_ERROR_STOP=1 -f db/verify.sql
+      - name: The store's and the purge's SQL through the real driver, as the real logins
+        run: npm run test:db
+        env:
+          DATABASE_URL: postgres://postgres@localhost:5432/ridenote
+          DB_APP_URL: postgres://history_app@localhost:5432/ridenote
+          DB_PURGE_URL: postgres://history_purge@localhost:5432/ridenote

@@ -6,7 +6,7 @@ import { Routes } from "../lib/routes";
 import type { Trip } from "../lib/trip";
 import { addDays, localDate } from "../lib/clock";
 import { formatDate } from "../lib/format";
-import { emptyTrip, freshClient, tripWith } from "./fixtures";
+import { emptyTrip, freshClient, productionServer, tripWith } from "./fixtures";
 
 // The e2e server runs like production with an in-memory store and a stubbed model: a note of the
 // form E2E:{trip JSON} comes back as that trip, and everything after the model (validation,
@@ -20,6 +20,8 @@ async function asNewClient(page: Page) {
 }
 
 async function parseThroughUi(page: Page, trip: Trip) {
+  // Marks the calling test skipped on a production build, which cannot contain the stub.
+  test.skip(productionServer, "parses through the model stub, which a production build refuses");
   await page.goto(Routes.page("home"));
   await page.getByRole("textbox", { name: "Dispatcher note" }).fill(`E2E:${JSON.stringify(trip)}`);
   await page.getByRole("button", { name: "Parse" }).click();

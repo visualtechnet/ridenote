@@ -14,6 +14,8 @@ const config = {
     "/node_modules/",
     "/.next/",
     "/e2e/",
+    // Needs a real Postgres; run with `npm run test:db` (CI does).
+    "<rootDir>/tests/db/",
     "<rootDir>/.claude/",
     "<rootDir>/.agents/",
   ],
