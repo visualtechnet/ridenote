@@ -129,6 +129,30 @@ test.describe("positive: what a successful parse looks like", () => {
     await expect(card(page).getByText("Approximate time.", { exact: true })).toBeVisible();
   });
 
+  test("Copy trip puts the card on the clipboard as labelled plain text", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await mockParseApi(page, {
+      trip: tripWith({ pickup_date: "2026-11-06", notes: "Confirm ramp access." }),
+    });
+    await page.goto(Routes.page("home"));
+    await submit(page, NOTE);
+    await card(page).getByRole("button", { name: "Copy trip" }).click();
+    await expect(card(page).getByText("Copied to the clipboard.")).toBeVisible();
+    const text = await page.evaluate(() => navigator.clipboard.readText());
+    expect(text.split("\n")).toEqual([
+      "Passenger: Mrs. Lee",
+      "Pickup date: Fri, Nov 6, 2026",
+      "Pickup time: 9:30 AM",
+      "Pickup: 12 Oak St",
+      "Dropoff: County Hospital",
+      "Mobility: Wheelchair",
+      "Parser note: Confirm ramp access.",
+    ]);
+  });
+
   test("shows the AI's note about an ambiguous request", async ({ page }) => {
     await mockParseApi(page, {
       trip: { ...trip, pickup_time: null, notes: "Time is vague (around lunch)." },

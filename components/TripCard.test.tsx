@@ -197,6 +197,11 @@ describe("TripCard", () => {
     });
   });
 
+  it("offers to copy the trip as text, so the card has a path into a scheduling system", () => {
+    render(<TripCard trip={full} />);
+    expect(screen.getByRole("button", { name: COPY.copyTrip })).toBeInTheDocument();
+  });
+
   it("reminds the dispatcher the data is AI-extracted", () => {
     render(<TripCard trip={full} />);
     expect(screen.getByText(/verify/i)).toBeInTheDocument();

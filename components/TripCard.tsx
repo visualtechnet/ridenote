@@ -10,6 +10,7 @@ import { MISSING_MOBILITY } from "@/lib/config";
 import { COPY } from "@/lib/messages";
 import type { Trip } from "@/lib/trip";
 import type { Usage } from "@/lib/usage";
+import { CopyTripButton } from "./CopyTripButton";
 
 const BLANK =
   "inline-block min-w-28 border-b-2 border-dashed border-edge text-base text-zinc-400 italic";
@@ -50,15 +51,18 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
       : undefined;
   return (
     <section aria-label={COPY.resultLabel} className="bezel">
-      <div className="border-etch border-b px-5 py-3.5">
-        <h2 className="caps text-2xl break-words text-zinc-50">
-          {trip.passenger_name ?? COPY.unknownPassenger}
-        </h2>
-        {hintFor("passenger_name", COPY.fieldPassenger) && (
-          <p className="text-missing mt-1 text-xs">
-            {hintFor("passenger_name", COPY.fieldPassenger)}
-          </p>
-        )}
+      <div className="border-etch flex flex-wrap items-start justify-between gap-3 border-b px-5 py-3.5">
+        <div className="min-w-0">
+          <h2 className="caps text-2xl break-words text-zinc-50">
+            {trip.passenger_name ?? COPY.unknownPassenger}
+          </h2>
+          {hintFor("passenger_name", COPY.fieldPassenger) && (
+            <p className="text-missing mt-1 text-xs">
+              {hintFor("passenger_name", COPY.fieldPassenger)}
+            </p>
+          )}
+        </div>
+        <CopyTripButton trip={trip} />
       </div>
 
       <div className="p-5">
