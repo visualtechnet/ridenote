@@ -197,6 +197,24 @@ describe("TripCard", () => {
     });
   });
 
+  describe("out of date", () => {
+    it("tags and outlines the card when the note has changed since it was parsed", () => {
+      render(<TripCard trip={full} stale />);
+      expect(screen.getByText(COPY.staleTag)).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: COPY.resultLabel })).toHaveAttribute("data-stale");
+      // The heading still reads as the passenger's name, with the tag as part of it.
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(/Mrs\. Lee/);
+    });
+
+    it("shows no tag on a current card", () => {
+      render(<TripCard trip={full} />);
+      expect(screen.queryByText(COPY.staleTag)).not.toBeInTheDocument();
+      expect(screen.getByRole("region", { name: COPY.resultLabel })).not.toHaveAttribute(
+        "data-stale",
+      );
+    });
+  });
+
   it("offers to copy the trip as text, so the card has a path into a scheduling system", () => {
     render(<TripCard trip={full} />);
     expect(screen.getByRole("button", { name: COPY.copyTrip })).toBeInTheDocument();

@@ -273,9 +273,11 @@ describe("Home page", () => {
 
     await user.type(note(), " going to the hospital");
     expect(screen.getByText(/note has changed since this was parsed/i)).toBeInTheDocument();
+    expect(screen.getByText(COPY.staleTag)).toBeInTheDocument();
 
     await user.click(parseBtn());
     await waitFor(() => expect(screen.queryByText(/note has changed/i)).not.toBeInTheDocument());
+    expect(screen.queryByText(COPY.staleTag)).not.toBeInTheDocument();
   });
 
   it("does not call the API again for a note that is already parsed and unchanged", async () => {
@@ -288,6 +290,22 @@ describe("Home page", () => {
     await user.click(parseBtn());
     await user.click(parseBtn());
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    // The no-op is not silent: the live region says the card is already current.
+    expect(screen.getByText(COPY.alreadyUpToDate)).toBeInTheDocument();
+  });
+
+  it("drops the 'already up to date' notice once the note is edited, in favour of the out-of-date tag", async () => {
+    fetchMock.mockReturnValue(json({ trip }));
+    const user = userEvent.setup();
+    renderWithProviders(<Home />);
+    await user.type(note(), "Pick up Mrs. Lee at 12 Oak St");
+    await user.click(parseBtn());
+    await screen.findByRole("heading", { level: 2, name: "Mrs. Lee" });
+    await user.click(parseBtn());
+    expect(screen.getByText(COPY.alreadyUpToDate)).toBeInTheDocument();
+    await user.type(note(), " at 9");
+    expect(screen.queryByText(COPY.alreadyUpToDate)).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.staleTag)).toBeInTheDocument();
   });
 
   it("does call the API again after a failed attempt, so a retry is possible", async () => {
@@ -307,8 +325,10 @@ describe("Home page", () => {
     const user = userEvent.setup();
     renderWithProviders(<Home />);
     await user.type(note(), "Pick up Mrs. Lee at 12 Oak St");
-    fireEvent.click(parseBtn());
-    fireEvent.click(parseBtn());
+    // One element, two clicks: a real double click lands on the same button, whatever it says by then.
+    const button = parseBtn();
+    fireEvent.click(button);
+    fireEvent.click(button);
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     await new Promise((r) => setTimeout(r, 20)); // give a second request time to show up
     expect(fetchMock).toHaveBeenCalledTimes(1);

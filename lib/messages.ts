@@ -111,6 +111,8 @@ export const COPY = {
   copied: "Copied to the clipboard.",
   copyFailed: "Couldn't copy. Select the card text and copy it instead.",
   staleResult: "The note has changed since this was parsed. Parse again to update it.",
+  staleTag: "Out of date",
+  alreadyUpToDate: "Already up to date: this card is for the note as written.",
   usageLabel: "Usage",
   ratingEfficient: "Efficient",
   ratingProblematic: "Problematic",

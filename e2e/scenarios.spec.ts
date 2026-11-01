@@ -227,6 +227,7 @@ test.describe("positive: avoiding unnecessary API calls", () => {
     await parse(page).click();
     await note(page).press("Control+Enter");
     expect(calls).toHaveLength(1);
+    await expect(page.getByText(/already up to date/i)).toBeVisible();
   });
 
   test("editing the note flags the result as out of date, and re-parsing clears the flag", async ({
@@ -240,9 +241,11 @@ test.describe("positive: avoiding unnecessary API calls", () => {
 
     await note(page).fill(`${NOTE} and bring the ramp`);
     await expect(page.getByText(/note has changed since this was parsed/i)).toBeVisible();
+    await expect(card(page).getByText("Out of date", { exact: true })).toBeVisible();
 
     await parse(page).click();
     await expect(page.getByText(/note has changed/i)).toHaveCount(0);
+    await expect(card(page).getByText("Out of date", { exact: true })).toHaveCount(0);
     expect(calls).toHaveLength(2);
   });
 

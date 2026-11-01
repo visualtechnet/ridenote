@@ -36,7 +36,14 @@ function Field({ label, value, hint }: { label: string; value: ReactNode | null;
   );
 }
 
-export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
+type Props = {
+  trip: Trip;
+  usage?: Usage;
+  /** The note has changed since this trip was parsed: the card is outlined and tagged, not just hinted. */
+  stale?: boolean;
+};
+
+export function TripCard({ trip, usage, stale = false }: Props) {
   // Mobility is flagged by the server (see missingFields), but as a quiet line beside the mobility
   // field rather than a chip: most notes name no aid, and a warning on nearly every card would be
   // ignored, including the ones that matter.
@@ -50,11 +57,22 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
       ? COPY.confirmField(label)
       : undefined;
   return (
-    <section aria-label={COPY.resultLabel} className="bezel">
+    <section
+      aria-label={COPY.resultLabel}
+      data-stale={stale || undefined}
+      className={`bezel ${stale ? "border-missing-edge outline-missing-edge outline-1 outline-dashed" : ""}`}
+    >
       <div className="border-etch flex flex-wrap items-start justify-between gap-3 border-b px-5 py-3.5">
         <div className="min-w-0">
           <h2 className="caps text-2xl break-words text-zinc-50">
             {trip.passenger_name ?? COPY.unknownPassenger}
+            {stale && (
+              <span
+                className={`${TAG} border-missing-edge text-missing ml-3 inline-block align-middle`}
+              >
+                {COPY.staleTag}
+              </span>
+            )}
           </h2>
           {hintFor("passenger_name", COPY.fieldPassenger) && (
             <p className="text-missing mt-1 text-xs">
