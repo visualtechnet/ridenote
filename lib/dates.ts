@@ -1,5 +1,6 @@
 import { addDays, isRealDate, localDate, weekdayOf, type Clock, type Weekday } from "./clock";
 import { DATES } from "./config";
+import { formatDate } from "./format";
 import { MESSAGES } from "./messages";
 
 /**
@@ -75,6 +76,8 @@ export type DateCheck = { date: string | null; reason: string | null };
 export function checkPickupDate(date: string | null, note: string, clock: Clock): DateCheck {
   if (date === null) return { date: null, reason: null };
   if (!isRealDate(date)) return { date: null, reason: MESSAGES.dateNotReal(date) };
+  // From here the date is real, so reasons name it the way the card does ("Fri, Nov 6, 2026").
+  const shown = formatDate(date);
 
   // The model may "correct" a written date to fit a weekday ("Friday 11/5" becoming the 6th). A
   // written date is a fact: the resolved date has to be one of them.
@@ -82,20 +85,20 @@ export function checkPickupDate(date: string | null, note: string, clock: Clock)
   if (written.length > 0 && !written.some((w) => matchesWritten(date, w))) {
     return {
       date: null,
-      reason: MESSAGES.dateDisagrees(date, written.map((w) => w.text).join(" or ")),
+      reason: MESSAGES.dateDisagrees(shown, written.map((w) => w.text).join(" or ")),
     };
   }
 
   const today = localDate(clock);
-  if (date < today) return { date: null, reason: MESSAGES.datePast(date) };
+  if (date < today) return { date: null, reason: MESSAGES.datePast(shown) };
   if (date > addDays(today, DATES.maxDaysAhead)) {
-    return { date: null, reason: MESSAGES.dateTooFar(date, DATES.maxDaysAhead) };
+    return { date: null, reason: MESSAGES.dateTooFar(shown, DATES.maxDaysAhead) };
   }
 
   const named = namedWeekdays(note);
   const actual = weekdayOf(date);
   if (named.length > 0 && !named.includes(actual)) {
-    return { date: null, reason: MESSAGES.dateWeekdayMismatch(date, named, actual) };
+    return { date: null, reason: MESSAGES.dateWeekdayMismatch(shown, named, actual) };
   }
   return { date, reason: null };
 }

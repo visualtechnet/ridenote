@@ -1,6 +1,7 @@
 /** @jest-environment node */
+import { MESSAGES } from "./messages";
 import { MOBILITY } from "./config";
-import { formatDate, formatTime12h, mobilityLabel } from "./format";
+import { formatDate, formatTime12h, mobilityLabel, splitDateReason } from "./format";
 
 describe("formatTime12h", () => {
   it.each([
@@ -54,5 +55,45 @@ describe("mobilityLabel", () => {
   it("uses plain words", () => {
     expect(mobilityLabel("wheelchair")).toBe("Wheelchair");
     expect(mobilityLabel("ambulatory")).toBe("Walks unaided");
+  });
+});
+
+describe("splitDateReason", () => {
+  const reason = "Date Thu, Oct 1, 2026 has already passed; confirm the date.";
+
+  it("lifts the server's reason off the front of the notes and keeps the rest", () => {
+    expect(splitDateReason(`${reason} Approximate time.`)).toEqual({
+      dateReason: reason,
+      rest: "Approximate time.",
+    });
+    expect(splitDateReason(reason)).toEqual({ dateReason: reason, rest: "" });
+  });
+
+  it("leaves a note alone when it carries no reason", () => {
+    expect(splitDateReason("Approximate time.")).toEqual({
+      dateReason: null,
+      rest: "Approximate time.",
+    });
+    expect(splitDateReason("")).toEqual({ dateReason: null, rest: "" });
+  });
+
+  it("never cuts the model's own words, even if they mention confirming the date", () => {
+    const own = "Caller said to confirm the date. Ramp needed.";
+    expect(splitDateReason(own)).toEqual({ dateReason: null, rest: own });
+    const midway = `Ramp needed. ${reason}`;
+    expect(splitDateReason(midway)).toEqual({ dateReason: null, rest: midway });
+  });
+
+  it("recognises every reason the server can write", () => {
+    const shown = "Fri, Nov 6, 2026";
+    for (const r of [
+      MESSAGES.dateNotReal("2026-02-30"),
+      MESSAGES.datePast(shown),
+      MESSAGES.dateTooFar(shown, 60),
+      MESSAGES.dateDisagrees(shown, "11/5"),
+      MESSAGES.dateWeekdayMismatch(shown, ["Friday"], "Thursday"),
+    ]) {
+      expect(splitDateReason(`${r} More.`)).toEqual({ dateReason: r, rest: "More." });
+    }
   });
 });

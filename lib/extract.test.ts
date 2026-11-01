@@ -185,7 +185,7 @@ describe("extractTrip checks the date in code", () => {
     );
     expect(result.ok && result.trip).toMatchObject({
       pickup_date: null,
-      notes: "Date 2026-10-01 has already passed; confirm the date. Approximate time.",
+      notes: "Date Thu, Oct 1, 2026 has already passed; confirm the date. Approximate time.",
     });
   });
 
@@ -195,7 +195,7 @@ describe("extractTrip checks the date in code", () => {
     });
     expect(result.ok && result.trip).toMatchObject({
       pickup_date: null,
-      notes: "Note says Friday but 2026-11-05 is a Thursday; confirm the date.",
+      notes: "Note says Friday but Thu, Nov 5, 2026 is a Thursday; confirm the date.",
     });
   });
 
@@ -210,9 +210,9 @@ describe("extractTrip checks the date in code", () => {
     const long = "x".repeat(OUTPUT_LIMITS.notes);
     const result = await extractTrip(clientReturning(dated("2026-10-01", long)), "note", { clock });
     expect(result.ok && result.trip.notes.length).toBeLessThanOrEqual(OUTPUT_LIMITS.notes);
-    expect(result.ok && result.trip.notes.startsWith("Date 2026-10-01 has already passed")).toBe(
-      true,
-    );
+    expect(
+      result.ok && result.trip.notes.startsWith("Date Thu, Oct 1, 2026 has already passed"),
+    ).toBe(true);
   });
 
   it("rejects a date in the wrong shape as a bad answer, like a bad time", async () => {

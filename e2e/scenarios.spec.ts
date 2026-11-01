@@ -113,6 +113,22 @@ test.describe("positive: what a successful parse looks like", () => {
     ).toBeVisible();
   });
 
+  test("a date the server cleared explains itself under the date field, with the rest of the note apart", async ({
+    page,
+  }) => {
+    const reason = "Date Thu, Oct 1, 2026 has already passed; confirm the date.";
+    await mockParseApi(page, {
+      trip: tripWith({ pickup_date: null, notes: `${reason} Approximate time.` }),
+    });
+    await page.goto(Routes.page("home"));
+    await submit(page, "Pick up Mrs. Lee on 10/1 at 9:30am");
+    const dateCell = card(page).locator("dt", { hasText: "Pickup date" }).locator("..");
+    await expect(dateCell.getByText("Not stated", { exact: true })).toBeVisible();
+    await expect(dateCell.getByText(reason)).toBeVisible();
+    await expect(card(page).getByText("Parser note")).toBeVisible();
+    await expect(card(page).getByText("Approximate time.", { exact: true })).toBeVisible();
+  });
+
   test("shows the AI's note about an ambiguous request", async ({ page }) => {
     await mockParseApi(page, {
       trip: { ...trip, pickup_time: null, notes: "Time is vague (around lunch)." },

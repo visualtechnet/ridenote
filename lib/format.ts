@@ -1,6 +1,6 @@
 import { isRealDate } from "./clock";
 import type { MOBILITY } from "./config";
-import { COPY } from "./messages";
+import { COPY, MESSAGES } from "./messages";
 
 const TIME_24H = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -40,4 +40,21 @@ export function mobilityLabel(aid: (typeof MOBILITY)[number]): string {
 /** "pickup_time" becomes "Pickup time". A field the copy does not know keeps its key, so nothing is hidden. */
 export function missingLabel(field: string): string {
   return (COPY.fieldLabels as Record<string, string | undefined>)[field] ?? field;
+}
+
+const DATE_REASON_STARTS = ["Date ", "Note says "];
+
+/**
+ * When the server cleared the pickup date it put its reason first in notes (lib/extract.ts). The card
+ * shows that reason under the date field, where the blank is, and the rest of the note on its own.
+ * Only a note that starts like a reason and contains its ending is split, so the model's own words
+ * are never cut.
+ */
+export function splitDateReason(notes: string): { dateReason: string | null; rest: string } {
+  const end = notes.indexOf(MESSAGES.dateReasonEnd);
+  if (end === -1 || !DATE_REASON_STARTS.some((start) => notes.startsWith(start))) {
+    return { dateReason: null, rest: notes };
+  }
+  const cut = end + MESSAGES.dateReasonEnd.length;
+  return { dateReason: notes.slice(0, cut), rest: notes.slice(cut).trim() };
 }

@@ -1,6 +1,8 @@
 import { LIMITS } from "./config";
 import type { Usage } from "./usage";
 
+const DATE_REASON_END = "; confirm the date.";
+
 /** User-facing validation and error text. Written for dispatchers, not developers. */
 export const MESSAGES = {
   noteRequired: "Please enter a dispatcher note before parsing.",
@@ -28,15 +30,20 @@ export const MESSAGES = {
   network: "We couldn't reach the server. Check your connection and try again.",
   notFound: "We couldn't find that page.",
   unexpected: "Something went wrong on our side. Please try again.",
-  /** Reasons the server clears a pickup date. They go in the trip's notes, so a person sees why. */
-  dateNotReal: (date: string) => `Date ${date} is not a real calendar date; confirm the date.`,
-  datePast: (date: string) => `Date ${date} has already passed; confirm the date.`,
+  /**
+   * Reasons the server clears a pickup date. They go first in the trip's notes, so a person sees why;
+   * the card lifts one out again (lib/format.ts, splitDateReason) by its start and this ending, so
+   * every reason must begin "Date " or "Note says " and end with dateReasonEnd.
+   */
+  dateReasonEnd: "; confirm the date.",
+  dateNotReal: (date: string) => `Date ${date} is not a real calendar date${DATE_REASON_END}`,
+  datePast: (date: string) => `Date ${date} has already passed${DATE_REASON_END}`,
   dateTooFar: (date: string, days: number) =>
-    `Date ${date} is more than ${days} days away; confirm the date.`,
+    `Date ${date} is more than ${days} days away${DATE_REASON_END}`,
   dateDisagrees: (date: string, written: string) =>
-    `Note says ${written} but the date came back as ${date}; confirm the date.`,
+    `Note says ${written} but the date came back as ${date}${DATE_REASON_END}`,
   dateWeekdayMismatch: (date: string, named: readonly string[], actual: string) =>
-    `Note says ${named.join(" or ")} but ${date} is a ${actual}; confirm the date.`,
+    `Note says ${named.join(" or ")} but ${date} is a ${actual}${DATE_REASON_END}`,
 } as const;
 
 /** Visible labels and text. */

@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
-import { formatDate, formatTime12h, missingLabel, mobilityLabel } from "@/lib/format";
+import {
+  formatDate,
+  formatTime12h,
+  missingLabel,
+  mobilityLabel,
+  splitDateReason,
+} from "@/lib/format";
 import { MISSING_MOBILITY } from "@/lib/config";
 import { COPY } from "@/lib/messages";
 import type { Trip } from "@/lib/trip";
@@ -34,6 +40,8 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
   // field rather than a chip: most notes name no aid, and a warning on nearly every card would be
   // ignored, including the ones that matter.
   const flagMobility = trip.missing_fields.includes(MISSING_MOBILITY);
+  // A date the server cleared explains itself under the date field, not in an unlabelled note.
+  const { dateReason, rest: notes } = splitDateReason(trip.notes);
   const chips = trip.missing_fields.filter((f) => f !== MISSING_MOBILITY);
   // One rule for every blank: a quiet line under it says so. The chips below are the summary.
   const hintFor = (field: string, label: string) =>
@@ -69,7 +77,7 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
               date, and a chip on nearly every card would be ignored. */}
           <Field
             label={COPY.fieldPickupDate}
-            hint={COPY.confirmDate}
+            hint={dateReason ?? COPY.confirmDate}
             value={
               trip.pickup_date && (
                 <time dateTime={trip.pickup_date}>{formatDate(trip.pickup_date)}</time>
@@ -108,10 +116,10 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
           </div>
         </dl>
 
-        {trip.notes && (
+        {notes && (
           <p className="mt-5 text-sm break-words text-zinc-300">
             <span className="lab mr-2">{COPY.notesLabel}</span>
-            <span>{trip.notes}</span>
+            <span>{notes}</span>
           </p>
         )}
 

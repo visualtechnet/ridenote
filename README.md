@@ -305,7 +305,8 @@ note and today's date in the dispatcher's time zone ("tomorrow", "Friday", "next
 is not a date, so it is `null`. Code, not the AI, then checks the date (`lib/dates.ts`): it must be a real
 calendar date, match any numeric date the note writes ("11/5" cannot come back as the 6th), fall between
 today and 60 days ahead, and fall on the weekday the note names, if any. If a check fails the date becomes `null` and the reason goes at the front of `notes`, for example "Date
-2026-10-01 has already passed; confirm the date." A missing date is not added to `missing_fields` and the
+Thu, Oct 1, 2026 has already passed; confirm the date." The card shows that reason under the date field
+and the rest of the note on its own line. A missing date is not added to `missing_fields` and the
 card shows no Missing chip: most notes give no date, and a chip on nearly every card would be ignored. It
 shows "Not stated" and the quiet line "Date not stated. Confirm before dispatching." instead.
 

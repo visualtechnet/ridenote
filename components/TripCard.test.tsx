@@ -85,6 +85,17 @@ describe("TripCard", () => {
       expect(screen.queryByRole("list", { name: "Missing fields" })).not.toBeInTheDocument();
     });
 
+    it("shows the server's reason for clearing the date under the date field, and the rest of the note on its own", () => {
+      const reason = "Date Thu, Oct 1, 2026 has already passed; confirm the date.";
+      render(
+        <TripCard trip={makeTrip({ pickup_date: null, notes: `${reason} Approximate time.` })} />,
+      );
+      expect(screen.getByText(reason)).toBeInTheDocument();
+      expect(screen.queryByText(COPY.confirmDate)).not.toBeInTheDocument();
+      expect(screen.getByText("Approximate time.")).toBeInTheDocument();
+      expect(screen.queryByText(`${reason} Approximate time.`)).not.toBeInTheDocument();
+    });
+
     it("keeps the date out of the Missing chips even when other fields are missing", () => {
       render(<TripCard trip={makeTrip({ pickup_date: null, pickup_time: null })} />);
       const list = screen.getByRole("list", { name: "Missing fields" });

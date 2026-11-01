@@ -70,7 +70,7 @@ describe("checkPickupDate", () => {
     // The model "corrected" Friday 11/5 to the Friday, 11/6. The written date is the fact.
     expect(checkPickupDate("2026-11-06", "Mr. Chen, Friday 11/5 at 3pm", clock)).toEqual({
       date: null,
-      reason: "Note says 11/5 but the date came back as 2026-11-06; confirm the date.",
+      reason: "Note says 11/5 but the date came back as Fri, Nov 6, 2026; confirm the date.",
     });
     expect(checkPickupDate("2026-11-05", "On 11/05/2027 at 3pm", clock).reason).toMatch(
       /Note says 11\/05\/2027/,
@@ -106,6 +106,19 @@ describe("checkPickupDate", () => {
     expect(DATES.maxDaysAhead).toBe(60);
   });
 
+  it("names the date in reasons the way the card shows it, never as YYYY-MM-DD", () => {
+    for (const [date, text] of [
+      ["2026-11-01", note],
+      ["2027-01-02", note],
+      ["2026-11-05", "Friday 11/5"],
+      ["2026-11-06", "Mr. Chen, 11/5 at 3pm"],
+    ]) {
+      const { reason } = checkPickupDate(date, text, clock);
+      expect(reason).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+      expect(reason).toMatch(/, 20\d\d/);
+    }
+  });
+
   it("clears a date that is not a real calendar date, with a reason", () => {
     for (const bad of ["2026-02-30", "2026-13-01", "tomorrow", "11/03/2026"]) {
       const out = checkPickupDate(bad, note, clock);
@@ -118,7 +131,7 @@ describe("checkPickupDate", () => {
   it("clears a date that has already passed, with a reason", () => {
     expect(checkPickupDate("2026-11-01", note, clock)).toEqual({
       date: null,
-      reason: expect.stringMatching(/2026-11-01.*already passed/),
+      reason: expect.stringMatching(/Sun, Nov 1, 2026 has already passed/),
     });
     expect(checkPickupDate("2026-03-14", note, clock).date).toBeNull();
   });
@@ -126,7 +139,7 @@ describe("checkPickupDate", () => {
   it("clears a date more than the window away, with a reason that names the window", () => {
     expect(checkPickupDate("2027-01-02", note, clock)).toEqual({
       date: null,
-      reason: expect.stringMatching(/2027-01-02.*more than 60 days/),
+      reason: expect.stringMatching(/Sat, Jan 2, 2027 is more than 60 days/),
     });
   });
 
@@ -161,7 +174,7 @@ describe("checkPickupDate", () => {
     // 2026-11-05 is a Thursday.
     expect(checkPickupDate("2026-11-05", "Mr. Chen, Friday 11/5, 88 Lake Rd.", clock)).toEqual({
       date: null,
-      reason: "Note says Friday but 2026-11-05 is a Thursday; confirm the date.",
+      reason: "Note says Friday but Thu, Nov 5, 2026 is a Thursday; confirm the date.",
     });
   });
 
