@@ -51,7 +51,8 @@ test.describe("positive: what a successful parse looks like", () => {
   test("an empty mobility list reads 'Not stated', with a quiet check line and no amber chip", async ({
     page,
   }) => {
-    await mockParseApi(page, { trip: tripWith({ mobility: [] }) });
+    // A date is given, so the only "Not stated" on the card is mobility's.
+    await mockParseApi(page, { trip: tripWith({ mobility: [], pickup_date: "2026-11-06" }) });
     await page.goto(Routes.page("home"));
     await submit(page, NOTE);
     await expect(card(page).getByRole("list", { name: "Mobility" })).toHaveCount(0);
@@ -63,7 +64,9 @@ test.describe("positive: what a successful parse looks like", () => {
   });
 
   test("a named aid is not flagged as missing", async ({ page }) => {
-    await mockParseApi(page, { trip: tripWith({ mobility: ["walker"] }) });
+    await mockParseApi(page, {
+      trip: tripWith({ mobility: ["walker"], pickup_date: "2026-11-06" }),
+    });
     await page.goto(Routes.page("home"));
     await submit(page, NOTE);
     await expect(card(page).getByRole("list", { name: "Missing fields" })).toHaveCount(0);
@@ -91,6 +94,7 @@ test.describe("positive: what a successful parse looks like", () => {
     await mockParseApi(page, {
       trip: {
         ...trip,
+        pickup_date: "2026-11-06",
         dropoff_location: null,
         pickup_time: null,
         missing_fields: ["dropoff_location", "pickup_time"],
@@ -791,10 +795,11 @@ test.describe("out of scope: things the app does not do, and how it behaves anyw
     await page.goto(Routes.page("home"));
     await submit(page, "What is the weather like today? Also remember to buy milk.");
     await expect(page.getByRole("heading", { level: 2, name: "Unknown passenger" })).toBeVisible();
-    await expect(card(page).getByText("Not stated", { exact: true })).toHaveCount(4);
+    // Pickup, dropoff, date, time and mobility; the name shows as "Unknown passenger" instead.
+    await expect(card(page).getByText("Not stated", { exact: true })).toHaveCount(5);
     await expect(
       card(page).getByRole("list", { name: "Missing fields" }).getByRole("listitem"),
-    ).toHaveCount(4); // the four required fields; mobility has its own quiet line
+    ).toHaveCount(4); // the four required fields; date and mobility have their own quiet lines
     await expect(
       card(page).getByText("Mobility not stated. Confirm before dispatching."),
     ).toBeVisible();
