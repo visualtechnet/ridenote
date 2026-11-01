@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {
   BUDGET,
+  DATES,
   HTTP,
   LIMITS,
   MOBILITY,
@@ -115,7 +116,8 @@ export default function RequirementsPage() {
           <ol className="mt-2 list-decimal space-y-1 pl-6 text-zinc-300">
             <li>Accept a pasted note and parse it on request (button or Ctrl/⌘ + Enter).</li>
             <li>
-              Extract passenger, pickup, dropoff, pickup time and every mobility aid named (a list).
+              Extract passenger, pickup, dropoff, pickup date, pickup time and every mobility aid
+              named (a list).
             </li>
             <li>
               Never invent facts. Anything not stated is null and listed as missing. An empty
@@ -155,8 +157,13 @@ export default function RequirementsPage() {
               notes.
             </li>
             <li>
-              <strong>No date.</strong> Only the time of day is stored. A day or date is repeated in
-              the notes.
+              <strong>A pickup date is resolved and checked.</strong> Relative wording
+              (&ldquo;tomorrow&rdquo;, &ldquo;Friday&rdquo;, &ldquo;11/20&rdquo;) is resolved
+              against today&rsquo;s date in the dispatcher&rsquo;s time zone. Code then checks it: a
+              real date, the same as any numeric date the note writes, from today to{" "}
+              {DATES.maxDaysAhead} days ahead, on the weekday the note names. If a check fails the
+              date is null and the reason is put in the notes. When no date is given the card shows
+              a quiet &ldquo;Date not stated&rdquo; line, never a Missing chip.
             </li>
             <li>
               <strong>Never guessed.</strong> A time with no AM or PM and no clue (&ldquo;at
@@ -202,10 +209,6 @@ export default function RequirementsPage() {
             <li>
               Accounts or sign-in, editing or deleting saved trips, and sending trips to a dispatch
               system.
-            </li>
-            <li>
-              A date field. Dates such as &ldquo;tomorrow&rdquo; or &ldquo;Friday&rdquo; are not
-              converted; they are repeated in the notes so a person can see them.
             </li>
             <li>
               Time zones. Whatever time the note gives is kept as is: nothing is converted to the
@@ -352,6 +355,15 @@ export default function RequirementsPage() {
                   </th>
                   <td className={td}>string | null</td>
                   <td className={td}>Max {OUTPUT_LIMITS.location} characters.</td>
+                </tr>
+                <tr>
+                  <th scope="row" className={`${td} font-mono font-normal`}>
+                    pickup_date
+                  </th>
+                  <td className={td}>string | null</td>
+                  <td className={td}>
+                    YYYY-MM-DD, or null when the note gives no date or the date failed its checks.
+                  </td>
                 </tr>
                 <tr>
                   <th scope="row" className={`${td} font-mono font-normal`}>

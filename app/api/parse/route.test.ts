@@ -8,7 +8,7 @@ jest.mock("@anthropic-ai/sdk", () => ({
   },
 }));
 
-import { HTTP, LIMITS, OUTPUT_LIMITS, UPSTREAM } from "@/lib/config";
+import { DATES, HTTP, LIMITS, OUTPUT_LIMITS, UPSTREAM } from "@/lib/config";
 import { MESSAGES } from "@/lib/messages";
 import { POST } from "./route";
 import { jsonContent } from "@/tests/model-reply";
@@ -19,6 +19,7 @@ const goodTrip = {
   passenger_name: "Mrs. Lee",
   pickup_location: "12 Oak St",
   dropoff_location: "County Hospital",
+  pickup_date: null,
   pickup_time: "09:30",
   mobility: ["wheelchair"],
   missing_fields: [],
@@ -423,6 +424,45 @@ describe("POST /api/parse", () => {
     const results = await Promise.all(pending);
     expect(results.map((r) => r.status)).toEqual([200, 200, 200]);
     expect(mockParse).toHaveBeenCalledTimes(1);
+  });
+
+  describe("time zone and clock", () => {
+    it("puts the browser's zone and today's date in the instructions", async () => {
+      await POST(request({ note: VALID_NOTE, timeZone: "Pacific/Auckland" }));
+      const system: string = mockParse.mock.calls[0][0].system;
+      expect(system).toMatch(/Today is \w+day, \d{4}-\d{2}-\d{2} \(Pacific\/Auckland\)\.$/);
+    });
+
+    it("falls back to the default zone for a bad one, with no error and no echo", async () => {
+      const res = await POST(request({ note: VALID_NOTE, timeZone: "Mars/Olympus" }));
+      expect(res.status).toBe(200);
+      expect(mockParse.mock.calls[0][0].system).toContain(`(${DATES.defaultTimeZone}).`);
+      expect(mockParse.mock.calls[0][0].system).not.toContain("Mars");
+      expect(JSON.stringify(await res.json())).not.toContain("Mars");
+    });
+
+    it("uses the default zone when none is sent", async () => {
+      await POST(request({ note: VALID_NOTE }));
+      expect(mockParse.mock.calls[0][0].system).toContain(`(${DATES.defaultTimeZone}).`);
+    });
+
+    it("does not share a call between the same note from different zones: 'tomorrow' can differ", async () => {
+      const note = "Pick up Lee at 12 Oak St tomorrow";
+      await Promise.all([
+        POST(request({ note, timeZone: "Pacific/Auckland" })),
+        POST(request({ note, timeZone: "America/Los_Angeles" })),
+      ]);
+      expect(mockParse).toHaveBeenCalledTimes(2);
+    });
+
+    it("shares a call for the same note from the same zone", async () => {
+      const note = "Pick up Lee at 12 Oak St tomorrow";
+      await Promise.all([
+        POST(request({ note, timeZone: "Europe/Madrid" })),
+        POST(request({ note, timeZone: "Europe/Madrid" })),
+      ]);
+      expect(mockParse).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("does not share a call between different notes", async () => {

@@ -2,13 +2,15 @@ import type { Trip } from "./trip";
 
 /** Sample responses shown on the Requirements page. A test checks each one against TripSchema. */
 export const OUTPUT_EXAMPLES: { title: string; note: string; trip: Trip }[] = [
+  // "tomorrow" is 2026-11-03 when today is 2026-11-02.
   {
     title: "Everything stated",
-    note: "Pick up Mrs. Lee at 12 Oak St at 9:30am, taking her to County Hospital. She uses a wheelchair.",
+    note: "Pick up Mrs. Lee at 12 Oak St tomorrow at 9:30am, taking her to County Hospital. She uses a wheelchair.",
     trip: {
       passenger_name: "Mrs. Lee",
       pickup_location: "12 Oak St",
       dropoff_location: "County Hospital",
+      pickup_date: "2026-11-03",
       pickup_time: "09:30",
       mobility: ["wheelchair"],
       missing_fields: [],
@@ -22,6 +24,7 @@ export const OUTPUT_EXAMPLES: { title: string; note: string; trip: Trip }[] = [
       passenger_name: "Mr. Davis",
       pickup_location: "44 Pine Ave",
       dropoff_location: null,
+      pickup_date: null,
       pickup_time: "14:00",
       mobility: [],
       missing_fields: ["dropoff_location", "mobility"],
@@ -35,6 +38,7 @@ export const OUTPUT_EXAMPLES: { title: string; note: string; trip: Trip }[] = [
       passenger_name: "Ana",
       pickup_location: null,
       dropoff_location: "the clinic",
+      pickup_date: null,
       pickup_time: null,
       mobility: [],
       missing_fields: ["pickup_location", "pickup_time", "mobility"],

@@ -9,6 +9,7 @@ const row = (over: Partial<HistoryRow> = {}): HistoryRow => ({
   passenger_name: "Mrs. Lee",
   pickup_location: "12 Oak St",
   dropoff_location: "County Hospital",
+  pickup_date: null,
   pickup_time: "16:15",
   mobility: ["wheelchair", "walker"],
   created_at: new Date("2026-10-27T14:05:00Z"),
@@ -84,7 +85,14 @@ describe("HistoryList", () => {
       />,
     );
     expect(screen.getByRole("heading").textContent).toBe(COPY.unknownPassenger);
-    expect(screen.getAllByText(COPY.notStated)).toHaveLength(4);
+    expect(screen.getAllByText(COPY.notStated)).toHaveLength(5);
+  });
+
+  it("shows the pickup date as a readable day, with the exact date for machines", () => {
+    render(<HistoryList rows={[row({ pickup_date: "2026-11-06" })]} />);
+    const date = screen.getByText("Fri, Nov 6, 2026");
+    expect(date.tagName).toBe("TIME");
+    expect(date).toHaveAttribute("datetime", "2026-11-06");
   });
 
   it("renders hostile and very long text as plain text", () => {

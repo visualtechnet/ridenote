@@ -36,6 +36,9 @@ an email. They go only into Neon and into Vercel's environment variables.
 3. It must finish without an error. If the last block raises `history roles have more than their grants`,
    stop: one of the logins holds a power it should not. Do not continue until that is fixed.
 
+An existing database also needs `db/migrations/2026-11-01-pickup-date.sql` run once, the same way, before
+you deploy the code that writes the `pickup_date` column. It is safe to run twice.
+
 Run it as the database owner (Neon's default login, `neondb_owner`). The script creates the two logins
 itself. **Do not create them in the console's Roles page**: a login made there is given broad powers that
 the script cannot take away.

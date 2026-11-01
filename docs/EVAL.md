@@ -22,7 +22,7 @@ A set of example notes in `evals/cases.ts`. Each one has:
 
 - a **note**, written the way a dispatcher would write it;
 - an **expectation**: only the fields that matter for that case (for example, "pickup time must be
-  `null`" or "notes must mention _tomorrow_");
+  `null`" or "pickup date must be `2026-11-03`");
 - an optional **critical** flag, for answers a dispatcher could act on and be wrong about.
 
 `npm run eval` sends every note to the real model, scores each answer, and prints what failed.
@@ -48,9 +48,16 @@ exactly as production does, so `MODEL=<another model> npm run eval` is how you c
 cases, different answers, a number to compare.
 
 **The prompt.** `lib/prompt.ts` holds the instructions given to the model. Each rule in it (never
-guess, an hour with no AM or PM is `null`, dates go in `notes`, several trips, text that is not a
+guess, an hour with no AM or PM is `null`, dates resolve to `pickup_date` against a pinned clock, several trips, text that is not a
 trip) has a matching group of eval cases. `lib/prompt.test.ts` makes sure no rule is edited away by
 accident; the eval tells you whether the model obeys it. Change the prompt, then run the eval.
+
+**The clock.** Every case runs with a pinned clock (`CLOCK` in `evals/cases.ts`: Monday 2026-11-02 in New
+York), so a case written around "tomorrow" never breaks the next day. The model is told that date as
+"today". Code then checks the date it returns: it must be real, within 60 days, and on the weekday the
+note names. The date cases cover "tomorrow", a weekday name, "next Friday", an explicit date, a date with
+no time, no date, "morning" only, a past date, a date more than 60 days out, and a weekday that disagrees
+with the date.
 
 **The schema.** `lib/trip.ts` defines the shape of a trip. `extractTrip` sends it to the model as a
 structured-output format, which constrains the answer to the right keys and types, with

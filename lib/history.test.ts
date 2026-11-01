@@ -13,6 +13,7 @@ const trip = (over: Partial<Trip> = {}): Trip => ({
   passenger_name: "Ann Lee",
   pickup_location: "12 Oak St",
   dropoff_location: "General Hospital",
+  pickup_date: null,
   pickup_time: "09:30",
   mobility: ["wheelchair"],
   missing_fields: ["x"],
@@ -66,7 +67,7 @@ describe("toRecord usage", () => {
 });
 
 describe("toRecord", () => {
-  it("keeps exactly the five trip fields plus the three usage counts", () => {
+  it("keeps exactly the six trip fields plus the three usage counts", () => {
     const record = toRecord(trip())!;
     expect(Object.keys(record).sort()).toEqual([
       "dropoff_location",
@@ -75,11 +76,21 @@ describe("toRecord", () => {
       "mobility",
       "output_tokens",
       "passenger_name",
+      "pickup_date",
       "pickup_location",
       "pickup_time",
     ]);
     expect(record).not.toHaveProperty("notes");
     expect(record).not.toHaveProperty("missing_fields");
+  });
+
+  it("keeps the pickup date as it is: a date carries no contact details", () => {
+    expect(toRecord(trip({ pickup_date: "2026-11-06" }))!.pickup_date).toBe("2026-11-06");
+    expect(toRecord(trip({ pickup_date: null }))!.pickup_date).toBeNull();
+  });
+
+  it("a date alone is not worth saving", () => {
+    expect(toRecord(emptyTrip({ pickup_date: "2026-11-06" }))).toBeNull();
   });
 
   it("scrubs text and keeps ordinary addresses", () => {
@@ -122,6 +133,7 @@ describe("toRecord", () => {
       passenger_name: null,
       pickup_location: null,
       dropoff_location: null,
+      pickup_date: null,
       pickup_time: null,
       mobility: ["cane"],
       input_tokens: null,

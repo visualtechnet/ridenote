@@ -10,6 +10,7 @@ const trip = {
   passenger_name: "Mrs. Lee",
   pickup_location: "12 Oak St",
   dropoff_location: null,
+  pickup_date: null,
   pickup_time: "09:30",
   mobility: ["wheelchair"],
   missing_fields: ["dropoff_location"],
@@ -137,7 +138,10 @@ describe("Home page", () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe(Routes.api("parse"));
     expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body)).toEqual({ note: "Pick up Mrs. Lee" });
+    expect(JSON.parse(init.body)).toEqual({
+      note: "Pick up Mrs. Lee",
+      timeZone: expect.any(String),
+    });
   });
 
   it("submits with Ctrl+Enter from the textarea", async () => {

@@ -11,6 +11,7 @@ time and mobility aids, shown as a card. Anything the note does not say is marke
     "passenger_name": "Mrs. Lee",
     "pickup_location": "12 Oak St",
     "dropoff_location": "County Hospital",
+    "pickup_date": null,
     "pickup_time": "09:30",
     "mobility": ["wheelchair"],
     "missing_fields": [],
@@ -296,7 +297,25 @@ dispatching." Not stated is not the same as needs none, so say "walks unaided" w
 mean. `pickup_time` is 24-hour `HH:MM` with no AM or PM, so 3pm is `15:00`; the card turns it into 12-hour for
 reading, and the data underneath never changes. The time is **exactly what the note says**: there is no
 time zone handling, so nothing is converted to server time or any other zone, and a zone named in the
-note ("3pm EST") is only repeated in `notes`. There is no date field either.
+note ("3pm EST") is only repeated in `notes`.
+
+`pickup_date` is `"YYYY-MM-DD"` or `null`, and sits just before `pickup_time`. The AI works it out from the
+note and today's date in the dispatcher's time zone ("tomorrow", "Friday", "next Friday", "11/20", "March
+14"). A date with no year is the next time that day comes, so "1/5" written in December means January. "Soon" or "next week"
+is not a date, so it is `null`. Code, not the AI, then checks the date (`lib/dates.ts`): it must be a real
+calendar date, match any numeric date the note writes ("11/5" cannot come back as the 6th), fall between
+today and 60 days ahead, and fall on the weekday the note names, if any. If a check fails the date becomes `null` and the reason goes at the front of `notes`, for example "Date
+2026-10-01 has already passed; confirm the date." A missing date is not added to `missing_fields` and the
+card shows no Missing chip: most notes give no date, and a chip on nearly every card would be ignored. It
+shows "Not stated" and the quiet line "Date not stated. Confirm before dispatching." instead.
+
+The request body may also carry an optional `timeZone`, the browser's IANA zone (for example
+`"America/New_York"`). The web page sends it for you. The server uses it only to work out today's date. If
+it is missing, not a real zone, or over 64 characters, the server silently uses `America/New_York`; it is
+never an error and never echoed back. The time itself is still not converted between zones.
+
+A vague part of the day with no hour ("morning", "after lunch") leaves `pickup_time` as `null` and `notes`
+says so ("Note says 'morning'. Confirm a specific pickup time."). "9 in the morning" is still `09:00`.
 
 Errors are JSON too: `{ "error": "human readable message", "code": "required" }`. The Docs page
 explains each status and each validation code.
@@ -364,7 +383,9 @@ short, once and in order:
 1. Add the **Neon** integration under Vercel **Storage**.
 2. Run `db/schema.sql` as the owner in the Neon SQL editor (table, two roles, self-check). A database from
    before the usage columns needs `db/migrations/2026-10-28-history-usage.sql` run once instead, **before**
-   deploying the code that writes them. Optionally prove the grants with `db/verify.sql`.
+   deploying the code that writes them. A database from before 2026-11-01 also needs
+   `db/migrations/2026-11-01-pickup-date.sql` run once, the same way, **before** deploying the code that
+   writes `pickup_date`; it is safe to run twice. Optionally prove the grants with `db/verify.sql`.
 3. Set each role's password with `alter role`, then build the two connection strings from the owner's pooled
    string (swap user and password, drop `&channel_binding=require`).
 4. Add `HISTORY_DATABASE_URL`, `HISTORY_PURGE_DATABASE_URL` and `CRON_SECRET` in **Settings, Environment
@@ -492,7 +513,7 @@ npm run test:all        # everything
 
 - **The accuracy eval** (`evals/`) sends a few dozen realistic notes to the real model through the same
   code the API uses and scores the answers. It covers complete notes, 12/24-hour and spoken times,
-  fields that must stay null, an hour with no AM/PM, dates that must reach `notes`, mobility,
+  fields that must stay null, an hour with no AM/PM, dates that must resolve to `pickup_date` (or stay null), mobility,
   several trips in one note, text that is not a trip, and instructions hidden in a note. Every
   _critical_ case must pass and at least 90% overall. Run it after changing `lib/prompt.ts`, the
   schema or `MODEL`. It is not part of `npm test` because it costs money.

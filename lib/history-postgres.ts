@@ -17,13 +17,14 @@ export function neonQuery(url: string): QueryFn {
 
 // ONE statement: the cap check and the insert cannot be separated by a concurrent save.
 // The cap counts rows strictly newer than 24 hours (created_at > ...).
-const INSERT_SQL = `INSERT INTO history (passenger_name, pickup_location, dropoff_location, pickup_time, mobility, input_tokens, output_tokens, latency_ms)
-SELECT $1::text, $2::text, $3::text, $4::text, $5::text[], $6::int, $7::int, $8::int
-WHERE (SELECT count(*) FROM history WHERE created_at > now() - interval '1 day') < $9::bigint
+const INSERT_SQL = `INSERT INTO history (passenger_name, pickup_location, dropoff_location, pickup_date, pickup_time, mobility, input_tokens, output_tokens, latency_ms)
+SELECT $1::text, $2::text, $3::text, $4::date, $5::text, $6::text[], $7::int, $8::int, $9::int
+WHERE (SELECT count(*) FROM history WHERE created_at > now() - interval '1 day') < $10::bigint
 RETURNING id`;
 
 // Inclusive cut-off (>=): the purge deletes only strictly older rows.
-const LIST_SQL = `SELECT id, created_at, passenger_name, pickup_location, dropoff_location, pickup_time, mobility, input_tokens, output_tokens, latency_ms
+// pickup_date comes back as text, so no driver turns a plain calendar day into a midnight in some zone.
+const LIST_SQL = `SELECT id, created_at, passenger_name, pickup_location, dropoff_location, to_char(pickup_date, 'YYYY-MM-DD') AS pickup_date, pickup_time, mobility, input_tokens, output_tokens, latency_ms
 FROM history
 WHERE created_at >= now() - make_interval(days => $2::int)
 ORDER BY created_at DESC, id DESC
@@ -35,6 +36,7 @@ type DbRow = {
   passenger_name: string | null;
   pickup_location: string | null;
   dropoff_location: string | null;
+  pickup_date: string | null;
   pickup_time: string | null;
   mobility: HistoryRow["mobility"] | null;
   input_tokens: number | string | null;
@@ -54,6 +56,7 @@ export function createPostgresStore(
         record.passenger_name,
         record.pickup_location,
         record.dropoff_location,
+        record.pickup_date,
         record.pickup_time,
         record.mobility,
         record.input_tokens ?? null,
@@ -71,6 +74,7 @@ export function createPostgresStore(
         passenger_name: r.passenger_name,
         pickup_location: r.pickup_location,
         dropoff_location: r.dropoff_location,
+        pickup_date: r.pickup_date ?? null,
         pickup_time: r.pickup_time,
         mobility: r.mobility ?? [],
         input_tokens: count(r.input_tokens),

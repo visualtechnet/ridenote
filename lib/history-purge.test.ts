@@ -7,6 +7,7 @@ const record = {
   passenger_name: null,
   pickup_location: null,
   dropoff_location: null,
+  pickup_date: null,
   pickup_time: null,
   mobility: [],
 };

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { TryButton } from "@/components/TryButton";
-import { HTTP, LIMITS, MOBILITY, OUTPUT_LIMITS, RATE_LIMIT } from "@/lib/config";
+import { DATES, HTTP, LIMITS, MOBILITY, OUTPUT_LIMITS, RATE_LIMIT } from "@/lib/config";
 import { API_EXAMPLES, INVALID_EXAMPLES, VALID_EXAMPLES } from "@/lib/docs-examples";
 import { MESSAGES } from "@/lib/messages";
 import { Routes } from "@/lib/routes";
@@ -380,8 +380,9 @@ export default function DocsPage() {
           </ul>
           <p className={p}>
             The parser never guesses. If something is not in the note it comes back empty rather
-            than invented. Dates like &ldquo;tomorrow&rdquo; are not converted because only the time
-            is stored, and times are never converted between time zones: &ldquo;3pm EST&rdquo; is{" "}
+            than invented. Dates like &ldquo;tomorrow&rdquo; are resolved to{" "}
+            <code className={code}>pickup_date</code> and checked by code, but times are never
+            converted between time zones: &ldquo;3pm EST&rdquo; is{" "}
             <code className={code}>15:00</code>, with the zone repeated in the notes.
           </p>
         </section>
@@ -557,6 +558,19 @@ export default function DocsPage() {
                   </th>
                   <td className={td}>text or null</td>
                   <td className={td}>Same as pickup.</td>
+                </tr>
+                <tr>
+                  <th scope="row" className={`${td} font-mono font-normal`}>
+                    pickup_date
+                  </th>
+                  <td className={td}>&ldquo;YYYY-MM-DD&rdquo; or null</td>
+                  <td className={td}>
+                    Resolved from the note and today&rsquo;s date in the dispatcher&rsquo;s time
+                    zone. Checked by code: a real date, the same as any numeric date the note
+                    writes, from today to {DATES.maxDaysAhead} days ahead, on the weekday the note
+                    names. If a check fails it is cleared and the reason goes in the notes. Never a
+                    Missing chip.
+                  </td>
                 </tr>
                 <tr>
                   <th scope="row" className={`${td} font-mono font-normal`}>

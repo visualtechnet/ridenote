@@ -16,6 +16,7 @@ const sample: HistoryRow = {
   passenger_name: "Mrs. Lee",
   pickup_location: "12 Oak St",
   dropoff_location: null,
+  pickup_date: null,
   pickup_time: "09:30",
   mobility: ["cane"],
   created_at: new Date("2026-10-27T14:05:00Z"),

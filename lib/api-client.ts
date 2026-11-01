@@ -18,6 +18,15 @@ export class ParseError extends Error {
   }
 }
 
+/** The browser's IANA time zone, so "tomorrow" is the dispatcher's tomorrow. Undefined if unknown. */
+export function browserTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Sends a note to the API and returns a validated trip with its usage. Throws ParseError on any failure. */
 export async function parseNote(note: string): Promise<{ trip: Trip; usage?: Usage }> {
   let res: Response;
@@ -25,7 +34,7 @@ export async function parseNote(note: string): Promise<{ trip: Trip; usage?: Usa
     res = await fetch(Routes.api("parse"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ note }),
+      body: JSON.stringify({ note, timeZone: browserTimeZone() }),
       signal: AbortSignal.timeout(CLIENT.timeoutMs),
     });
   } catch (err) {

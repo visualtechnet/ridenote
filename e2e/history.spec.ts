@@ -4,6 +4,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { COPY } from "../lib/messages";
 import { Routes } from "../lib/routes";
 import type { Trip } from "../lib/trip";
+import { addDays, localDate } from "../lib/clock";
+import { formatDate } from "../lib/format";
 import { emptyTrip, freshClient, tripWith } from "./fixtures";
 
 // The e2e server runs like production with an in-memory store and a stubbed model: a note of the
@@ -48,6 +50,23 @@ const card = (page: Page, name: string) =>
   page.getByRole("article").filter({ has: page.getByRole("heading", { name }) });
 
 test.describe("History", () => {
+  test("a dated trip shows its pickup date on /history", async ({ page }) => {
+    await asNewClient(page);
+    const name = unique("Mrs. Dated");
+    // Tomorrow in the browser's zone, which is also the server's on this machine, so the server's
+    // date check (today to 60 days ahead) always keeps it.
+    const tomorrow = addDays(
+      localDate({ now: new Date(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+      1,
+    );
+    await parseThroughUi(page, tripWith({ passenger_name: name, pickup_date: tomorrow }));
+    await expect(page.getByRole("region", { name: "Parsed trip" })).toContainText(
+      formatDate(tomorrow),
+    );
+    await expectOnHistory(page, name);
+    await expect(card(page, name)).toContainText(formatDate(tomorrow));
+  });
+
   test("a parsed note appears on /history with phone numbers and emails removed", async ({
     page,
   }) => {

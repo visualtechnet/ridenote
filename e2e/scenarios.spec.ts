@@ -120,7 +120,7 @@ test.describe("positive: what a successful parse looks like", () => {
     const tricky = 'Mrs. "Peg" O\'Brien at 5\\6 Elm St\nJosé Müller 🏥\tgate B';
     await submit(page, `   ${tricky}   `);
     await expect(card(page)).toBeVisible();
-    expect(calls).toEqual([{ note: tricky }]);
+    expect(calls).toEqual([{ note: tricky, timeZone: expect.any(String) }]);
   });
 
   test("every accepted example in the docs is sent to the API unchanged", async ({ page }) => {
@@ -133,7 +133,9 @@ test.describe("positive: what a successful parse looks like", () => {
     }
     expect(calls).toHaveLength(VALID_EXAMPLES.length);
     // The page trims, so compare against the trimmed text.
-    expect(calls).toEqual(VALID_EXAMPLES.map((e) => ({ note: e.note.trim() })));
+    expect(calls).toEqual(
+      VALID_EXAMPLES.map((e) => ({ note: e.note.trim(), timeZone: expect.any(String) })),
+    );
   });
 
   test("a note of exactly the maximum length is accepted", async ({ page }) => {
@@ -689,7 +691,7 @@ test.describe("docs pages", () => {
     await expect(note(page)).toHaveValue(VALID_EXAMPLES[0].note);
     await parse(page).click();
     await expect(card(page)).toBeVisible();
-    expect(calls).toEqual([{ note: VALID_EXAMPLES[0].note }]);
+    expect(calls).toEqual([{ note: VALID_EXAMPLES[0].note, timeZone: expect.any(String) }]);
   });
 
   test("the docs' in-page links jump to their sections", async ({ page }) => {
@@ -821,7 +823,7 @@ test.describe("out of scope: things the app does not do, and how it behaves anyw
       "Recoger a José Müller en Calle Ñandú 7 a las 6pm, silla de ruedas. 患者を午後3時に迎えに行く";
     await submit(page, text);
     await expect(card(page)).toBeVisible();
-    expect(calls).toEqual([{ note: text }]);
+    expect(calls).toEqual([{ note: text, timeZone: expect.any(String) }]);
   });
 
   test("very long unbroken text from the server stays inside the card on a phone", async ({

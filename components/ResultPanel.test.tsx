@@ -6,6 +6,7 @@ const trip: Trip = {
   passenger_name: "Mrs. Lee",
   pickup_location: "12 Oak St",
   dropoff_location: "County Hospital",
+  pickup_date: null,
   pickup_time: "09:30",
   mobility: ["wheelchair"],
   missing_fields: [],

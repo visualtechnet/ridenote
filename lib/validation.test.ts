@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { LIMITS } from "./config";
+import { DATES, LIMITS } from "./config";
 import { MESSAGES } from "./messages";
 import { validateNote, validateRequestBody } from "./validation";
 
@@ -139,10 +139,11 @@ describe("validateNote: blocks script injection", () => {
 });
 
 describe("validateRequestBody (the API's stricter front door)", () => {
-  it("accepts { note } and returns the trimmed note", () => {
+  it("accepts { note } and returns the trimmed note, with the default time zone", () => {
     expect(validateRequestBody({ note: "  Pick up Lee at 9  " })).toEqual({
       ok: true,
       note: "Pick up Lee at 9",
+      timeZone: DATES.defaultTimeZone,
     });
   });
 
@@ -150,7 +151,27 @@ describe("validateRequestBody (the API's stricter front door)", () => {
     expect(validateRequestBody({ note: "Pick up Lee at 9", admin: true })).toEqual({
       ok: true,
       note: "Pick up Lee at 9",
+      timeZone: DATES.defaultTimeZone,
     });
+  });
+
+  it("keeps a real IANA time zone from the browser", () => {
+    expect(validateRequestBody({ note: "Pick up Lee at 9", timeZone: "Europe/Madrid" })).toEqual({
+      ok: true,
+      note: "Pick up Lee at 9",
+      timeZone: "Europe/Madrid",
+    });
+  });
+
+  it.each([
+    ["a made-up zone", "Mars/Olympus"],
+    ["a number", 7],
+    ["an object", { tz: "UTC" }],
+    ["a long string", "x".repeat(DATES.timeZoneMaxLength + 1)],
+    ["script in a zone", "<script>alert(1)</script>"],
+  ])("falls back to the default zone for %s, and never refuses the note or echoes it", (_n, tz) => {
+    const out = validateRequestBody({ note: "Pick up Lee at 9", timeZone: tz });
+    expect(out).toEqual({ ok: true, note: "Pick up Lee at 9", timeZone: DATES.defaultTimeZone });
   });
 
   it.each([

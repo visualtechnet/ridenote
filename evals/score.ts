@@ -18,6 +18,19 @@ export function score(trip: Trip, expected: Expectation): string[] {
     }
   }
 
+  if (expected.pickup_date !== undefined) {
+    const want = expected.pickup_date;
+    const got = trip.pickup_date;
+    const ok =
+      want === null
+        ? got === null
+        : got !== null && (want instanceof RegExp ? want.test(got) : want === got);
+    if (!ok) {
+      problems.push(
+        `pickup_date: expected ${want instanceof RegExp ? want : JSON.stringify(want)}, got ${JSON.stringify(got)}`,
+      );
+    }
+  }
   if (expected.pickup_time !== undefined && trip.pickup_time !== expected.pickup_time) {
     problems.push(
       `pickup_time: expected ${JSON.stringify(expected.pickup_time)}, got ${JSON.stringify(trip.pickup_time)}`,

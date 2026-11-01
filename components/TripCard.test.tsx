@@ -8,6 +8,7 @@ const full: Trip = {
   passenger_name: "Mrs. Lee",
   pickup_location: "12 Oak St",
   dropoff_location: "County Hospital",
+  pickup_date: null,
   pickup_time: "09:30",
   mobility: ["wheelchair"],
   missing_fields: [],
@@ -55,12 +56,36 @@ describe("TripCard", () => {
     expect(
       screen.getByRole("heading", { level: 2, name: "Unknown passenger" }),
     ).toBeInTheDocument();
-    expect(screen.getAllByText("Not stated")).toHaveLength(3);
+    expect(screen.getAllByText("Not stated")).toHaveLength(4);
+  });
+
+  describe("pickup date", () => {
+    it("shows the date as a readable day, with the exact date for machines", () => {
+      const { container } = render(<TripCard trip={{ ...full, pickup_date: "2026-11-06" }} />);
+      expect(screen.getByText("Pickup date")).toBeInTheDocument();
+      const date = container.querySelector('time[datetime="2026-11-06"]')!;
+      expect(date).toHaveTextContent("Fri, Nov 6, 2026");
+      expect(screen.queryByText(COPY.confirmDate)).not.toBeInTheDocument();
+    });
+
+    it("asks for a check with a quiet line, not a Missing chip, when the date is not stated", () => {
+      render(<TripCard trip={makeTrip({ pickup_date: null })} />);
+      expect(screen.getByText(COPY.confirmDate)).toBeInTheDocument();
+      // Most notes give no date, so it is never a chip: a chip on nearly every card would be ignored.
+      expect(screen.queryByRole("list", { name: "Missing fields" })).not.toBeInTheDocument();
+    });
+
+    it("keeps the date out of the Missing chips even when other fields are missing", () => {
+      render(<TripCard trip={makeTrip({ pickup_date: null, pickup_time: null })} />);
+      const list = screen.getByRole("list", { name: "Missing fields" });
+      expect(list).toHaveTextContent("pickup_time");
+      expect(list).not.toHaveTextContent("pickup_date");
+    });
   });
 
   it("shows the pickup time in 12-hour form, with the exact 24-hour value for machines", () => {
     const { container } = render(<TripCard trip={{ ...full, pickup_time: "16:15" }} />);
-    const time = container.querySelector("time")!;
+    const time = container.querySelector('time[datetime="16:15"]')!;
     expect(time).toHaveTextContent("4:15 PM");
     expect(time).toHaveAttribute("datetime", "16:15");
   });
@@ -76,7 +101,8 @@ describe("TripCard", () => {
     it("says 'Not stated' when the list is empty, rather than showing nothing", () => {
       render(<TripCard trip={makeTrip({ mobility: [] })} />);
       expect(screen.queryByRole("list", { name: "Mobility" })).not.toBeInTheDocument();
-      expect(screen.getAllByText("Not stated")).toHaveLength(1);
+      // Mobility and the (undated) pickup date.
+      expect(screen.getAllByText("Not stated")).toHaveLength(2);
     });
 
     it("asks for a check with a quiet line, not an amber chip, when mobility is not stated", () => {

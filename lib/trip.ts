@@ -8,6 +8,8 @@ import {
 } from "./config";
 
 const TIME_24H = /^([01]\d|2[0-3]):[0-5]\d$/;
+// The shape only. Whether the day exists, and whether it may stand, is decided by lib/dates.ts.
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 // refine() rather than .max(): refinements stay out of the JSON Schema sent to the model, which
 // only supports a subset of keywords, but still reject oversized output when we parse it.
@@ -17,6 +19,13 @@ export const TripSchema = z.object({
   passenger_name: bounded(OUTPUT_LIMITS.name).nullable(),
   pickup_location: bounded(OUTPUT_LIMITS.location).nullable(),
   dropoff_location: bounded(OUTPUT_LIMITS.location).nullable(),
+  pickup_date: z
+    .string()
+    .refine((v) => ISO_DATE.test(v), "must be YYYY-MM-DD")
+    .nullable()
+    .describe(
+      "The calendar date of the pickup as YYYY-MM-DD, resolved from the note and today's date; null if the note gives no date",
+    ),
   pickup_time: z
     .string()
     .refine((v) => TIME_24H.test(v), "must be 24h HH:MM")

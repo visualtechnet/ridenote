@@ -6,7 +6,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { extractTrip } from "../lib/extract";
 import { UPSTREAM } from "../lib/config";
-import { CASES, PASS_RATE_FLOOR } from "./cases";
+import { CASES, CLOCK, PASS_RATE_FLOOR } from "./cases";
 import { RETRIES, attempt, judge, score, summarise, type Attempt, type CaseResult } from "./score";
 
 const BATCH = 5;
@@ -21,7 +21,8 @@ const results: CaseResult[] = [];
       const done = await Promise.all(
         batch.map(async (c): Promise<CaseResult> => {
           const run = async (): Promise<Attempt> => {
-            const out = await extractTrip(client, c.note);
+            // The clock is pinned, so a case written around "tomorrow" means the same thing every day.
+            const out = await extractTrip(client, c.note, { clock: CLOCK });
             return out.ok ? score(out.trip, c.expect) : [`request failed: ${out.error}`];
           };
           const attempts = [await attempt(run)];

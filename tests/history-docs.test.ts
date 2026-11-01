@@ -39,9 +39,9 @@ describe("history documentation", () => {
   describe("example queries in the README", () => {
     const section = readme.slice(readme.search(/^#+ .*Query/im));
     const blocks = [...section.matchAll(/```sql\n([\s\S]*?)```/g)].map((m) => m[1].trim());
-    const columns = [...schema.matchAll(/^\s{2}([a-z_]+)\s+(?:bigint|timestamptz|text)/gm)].map(
-      (m) => m[1],
-    );
+    const columns = [
+      ...schema.matchAll(/^\s{2}([a-z_]+)\s+(?:bigint|timestamptz|text|date)/gm),
+    ].map((m) => m[1]);
     const KNOWN = new Set([
       "select",
       "from",
@@ -79,7 +79,7 @@ describe("history documentation", () => {
 
     it("has the five examples", () => {
       expect(columns).toEqual(
-        expect.arrayContaining(["created_at", "pickup_location", "mobility"]),
+        expect.arrayContaining(["created_at", "pickup_location", "pickup_date", "mobility"]),
       );
       expect(blocks.length).toBeGreaterThanOrEqual(5);
     });

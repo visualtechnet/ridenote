@@ -11,6 +11,8 @@ export type HistoryRecord = {
   passenger_name: string | null;
   pickup_location: string | null;
   dropoff_location: string | null;
+  /** YYYY-MM-DD, or null. Null on rows saved before the column existed. */
+  pickup_date: string | null;
   pickup_time: string | null;
   mobility: Trip["mobility"];
   input_tokens?: number | null;
@@ -51,6 +53,7 @@ export function toRecord(trip: Trip, usage?: Usage): HistoryRecord | null {
     passenger_name: orNull(scrubText(trip.passenger_name)),
     pickup_location: orNull(scrubText(trip.pickup_location)),
     dropoff_location: orNull(scrubText(trip.dropoff_location)),
+    pickup_date: trip.pickup_date,
     pickup_time: trip.pickup_time,
     mobility: trip.mobility,
     input_tokens: usage?.inputTokens ?? null,

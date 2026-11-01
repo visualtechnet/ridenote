@@ -115,7 +115,21 @@ the `<time>` element. A plain function does the conversion, so there is nothing 
 
 No. The time is exactly what the note says. It is never converted to the server's time or to any other
 zone. If the note says "3pm EST", the result is `15:00` and the zone is only repeated in `notes`, so a
-person can see it. There is no date field either; days and dates are repeated in `notes`.
+person can see it. Dates are handled separately, see the next question.
+
+### How are dates like "tomorrow" handled?
+
+There is a `pickup_date` field, `"YYYY-MM-DD"` or `null`. The AI works it out from the note and today's
+date in the dispatcher's time zone, so "tomorrow", "Friday", "next Friday", "11/20" and "March 14" all
+become a real date. A date with no year is the next time that day comes, so "1/5" in December means
+January. "Soon" or "next week" is not
+a date, so it stays `null`. Then code checks the answer: it must be a real calendar date, match any numeric
+date the note writes ("11/5" cannot come back as the 6th), fall from today to 60 days ahead, and fall on the
+weekday the note names. If a check fails the date becomes `null` and the reason is
+put at the front of `notes`. A missing date is not a Missing chip (most notes give no date); the card
+shows "Date not stated. Confirm before dispatching." The browser sends its time zone as an optional
+`timeZone`; if it is missing or not a real zone the server uses `America/New_York`. The time of day is
+still never converted between zones.
 
 ### Why does the card ask me to confirm mobility when the passenger needs no help?
 
@@ -530,7 +544,7 @@ non-deterministic, you need a different kind of test for it, and it will not be 
 ### 27. The prompt left risky cases to chance
 
 **What happened.** The instructions said "use only stated facts" but nothing about an hour with no
-AM or PM, a date like "tomorrow" (there is no date field, so it was silently dropped), several trips
+AM or PM, a date like "tomorrow" (at the time there was no date field, so it was silently dropped; `pickup_date` was added on 2026-11-01), several trips
 in one note, a note with no trip, or unclear mobility such as a walker (mobility has since become a
 list of aids, see #34).
 

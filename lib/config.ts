@@ -6,8 +6,22 @@ export const LIMITS = {
   // pasted email snippet while keeping every request cheap: cost grows with input length.
   noteMax: 1000,
   // 1,000 characters even if every one is written as a 6-byte JSON escape (\uXXXX) is 6,000 bytes,
-  // plus the {"note":""} wrapper. 8 KB covers that with headroom and nothing more.
+  // plus the {"note":""} wrapper and a time zone name (at most 64 characters, 384 bytes escaped).
+  // 8 KB covers that with headroom and nothing more.
   bodyMaxBytes: 8_192,
+} as const;
+
+/**
+ * Dates in a note ("tomorrow", "Friday") are resolved against today's date in the dispatcher's time
+ * zone. The browser sends its zone; the server uses it only if it is a real IANA name, and falls back
+ * to the default otherwise. The clock itself is passed in (see lib/clock.ts), never read by the parser.
+ */
+export const DATES = {
+  defaultTimeZone: "America/New_York",
+  /** IANA names are short ("America/Argentina/ComodRivadavia" is 31); this stops junk being tested. */
+  timeZoneMaxLength: 64,
+  /** A pickup date is accepted from today up to this many days ahead. Beyond that it is cleared. */
+  maxDaysAhead: 60,
 } as const;
 
 export const RATE_LIMIT = {

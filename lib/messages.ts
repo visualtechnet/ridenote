@@ -28,6 +28,15 @@ export const MESSAGES = {
   network: "We couldn't reach the server. Check your connection and try again.",
   notFound: "We couldn't find that page.",
   unexpected: "Something went wrong on our side. Please try again.",
+  /** Reasons the server clears a pickup date. They go in the trip's notes, so a person sees why. */
+  dateNotReal: (date: string) => `Date ${date} is not a real calendar date; confirm the date.`,
+  datePast: (date: string) => `Date ${date} has already passed; confirm the date.`,
+  dateTooFar: (date: string, days: number) =>
+    `Date ${date} is more than ${days} days away; confirm the date.`,
+  dateDisagrees: (date: string, written: string) =>
+    `Note says ${written} but the date came back as ${date}; confirm the date.`,
+  dateWeekdayMismatch: (date: string, named: readonly string[], actual: string) =>
+    `Note says ${named.join(" or ")} but ${date} is a ${actual}; confirm the date.`,
 } as const;
 
 /** Visible labels and text. */
@@ -61,6 +70,7 @@ export const COPY = {
   notStated: "Not stated",
   fieldPickup: "Pickup",
   fieldDropoff: "Dropoff",
+  fieldPickupDate: "Pickup date",
   fieldPickupTime: "Pickup time",
   fieldMobility: "Mobility",
   mobilityListLabel: "Mobility",
@@ -76,6 +86,7 @@ export const COPY = {
   },
   missingHeading: "Missing",
   confirmMobility: "Mobility not stated. Confirm before dispatching.",
+  confirmDate: "Date not stated. Confirm before dispatching.",
   missingListLabel: "Missing fields",
   staleResult: "The note has changed since this was parsed. Parse again to update it.",
   usageLabel: "Usage",

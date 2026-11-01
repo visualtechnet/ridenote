@@ -16,6 +16,7 @@ describe("TripSchema", () => {
     passenger_name: null,
     pickup_location: null,
     dropoff_location: null,
+    pickup_date: null,
     pickup_time: null,
     mobility: [],
     missing_fields: [],
@@ -82,6 +83,23 @@ describe("TripSchema", () => {
     }
   });
 
+  it("keeps pickup_date as plain YYYY-MM-DD: the shape only, the day itself is checked in code", () => {
+    for (const bad of ["11/06/2026", "2026-11-6", "tomorrow", "2026-11-06T09:30", "Nov 6"]) {
+      expect(TripSchema.safeParse({ ...valid, pickup_date: bad }).success).toBe(false);
+    }
+    for (const good of ["2026-11-06", "2027-01-01", null]) {
+      expect(TripSchema.safeParse({ ...valid, pickup_date: good }).success).toBe(true);
+    }
+    // Shape only: whether the day exists is lib/dates.ts's job, so the schema lets it through.
+    expect(TripSchema.safeParse({ ...valid, pickup_date: "2026-02-30" }).success).toBe(true);
+  });
+
+  it("tells the model the date is resolved from the note and today, null when not given", () => {
+    expect(TripSchema.shape.pickup_date.description).toMatch(/YYYY-MM-DD/);
+    expect(TripSchema.shape.pickup_date.description).toMatch(/today/i);
+    expect(TripSchema.shape.pickup_date.description).toMatch(/null if/i);
+  });
+
   it("tells the model the time is kept as written, with no time zone conversion", () => {
     expect(TripSchema.shape.pickup_time.description).toMatch(/as written/i);
     expect(TripSchema.shape.pickup_time.description).toMatch(/time zone/i);
@@ -99,6 +117,7 @@ describe("what the model may say versus what we keep", () => {
     passenger_name: "Mrs. Lee",
     pickup_location: "12 Oak St",
     dropoff_location: null,
+    pickup_date: null,
     pickup_time: "09:30",
     mobility: ["cane"],
     missing_fields: ["dropoff_location"],
@@ -171,6 +190,7 @@ describe("missingFields", () => {
     passenger_name: "A",
     pickup_location: "B",
     dropoff_location: "C",
+    pickup_date: null,
     pickup_time: "09:00",
     mobility: ["wheelchair"],
     missing_fields: [],

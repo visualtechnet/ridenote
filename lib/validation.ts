@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolveTimeZone } from "./clock";
 import { LIMITS } from "./config";
 import { MESSAGES } from "./messages";
 
@@ -71,24 +72,38 @@ export const NoteSchema = rules.reduce<z.ZodType<string>>(
     .pipe(z.string()),
 );
 
-/** The JSON body the API accepts. */
-export const ParseRequestSchema = z.object({ note: NoteSchema }, { error: MESSAGES.noteRequired });
+/**
+ * The JSON body the API accepts. timeZone is the browser's IANA zone, used only to work out today's
+ * date; anything unusable falls back to the default and is never an error, so a bad zone can neither
+ * block a note nor be echoed back.
+ */
+export const ParseRequestSchema = z.object(
+  { note: NoteSchema, timeZone: z.unknown().optional() },
+  { error: MESSAGES.noteRequired },
+);
 
-type Parsed<T> = { success: true; data: T } | { success: false; error: z.ZodError };
+export type RequestResult =
+  | { ok: true; note: string; timeZone: string }
+  | { ok: false; code: NoteErrorCode; message: string };
 
-function toResult<T>(parsed: Parsed<T>, pickNote: (data: T) => string): NoteResult {
-  if (parsed.success) return { ok: true, note: pickNote(parsed.data) };
-  const issue = parsed.error.issues[0];
+function firstProblem(error: z.ZodError): { ok: false; code: NoteErrorCode; message: string } {
+  const issue = error.issues[0];
   const code = (issue as { params?: { code?: NoteErrorCode } }).params?.code ?? "required";
   return { ok: false, code, message: issue.message };
 }
 
 /** Validates text typed into the form. Anything that isn't a string is treated as missing. Never throws. */
 export function validateNote(input: unknown): NoteResult {
-  return toResult(NoteSchema.safeParse(input), (note) => note);
+  const parsed = NoteSchema.safeParse(input);
+  return parsed.success ? { ok: true, note: parsed.data } : firstProblem(parsed.error);
 }
 
-/** Validates the API's JSON body. Must be exactly `{ note: string }`; extra fields are dropped. */
-export function validateRequestBody(body: unknown): NoteResult {
-  return toResult(ParseRequestSchema.safeParse(body), (data) => data.note);
+/**
+ * Validates the API's JSON body: `{ note: string, timeZone?: string }`. Extra fields are dropped,
+ * and the time zone comes back resolved (a real zone, or the default).
+ */
+export function validateRequestBody(body: unknown): RequestResult {
+  const parsed = ParseRequestSchema.safeParse(body);
+  if (!parsed.success) return firstProblem(parsed.error);
+  return { ok: true, note: parsed.data.note, timeZone: resolveTimeZone(parsed.data.timeZone) };
 }

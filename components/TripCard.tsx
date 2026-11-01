@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatTime12h, mobilityLabel } from "@/lib/format";
+import { formatDate, formatTime12h, mobilityLabel } from "@/lib/format";
 import { MISSING_MOBILITY } from "@/lib/config";
 import { COPY } from "@/lib/messages";
 import type { Trip } from "@/lib/trip";
@@ -10,16 +10,20 @@ const BLANK =
 
 const TAG = "font-mono border px-2 py-0.5 text-xs tracking-[0.14em] uppercase";
 
-function Field({ label, value }: { label: string; value: ReactNode | null }) {
+/** `hint` is a quiet line shown under "Not stated", for fields that are flagged but not chips. */
+function Field({ label, value, hint }: { label: string; value: ReactNode | null; hint?: string }) {
   return (
     <div className="bg-panel min-w-0 p-4">
       <dt className="lab">{label}</dt>
-      <dd
-        className={
-          value ? "mt-1.5 font-mono text-base break-words text-zinc-50" : `mt-1.5 ${BLANK}`
-        }
-      >
-        {value ?? COPY.notStated}
+      <dd className="mt-1.5">
+        {value ? (
+          <span className="font-mono text-base break-words text-zinc-50">{value}</span>
+        ) : (
+          <>
+            <span className={BLANK}>{COPY.notStated}</span>
+            {hint && <p className="text-missing mt-1.5 text-xs">{hint}</p>}
+          </>
+        )}
       </dd>
     </div>
   );
@@ -41,6 +45,17 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
         <dl className="border-etch bg-etch grid gap-px border sm:grid-cols-2">
           <Field label={COPY.fieldPickup} value={trip.pickup_location} />
           <Field label={COPY.fieldDropoff} value={trip.dropoff_location} />
+          {/* A missing date is a quiet line, like mobility, not a Missing chip: most notes give no
+              date, and a chip on nearly every card would be ignored. */}
+          <Field
+            label={COPY.fieldPickupDate}
+            hint={COPY.confirmDate}
+            value={
+              trip.pickup_date && (
+                <time dateTime={trip.pickup_date}>{formatDate(trip.pickup_date)}</time>
+              )
+            }
+          />
           <Field
             label={COPY.fieldPickupTime}
             value={
@@ -49,7 +64,7 @@ export function TripCard({ trip, usage }: { trip: Trip; usage?: Usage }) {
               )
             }
           />
-          <div className="bg-panel min-w-0 p-4">
+          <div className="bg-panel min-w-0 p-4 sm:col-span-2">
             <dt className="lab">{COPY.fieldMobility}</dt>
             <dd className="mt-1.5">
               {trip.mobility.length > 0 ? (

@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { MOBILITY } from "./config";
-import { formatTime12h, mobilityLabel } from "./format";
+import { formatDate, formatTime12h, mobilityLabel } from "./format";
 
 describe("formatTime12h", () => {
   it.each([
@@ -21,6 +21,23 @@ describe("formatTime12h", () => {
   it("returns text it does not recognise unchanged, so nothing is ever hidden", () => {
     for (const odd of ["9:30pm", "25:00", "noon", "", "09:60"]) {
       expect(formatTime12h(odd)).toBe(odd);
+    }
+  });
+});
+
+describe("formatDate", () => {
+  it.each([
+    ["2026-11-06", "Fri, Nov 6, 2026"],
+    ["2026-11-02", "Mon, Nov 2, 2026"],
+    ["2027-01-01", "Fri, Jan 1, 2027"],
+    ["2024-02-29", "Thu, Feb 29, 2024"],
+  ])("%s becomes %s, whatever zone the reader is in", (input, expected) => {
+    expect(formatDate(input)).toBe(expected);
+  });
+
+  it("returns text it does not recognise unchanged, so nothing is ever hidden", () => {
+    for (const odd of ["tomorrow", "11/06/2026", "", "2026-13-45", "2026-02-30"]) {
+      expect(formatDate(odd)).toBe(odd);
     }
   });
 });

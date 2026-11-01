@@ -1,6 +1,6 @@
 /** @jest-environment node */
 
-import { HTTP, UPSTREAM } from "./config";
+import { HTTP, OUTPUT_LIMITS, UPSTREAM } from "./config";
 import { extractTrip } from "./extract";
 import { jsonContent } from "@/tests/model-reply";
 
@@ -8,6 +8,7 @@ const goodTrip = {
   passenger_name: "Mrs. Lee",
   pickup_location: "12 Oak St",
   dropoff_location: "County Hospital",
+  pickup_date: null,
   pickup_time: "09:30",
   mobility: ["wheelchair"],
   notes: "",
@@ -20,6 +21,9 @@ const USAGE = {
   cache_creation_input_tokens: 7,
 };
 
+// Monday 2026-11-02, 10:00 in New York.
+const clock = { now: new Date("2026-11-02T15:00:00Z"), timeZone: "America/New_York" };
+
 function clientReturning(res: Record<string, unknown>) {
   return { messages: { create: jest.fn().mockResolvedValue(res) } } as never;
 }
@@ -29,6 +33,7 @@ describe("extractTrip meta", () => {
     const result = await extractTrip(
       clientReturning({ stop_reason: "end_turn", content: jsonContent(goodTrip), usage: USAGE }),
       "note",
+      { clock },
     );
     expect(result.ok).toBe(true);
     expect(result.meta).toEqual({
@@ -46,6 +51,7 @@ describe("extractTrip meta", () => {
     const result = await extractTrip(
       clientReturning({ stop_reason: "refusal", content: [], usage: USAGE }),
       "note",
+      { clock },
     );
     expect(result).toMatchObject({ ok: false, status: HTTP.unprocessable });
     expect(result.meta.stopReason).toBe("refusal");
@@ -55,6 +61,7 @@ describe("extractTrip meta", () => {
     const result = await extractTrip(
       clientReturning({ stop_reason: "max_tokens", content: [], usage: USAGE }),
       "note",
+      { clock },
     );
     expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
     expect(result.meta.outputTokens).toBe(160);
@@ -64,6 +71,7 @@ describe("extractTrip meta", () => {
     const result = await extractTrip(
       clientReturning({ stop_reason: "end_turn", content: jsonContent({ nope: 1 }), usage: USAGE }),
       "note",
+      { clock },
     );
     expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
     expect(result.meta.inputTokens).toBe(120);
@@ -81,6 +89,7 @@ describe("extractTrip meta", () => {
         usage: USAGE,
       }),
       "note",
+      { clock },
     );
     expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
     expect(result.meta).toMatchObject({ outputTokens: 160, stopReason: "max_tokens" });
@@ -94,6 +103,7 @@ describe("extractTrip meta", () => {
         usage: USAGE,
       }),
       "note",
+      { clock },
     );
     expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
     expect(result.meta.outputTokens).toBe(160);
@@ -103,6 +113,7 @@ describe("extractTrip meta", () => {
     const result = await extractTrip(
       clientReturning({ stop_reason: "end_turn", content: [], usage: USAGE }),
       "note",
+      { clock },
     );
     expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
     expect(result.meta.inputTokens).toBe(120);
@@ -116,8 +127,20 @@ describe("extractTrip meta", () => {
         usage: USAGE,
       }),
       "note",
+      { clock },
     );
     expect(result.ok).toBe(true);
+  });
+
+  it("sends today's date in the dispatcher's zone with the instructions", async () => {
+    const client = clientReturning({
+      stop_reason: "end_turn",
+      content: jsonContent(goodTrip),
+      usage: USAGE,
+    });
+    await extractTrip(client, "note", { clock });
+    const params = (client as { messages: { create: jest.Mock } }).messages.create.mock.calls[0][0];
+    expect(params.system).toContain("Today is Monday, 2026-11-02 (America/New_York).");
   });
 
   it("logs missing cache counts as 0, not null", async () => {
@@ -133,7 +156,67 @@ describe("extractTrip meta", () => {
         },
       }),
       "note",
+      { clock },
     );
     expect(result.meta).toMatchObject({ cacheRead: 0, cacheWrite: 0 });
+  });
+});
+
+describe("extractTrip checks the date in code", () => {
+  const dated = (pickup_date: string | null, notes = "") => ({
+    stop_reason: "end_turn",
+    content: jsonContent({ ...goodTrip, pickup_date, notes }),
+    usage: USAGE,
+  });
+
+  it("keeps a date that is real, in the window and on the named weekday", async () => {
+    const result = await extractTrip(clientReturning(dated("2026-11-06")), "Friday 9:30am", {
+      clock,
+    });
+    expect(result.ok && result.trip.pickup_date).toBe("2026-11-06");
+    expect(result.ok && result.trip.notes).toBe("");
+  });
+
+  it("clears a date that has passed and puts the reason first in notes", async () => {
+    const result = await extractTrip(
+      clientReturning(dated("2026-10-01", "Approximate time.")),
+      "On 10/1 at 9:30am",
+      { clock },
+    );
+    expect(result.ok && result.trip).toMatchObject({
+      pickup_date: null,
+      notes: "Date 2026-10-01 has already passed; confirm the date. Approximate time.",
+    });
+  });
+
+  it("clears a date on the wrong weekday", async () => {
+    const result = await extractTrip(clientReturning(dated("2026-11-05")), "Friday 11/5 at 9am", {
+      clock,
+    });
+    expect(result.ok && result.trip).toMatchObject({
+      pickup_date: null,
+      notes: "Note says Friday but 2026-11-05 is a Thursday; confirm the date.",
+    });
+  });
+
+  it("does not add the date to missing_fields: a missing date is never a Missing chip", async () => {
+    const result = await extractTrip(clientReturning(dated(null)), "note", { clock });
+    expect(result.ok && result.trip.missing_fields).toEqual([]);
+    const cleared = await extractTrip(clientReturning(dated("2026-10-01")), "note", { clock });
+    expect(cleared.ok && cleared.trip.missing_fields).toEqual([]);
+  });
+
+  it("keeps notes within the limit when a reason is added to a long line", async () => {
+    const long = "x".repeat(OUTPUT_LIMITS.notes);
+    const result = await extractTrip(clientReturning(dated("2026-10-01", long)), "note", { clock });
+    expect(result.ok && result.trip.notes.length).toBeLessThanOrEqual(OUTPUT_LIMITS.notes);
+    expect(result.ok && result.trip.notes.startsWith("Date 2026-10-01 has already passed")).toBe(
+      true,
+    );
+  });
+
+  it("rejects a date in the wrong shape as a bad answer, like a bad time", async () => {
+    const result = await extractTrip(clientReturning(dated("11/06/2026")), "note", { clock });
+    expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
   });
 });

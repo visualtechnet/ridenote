@@ -1,4 +1,4 @@
-import { formatTime12h, mobilityLabel } from "@/lib/format";
+import { formatDate, formatTime12h, mobilityLabel } from "@/lib/format";
 import type { HistoryRow } from "@/lib/history";
 import { COPY } from "@/lib/messages";
 import { rateCalls } from "@/lib/usage-compare";
@@ -64,6 +64,14 @@ export function HistoryList({ rows }: { rows: HistoryRow[] }) {
               <dl className="mt-4 grid gap-4 sm:grid-cols-2">
                 <Field label={COPY.fieldPickup} value={row.pickup_location} />
                 <Field label={COPY.fieldDropoff} value={row.dropoff_location} />
+                <Field
+                  label={COPY.fieldPickupDate}
+                  value={
+                    row.pickup_date && (
+                      <time dateTime={row.pickup_date}>{formatDate(row.pickup_date)}</time>
+                    )
+                  }
+                />
                 <Field
                   label={COPY.fieldPickupTime}
                   value={row.pickup_time && formatTime12h(row.pickup_time)}
