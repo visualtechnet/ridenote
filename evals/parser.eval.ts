@@ -7,7 +7,16 @@ import Anthropic from "@anthropic-ai/sdk";
 import { extractTrip } from "../lib/extract";
 import { UPSTREAM } from "../lib/config";
 import { CASES, CLOCK, PASS_RATE_FLOOR } from "./cases";
-import { RETRIES, attempt, judge, score, summarise, type Attempt, type CaseResult } from "./score";
+import {
+  CRITICAL_RUNS,
+  RETRIES,
+  attempt,
+  judge,
+  score,
+  summarise,
+  type Attempt,
+  type CaseResult,
+} from "./score";
 
 const BATCH = 5;
 const hasKey = Boolean(process.env.ANTHROPIC_API_KEY);
@@ -25,12 +34,15 @@ const results: CaseResult[] = [];
             const out = await extractTrip(client, c.note, { clock: CLOCK });
             return out.ok ? score(out.trip, c.expect) : [`request failed: ${out.error}`];
           };
-          const attempts = [await attempt(run)];
-          // Only a failure is run again: a clean first answer needs no second opinion.
-          if (attempts[0].length > 0) {
+          // A critical case is always run three times and must pass all three. Any other case is run
+          // again only after a failure: a clean first answer needs no second opinion.
+          const attempts = c.critical
+            ? await Promise.all(Array.from({ length: CRITICAL_RUNS }, () => attempt(run)))
+            : [await attempt(run)];
+          if (!c.critical && attempts[0].length > 0) {
             for (let i = 0; i < RETRIES; i++) attempts.push(await attempt(run));
           }
-          return { case: c, ...judge(attempts), attempts: attempts.length };
+          return { case: c, ...judge(attempts, c.critical), attempts: attempts.length };
         }),
       );
       results.push(...done);

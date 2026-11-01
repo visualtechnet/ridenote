@@ -659,7 +659,9 @@ note had passed an earlier run.
 every time. So the failure was one unlucky answer, not a regression.
 
 **Fix.** A failing case is now run twice more and passes if it passes two of its three runs. A case that
-passes some runs and fails others is printed as FLAKY, so unreliable behaviour is still reported.
+passes some runs and fails others is printed as FLAKY, so unreliable behaviour is still reported. Critical
+cases were later made stricter: they always run three times and must pass all three, because a critical
+case that passes two runs in three is a wrong trip one time in three.
 
 **Lesson.** _A model gives different answers to the same question, so one sample proves little._ Measure a
 rate before changing anything, and do not tune a prompt to fix a single bad answer.

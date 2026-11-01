@@ -84,10 +84,15 @@ A run passes only if **both** hold:
 The two rules exist because a model is not perfectly repeatable. A single flaky formatting case
 should not stop a release. A pickup time the model keeps inventing should.
 
-**Re-runs.** A model does not answer the same way every time, so one unlucky answer should not fail a
-case. When a case fails, it is run twice more, and it passes if it passes at least two of its three runs.
-A case that passed some runs and failed others is printed as `FLAKY`, so unreliability is reported, not
-hidden. A case that fails most of its runs fails the eval. A request that throws (for example an answer the
+**Re-runs.** A model does not answer the same way every time, so one unlucky answer should not fail an
+ordinary case. When such a case fails, it is run twice more, and it passes if it passes at least two of
+its three runs. A case that passed some runs and failed others is printed as `FLAKY`, so unreliability is
+reported, not hidden. A case that fails most of its runs fails the eval.
+
+**Critical cases are stricter.** A critical case is always run three times, whether or not the first run
+passed, and it must pass all three. One wrong answer in three is one wrong trip in three, so a flaky
+critical is a failure, not a warning. This makes the eval slower and a little dearer (about three times the
+calls for the critical cases), which is the point: the cases that matter are measured, not sampled. A request that throws (for example an answer the
 SDK cannot parse) counts as one failed attempt for that case, so one broken request cannot stop the run
 and hide every other result.
 

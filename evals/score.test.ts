@@ -204,6 +204,26 @@ describe("judge (a failing case is run again, and passes if it passes most runs)
   it("re-runs a failure exactly twice", () => {
     expect(RETRIES).toBe(2);
   });
+
+  describe("a critical case must pass every run", () => {
+    it("passes only when all three runs pass", () => {
+      expect(judge([ok, ok, ok], true)).toEqual({ problems: [], flaky: false });
+    });
+
+    it("fails at 2 of 3, reporting the failure and marking it flaky", () => {
+      expect(judge([ok, bad, ok], true)).toEqual({ problems: bad, flaky: true });
+      expect(judge([bad, ok, ok], true)).toEqual({ problems: bad, flaky: true });
+    });
+
+    it("fails at 1 of 3 and at 0 of 3", () => {
+      expect(judge([bad, bad, ok], true).problems).toEqual(bad);
+      expect(judge([bad, bad, bad], true)).toEqual({ problems: bad, flaky: false });
+    });
+
+    it("is not satisfied by a single run (the runner must supply all three)", () => {
+      expect(judge([ok], true).problems).toEqual(["critical case: expected 3 runs, got 1"]);
+    });
+  });
 });
 
 describe("attempt (one broken request must not sink the whole run)", () => {

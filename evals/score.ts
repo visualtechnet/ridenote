@@ -81,18 +81,38 @@ export async function attempt(run: () => Promise<Attempt>): Promise<Attempt> {
   }
 }
 
-/** A failing case is run again this many more times before it is called a failure. */
+/**
+ * A failing case is run again this many more times before it is called a failure. A critical case is
+ * always run this many more times, whether or not the first run passed.
+ */
 export const RETRIES = 2;
 
+/** Every run a critical case must make and pass. */
+export const CRITICAL_RUNS = RETRIES + 1;
+
 /**
- * A model does not answer the same way every time, so one unlucky answer should not fail a case. A case
- * passes if it passes MORE THAN HALF of its runs (2 of 3). A case that passed some runs and failed
- * others is marked flaky, so unreliability is reported rather than hidden.
+ * A model does not answer the same way every time, so one unlucky answer should not fail an ordinary
+ * case: it passes if it passes MORE THAN HALF of its runs (2 of 3). A critical case is one a dispatcher
+ * could act on and be wrong about, so one bad answer in three is one bad trip in three: it must pass
+ * EVERY run, and a critical that passes some runs and fails others fails. Either way a case that passed
+ * some runs and failed others is marked flaky, so unreliability is reported rather than hidden.
  */
-export function judge(attempts: Attempt[]): { problems: string[]; flaky: boolean } {
+export function judge(
+  attempts: Attempt[],
+  critical = false,
+): { problems: string[]; flaky: boolean } {
   const passed = attempts.filter((a) => a.length === 0).length;
   const failedRuns = attempts.filter((a) => a.length > 0);
   const flaky = passed > 0 && failedRuns.length > 0;
+  if (critical) {
+    if (attempts.length < CRITICAL_RUNS) {
+      return {
+        problems: [`critical case: expected ${CRITICAL_RUNS} runs, got ${attempts.length}`],
+        flaky,
+      };
+    }
+    return { problems: failedRuns.at(-1) ?? [], flaky };
+  }
   const passes = passed * 2 > attempts.length;
   return { problems: passes ? [] : (failedRuns.at(-1) ?? []), flaky };
 }
