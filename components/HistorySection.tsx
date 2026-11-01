@@ -1,15 +1,25 @@
 import { cacheLife } from "next/cache";
 import { connection } from "next/server";
 import { HISTORY } from "@/lib/config";
-import { loadHistory } from "@/lib/history";
+import { loadHistory, type HistoryResult } from "@/lib/history";
 import { COPY } from "@/lib/messages";
 import { HistoryList } from "./HistoryList";
 
-async function loadCached() {
+/**
+ * The cached read. A failed load is thrown, not returned: a thrown error is never stored, while a
+ * returned { status: "error" } would be kept for HISTORY.revalidateSec, so one cold start or dropped
+ * connection would show "could not be loaded" to every visitor for a minute.
+ */
+export async function loadCached(): Promise<Exclude<HistoryResult, { status: "error" }>> {
   "use cache";
   cacheLife({ stale: HISTORY.revalidateSec, revalidate: HISTORY.revalidateSec, expire: 3600 });
-  return loadHistory();
+  const result = await loadHistory();
+  if (result.status === "error") throw new Error("history load failed");
+  return result;
 }
+
+/** The uncached path keeps the error; the cached one turns the thrown error back into it. */
+const failed = (): HistoryResult => ({ status: "error" });
 
 /** The browser tests use the in-memory store and must see a new entry at once, so it is not cached. */
 const shouldCache = () => process.env.HISTORY_STORE !== "memory";
@@ -20,7 +30,7 @@ const shouldCache = () => process.env.HISTORY_STORE !== "memory";
  */
 export async function HistorySection() {
   await connection();
-  const result = await (shouldCache() ? loadCached() : loadHistory());
+  const result = await (shouldCache() ? loadCached().catch(failed) : loadHistory());
 
   if (result.status === "disabled") {
     return <p className="mt-6 text-zinc-300">{COPY.historyDisabled}</p>;

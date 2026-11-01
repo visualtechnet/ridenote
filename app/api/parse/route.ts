@@ -40,8 +40,8 @@ const coalescer = createCoalescer<Outcome>();
 
 let client: Pick<Anthropic, "messages"> | undefined;
 
-/** Upstream timeout plus one retry can take about a minute; give the platform room for it. */
-export const maxDuration = 90;
+/** Upstream timeout plus one retry is about 24 s (UPSTREAM in lib/config.ts); give the platform room for it. */
+export const maxDuration = 60;
 
 type Outcome = { status: number; body: unknown; retryAfterSec?: number; failure?: string };
 

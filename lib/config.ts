@@ -57,7 +57,10 @@ export const UPSTREAM = {
   // and it cost about 3.5 times as much. With it off, 30 of 30 runs of a hostile note resisted it.
   // If you set MODEL to a model that rejects this setting, every parse fails with an upstream 400: remove it.
   thinking: { type: "disabled" } as const,
-  timeoutMs: 30_000,
+  // A parse takes 1 to 3 seconds. 12 s is several times that, and short enough that a stalled
+  // upstream cannot hold every concurrency slot for a minute while everyone else gets 503s. The
+  // SDK retries once, so the worst case is about 24 s; CLIENT.timeoutMs follows from it.
+  timeoutMs: 12_000,
   maxRetries: 1,
 } as const;
 

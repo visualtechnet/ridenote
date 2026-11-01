@@ -205,7 +205,7 @@ API guarantees the reply matches it.
      system: SYSTEM,                                  // the AI's instructions
      messages: [{ role: "user", content: wrapNote(note) }],
      output_config: { format: zodOutputFormat(TripSchema) },   // "answer in this shape"
-   }, { timeout: 30_000, maxRetries: 1, signal: req.signal });
+   }, { timeout: 12_000, maxRetries: 1, signal: req.signal });
    ```
 
 3. The SDK (a ready-made code library from Anthropic) converts our Zod schema into the format the API
@@ -769,7 +769,7 @@ results, and prints a score. That costs real money per run, so it runs on demand
 | 4   | Model output only shape-checked; `missing_fields` trusted           | Required | **Fixed**: length caps; `missing_fields` computed by our code; "verify" reminder in the UI. |
 | 5   | Prompt injection untested against a real model                      | Required | **Not done**: needs real API calls (money). Described as the first eval in 8.5.             |
 | 6   | CSP allows `'unsafe-inline'` scripts                                | Required | **Accepted trade-off**, documented (below).                                                 |
-| 7   | No timeout/retry/abort on the AI call                               | Optional | **Fixed**: 30 s timeout, 1 retry, cancels if the user leaves.                               |
+| 7   | No timeout/retry/abort on the AI call                               | Optional | **Fixed**: 12 s timeout, 1 retry, cancels if the user leaves.                               |
 | 9   | Refusal reported as "try again"                                     | Optional | **Fixed**: distinct 422 message.                                                            |
 | 10  | Rate limiter memory could grow without bound                        | Optional | **Fixed**: hard cap, oldest entries evicted. Tested.                                        |
 | 12  | `role="alert"` inside a live region announces twice                 | Optional | **Fixed**, with a test.                                                                     |

@@ -5,7 +5,7 @@ import { HISTORY } from "@/lib/config";
 import type { HistoryRow } from "@/lib/history";
 import { loadHistory } from "@/lib/history";
 import { COPY } from "@/lib/messages";
-import { HistorySection } from "./HistorySection";
+import { HistorySection, loadCached } from "./HistorySection";
 
 jest.mock("next/cache", () => ({ cacheLife: jest.fn() }));
 jest.mock("@/lib/history", () => ({ loadHistory: jest.fn() }));
@@ -70,10 +70,34 @@ describe("HistorySection", () => {
     );
   });
 
+  it("still says it could not load when the cached read fails in production", async () => {
+    process.env = { ...env, VERCEL_ENV: "production", HISTORY_DATABASE_URL: "postgres://x" };
+    delete process.env.HISTORY_STORE;
+    jest.mocked(loadHistory).mockResolvedValue({ status: "error" });
+    await show();
+    expect(screen.getByRole("alert")).toHaveTextContent(COPY.historyError);
+  });
+
   it("does not cache when the in-memory store is used, so a new entry shows at once", async () => {
     process.env = { ...env, HISTORY_STORE: "memory" };
     jest.mocked(loadHistory).mockResolvedValue({ status: "ok", rows: [] });
     await show();
     expect(cacheLife).not.toHaveBeenCalled();
+  });
+});
+
+describe('loadCached (the read that "use cache" stores)', () => {
+  afterEach(() => jest.mocked(loadHistory).mockReset());
+
+  it("throws on a failed load, so a database error is never cached for a minute", async () => {
+    jest.mocked(loadHistory).mockResolvedValue({ status: "error" });
+    await expect(loadCached()).rejects.toThrow("history load failed");
+  });
+
+  it("passes a good result and the disabled state through unchanged", async () => {
+    jest.mocked(loadHistory).mockResolvedValue({ status: "ok", rows: [sample] });
+    expect(await loadCached()).toEqual({ status: "ok", rows: [sample] });
+    jest.mocked(loadHistory).mockResolvedValue({ status: "disabled" });
+    expect(await loadCached()).toEqual({ status: "disabled" });
   });
 });
