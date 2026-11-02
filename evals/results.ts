@@ -1,4 +1,5 @@
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Trip } from "../lib/trip";
 import { costUsd } from "./prices";
 
@@ -89,4 +90,36 @@ export function resultsPath(date: string, model: string, label?: string): string
 
 export function writeResults(file: ResultsFile, path: string): void {
   writeFileSync(path, `${JSON.stringify(file, null, 2)}\n`);
+}
+
+/** How runs on the same day rank: the kept "after" run, then a plain run, then "before", then attempts. */
+function labelRank(fileName: string, date: string, model: string): number {
+  const label = fileName
+    .slice(`${date}-${model}`.length)
+    .replace(/^-/, "")
+    .replace(/\.json$/, "");
+  if (label.includes("reverted")) return 3;
+  if (label === "after") return 0;
+  if (label === "") return 1;
+  return 2;
+}
+
+/**
+ * The newest committed run for a model, by the file's own date field, with same-day ties broken by
+ * the label in the file name (see labelRank). Reverted attempts never win. Null when there is none.
+ * The README guard reads this, so a claim there is always the latest evidence.
+ */
+export function latestResults(model: string, dir = "evals/results"): ResultsFile | null {
+  if (!existsSync(dir)) return null;
+  const candidates = readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => ({ name: f, file: JSON.parse(readFileSync(join(dir, f), "utf8")) as ResultsFile }))
+    .filter((c) => c.file.model === model);
+  candidates.sort(
+    (a, b) =>
+      b.file.date.localeCompare(a.file.date) ||
+      labelRank(a.name, a.file.date, model) - labelRank(b.name, b.file.date, model) ||
+      b.name.localeCompare(a.name),
+  );
+  return candidates[0]?.file ?? null;
 }

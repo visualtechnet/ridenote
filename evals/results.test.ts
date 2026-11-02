@@ -1,9 +1,9 @@
 /** @jest-environment node */
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PRICES, PRICES_AS_OF, costUsd } from "./prices";
-import { resultsPath, summariseRun, writeResults, type CaseRow } from "./results";
+import { latestResults, resultsPath, summariseRun, writeResults, type CaseRow } from "./results";
 
 const row = (over: Partial<CaseRow> = {}): CaseRow => ({
   name: "a case",
@@ -101,5 +101,44 @@ describe("resultsPath and writeResults", () => {
     expect(text.endsWith("}\n")).toBe(true);
     expect(text).toContain('\n  "rows": [');
     expect(JSON.parse(text)).toEqual(file);
+  });
+});
+
+describe("latestResults", () => {
+  const file = (model: string, date: string) => ({
+    ...summariseRun([row()], model, "v", date),
+    rows: [row()],
+  });
+
+  it("finds the latest file for a model and ignores other models", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ridenote-latest-"));
+    writeFileSync(
+      join(dir, "2026-11-01-claude-haiku-5-5.json"),
+      JSON.stringify(file("claude-haiku-5-5", "2026-11-01")),
+    );
+    writeFileSync(
+      join(dir, "2026-11-02-claude-haiku-5-5.json"),
+      JSON.stringify(file("claude-haiku-5-5", "2026-11-02")),
+    );
+    writeFileSync(
+      join(dir, "2026-11-03-claude-sonnet-5-5.json"),
+      JSON.stringify(file("claude-sonnet-5-5", "2026-11-03")),
+    );
+    expect(latestResults("claude-haiku-5-5", dir)?.date).toBe("2026-11-02");
+    expect(latestResults("claude-sonnet-5-5", dir)?.date).toBe("2026-11-03");
+    expect(latestResults("claude-opus-5-5", dir)).toBeNull();
+  });
+
+  it("on one day prefers the 'after' run, then an unlabelled run, then 'before', and never a reverted attempt", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ridenote-latest-"));
+    const m = "claude-haiku-5-5";
+    for (const label of ["before", "after-attempt1-reverted", "after", undefined]) {
+      const f = { ...file(m, "2026-11-02"), passed: label === "after" ? 7 : 1 };
+      writeFileSync(
+        join(dir, resultsPath("2026-11-02", m, label).split("/").at(-1)!),
+        JSON.stringify(f),
+      );
+    }
+    expect(latestResults(m, dir)?.passed).toBe(7);
   });
 });
