@@ -8,6 +8,7 @@ import { createStubClient, stubActive } from "@/lib/e2e-stub-client";
 import { extractTrip } from "@/lib/extract";
 import { saveEntry } from "@/lib/history";
 import { MESSAGES } from "@/lib/messages";
+import { PROMPT_VERSION } from "@/lib/prompt";
 import { createRateLimiter, maxRequestsFor } from "@/lib/rate-limit";
 import { isOutOfCredit } from "@/lib/upstream-errors";
 import { readLimitedText } from "@/lib/read-body";
@@ -101,9 +102,20 @@ async function callModel(note: string, clock: Clock, signal: AbortSignal): Promi
 
   try {
     client ??= stubActive() ? createStubClient() : new Anthropic();
+    const requestId = crypto.randomUUID();
     const result = await extractTrip(client, note, { clock, signal });
-    // Numbers, model name and stop reason only: never the note or anything parsed from it.
-    console.info("parse usage:", JSON.stringify(result.meta));
+    // One line per paid call: an id and time to find it by, the prompt it ran with, and numbers,
+    // model name and stop reason. Never the note or anything parsed from it.
+    console.info(
+      "parse usage:",
+      JSON.stringify({
+        event: "llm_call",
+        requestId,
+        at: new Date().toISOString(),
+        promptVersion: PROMPT_VERSION,
+        ...result.meta,
+      }),
+    );
     if (!result.ok) return { status: result.status, body: { error: result.error } };
     const usage = toUsage(result.meta);
     saveAfterResponse(result.trip, usage);
