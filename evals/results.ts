@@ -105,12 +105,12 @@ function labelRank(fileName: string, date: string, model: string): number {
 }
 
 /**
- * The newest committed run for a model, by the file's own date field, with same-day ties broken by
- * the label in the file name (see labelRank). Reverted attempts never win. Null when there is none.
- * The README guard reads this, so a claim there is always the latest evidence.
+ * Every committed run for a model, newest first by the file's own date field, with same-day ties
+ * broken by the label in the file name (see labelRank), so the kept "after" run outranks a
+ * reverted attempt. The model is read from inside the file, never from its name.
  */
-export function latestResults(model: string, dir = "evals/results"): ResultsFile | null {
-  if (!existsSync(dir)) return null;
+export function allResults(model: string, dir = "evals/results"): ResultsFile[] {
+  if (!existsSync(dir)) return [];
   const candidates = readdirSync(dir)
     .filter((f) => f.endsWith(".json"))
     .map((f) => ({ name: f, file: JSON.parse(readFileSync(join(dir, f), "utf8")) as ResultsFile }))
@@ -121,5 +121,18 @@ export function latestResults(model: string, dir = "evals/results"): ResultsFile
       labelRank(a.name, a.file.date, model) - labelRank(b.name, b.file.date, model) ||
       b.name.localeCompare(a.name),
   );
-  return candidates[0]?.file ?? null;
+  return candidates.map((c) => c.file);
+}
+
+/** The newest committed run for a model, or null. The README guard reads this, so a claim there is always the latest evidence. */
+export function latestResults(model: string, dir = "evals/results"): ResultsFile | null {
+  return allResults(model, dir)[0] ?? null;
+}
+
+/**
+ * A run in which no request answered (a dead key, no credit, a model that rejects its settings) is
+ * not a measurement of the model and must not become a file that could be committed as a baseline.
+ */
+export function shouldWriteResults(rows: CaseRow[]): boolean {
+  return rows.some((r) => r.answer !== null);
 }

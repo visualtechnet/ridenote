@@ -3,7 +3,26 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PRICES, PRICES_AS_OF, costUsd } from "./prices";
-import { latestResults, resultsPath, summariseRun, writeResults, type CaseRow } from "./results";
+import {
+  allResults,
+  latestResults,
+  resultsPath,
+  shouldWriteResults,
+  summariseRun,
+  writeResults,
+  type CaseRow,
+} from "./results";
+
+const makeAnswer = () => ({
+  passenger_name: "Ann",
+  pickup_location: "1 Main St",
+  dropoff_location: null,
+  pickup_date: null,
+  pickup_time: "09:30",
+  mobility: [] as never[],
+  missing_fields: ["dropoff_location"] as never[],
+  notes: "",
+});
 
 const row = (over: Partial<CaseRow> = {}): CaseRow => ({
   name: "a case",
@@ -140,5 +159,47 @@ describe("latestResults", () => {
       );
     }
     expect(latestResults(m, dir)?.passed).toBe(7);
+  });
+});
+
+describe("shouldWriteResults", () => {
+  it("refuses to write a run in which every request failed, so a dead key cannot become a baseline", () => {
+    expect(shouldWriteResults([])).toBe(false);
+    expect(
+      shouldWriteResults([row({ answer: null, pass: false }), row({ answer: null, pass: false })]),
+    ).toBe(false);
+  });
+
+  it("writes a run in which at least one request answered", () => {
+    const answered = row({ answer: { ...makeAnswer() } });
+    expect(shouldWriteResults([row({ answer: null, pass: false }), answered])).toBe(true);
+  });
+});
+
+describe("allResults", () => {
+  it("lists every file for a model, newest and most authoritative first", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ridenote-all-"));
+    const m = "claude-haiku-5-5";
+    const file = (date: string) => ({ ...summariseRun([row()], m, "v", date), rows: [row()] });
+    writeFileSync(
+      join(dir, resultsPath("2026-11-01", m).split("/").at(-1)!),
+      JSON.stringify(file("2026-11-01")),
+    );
+    writeFileSync(
+      join(dir, resultsPath("2026-11-02", m, "before").split("/").at(-1)!),
+      JSON.stringify(file("2026-11-02")),
+    );
+    writeFileSync(
+      join(dir, resultsPath("2026-11-02", m, "after").split("/").at(-1)!),
+      JSON.stringify(file("2026-11-02")),
+    );
+    writeFileSync(
+      join(dir, resultsPath("2026-11-02", "claude-sonnet-5-5").split("/").at(-1)!),
+      JSON.stringify({ ...file("2026-11-02"), model: "claude-sonnet-5-5" }),
+    );
+    const all = allResults(m, dir);
+    expect(all).toHaveLength(3);
+    expect(all[0].date).toBe("2026-11-02");
+    expect(latestResults(m, dir)).toEqual(all[0]);
   });
 });

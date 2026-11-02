@@ -9,7 +9,13 @@ import { UPSTREAM } from "../lib/config";
 import { PROMPT_VERSION } from "../lib/prompt";
 import type { Trip } from "../lib/trip";
 import { CASES, CLOCK, PASS_RATE_FLOOR } from "./cases";
-import { resultsPath, summariseRun, writeResults, type CaseRow } from "./results";
+import {
+  resultsPath,
+  shouldWriteResults,
+  summariseRun,
+  writeResults,
+  type CaseRow,
+} from "./results";
 import {
   CRITICAL_RUNS,
   RETRIES,
@@ -79,9 +85,11 @@ type Attempted = { problems: Attempt; meta?: CallMeta; trip?: Trip };
     const today = new Date().toISOString().slice(0, 10);
     const summary = summariseRun(rows, model, PROMPT_VERSION, today);
     const path = resultsPath(today, model, process.env.EVAL_LABEL);
-    writeResults({ ...summary, rows }, path);
+    // A run where nothing answered is not evidence about the model: say so, write nothing.
+    const written = shouldWriteResults(rows);
+    if (written) writeResults({ ...summary, rows }, path);
     console.log(
-      `${flaky.map((f) => `FLAKY ${f.case.name}: passed, but not every run`).join("\n")}\n${failed.map((f) => `FAIL ${f.case.name}: ${f.problems.join("; ")}`).join("\n")}\nmodel ${model} (prompt ${PROMPT_VERSION}): ${results.length - failed.length}/${results.length} passed (${Math.round(passRate * 100)}%), $${summary.costUsd.toFixed(4)} for ${summary.calls} calls, ${Math.round(summary.meanLatencyPerCallMs)} ms per call\nresults written to ${path}`,
+      `${flaky.map((f) => `FLAKY ${f.case.name}: passed, but not every run`).join("\n")}\n${failed.map((f) => `FAIL ${f.case.name}: ${f.problems.join("; ")}`).join("\n")}\nmodel ${model} (prompt ${PROMPT_VERSION}): ${results.length - failed.length}/${results.length} passed (${Math.round(passRate * 100)}%), $${summary.costUsd.toFixed(4)} for ${summary.calls} calls, ${Math.round(summary.meanLatencyPerCallMs)} ms per call\n${written ? `results written to ${path}` : "no request answered, so no results file was written"}`,
     );
   }, 300_000);
 

@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { latestResults } from "@/evals/results";
+import { allResults, latestResults } from "@/evals/results";
 import { UPSTREAM } from "@/lib/config";
 
 // The README's numbers are a claim to a reader who cannot rerun the eval. They must be the numbers in
@@ -34,5 +34,14 @@ describe("README: How I evaluated this", () => {
     expect(sonnet).not.toBeNull();
     expect(section).toContain("claude-sonnet-5-5");
     expect(section).toContain(`${sonnet!.passed} of ${sonnet!.cases}`);
+  });
+});
+
+describe("README: the tidy-set figure", () => {
+  it("quotes the committed run on the tidy set (the smallest run for the default model)", () => {
+    const runs = allResults(UPSTREAM.defaultModel);
+    expect(runs.length).toBeGreaterThan(0);
+    const tidy = runs.reduce((a, b) => (b.cases < a.cases ? b : a));
+    expect(section).toContain(`${tidy.passed} of ${tidy.cases}`);
   });
 });

@@ -548,7 +548,8 @@ Valley Clinic". The rest are the tidy originals.
 2026-11-02 in New York). A critical case runs three times and must pass all three; any other case
 passes at two of three. Every run writes a dated file to `evals/results/` with each case's verdict,
 answer and cost. The lesson's warning that a 100% score means the tests are too easy applied here:
-the tidy set scored 49 of 49; the messier set does not.
+the tidy set's committed run scored 48 of 49 (and 49 of 49 the day before); the messier set scores
+lower, which is the point.
 
 **The result.** `claude-haiku-5-5`, prompt `9cd5b85e`: **73 of 76 (96%)**, no critical
 failures, 148 calls for $0.04, 1540 ms per call. One parse costs about
