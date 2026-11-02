@@ -3,9 +3,10 @@
     "impeccable@impeccable": true,
     "frontend-design@claude-plugins-official": true,
     "playwright@claude-plugins-official": true,
-    "github@claude-plugins-official": true,
-    "figma@claude-plugins-official": true,
+    "github@claude-plugins-official": false,
+    "figma@claude-plugins-official": false,
     "vercel@claude-plugins-official": true,
-    "code-review-anthropics@anthropic-plugin-directory": true
+    "code-review-anthropics@anthropic-plugin-directory": true,
+    "superpowers@superpowers-marketplace": true
   }
 }
