@@ -40,6 +40,9 @@ export default function EvalPage() {
                   Kind
                 </th>
                 <th scope="col" className={th}>
+                  Shapes
+                </th>
+                <th scope="col" className={th}>
                   Note sent to the AI
                 </th>
               </tr>
@@ -51,6 +54,7 @@ export default function EvalPage() {
                     {c.name}
                   </th>
                   <td className={td}>{c.critical ? "Critical" : "Normal"}</td>
+                  <td className={td}>{(c.tags ?? []).join(", ")}</td>
                   <td className={`${td} break-words whitespace-pre-wrap`}>{c.note}</td>
                 </tr>
               ))}

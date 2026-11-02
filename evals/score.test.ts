@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import { validateNote } from "../lib/validation";
 import type { Trip } from "../lib/trip";
-import { CASES, CLOCK, PASS_RATE_FLOOR } from "./cases";
+import { CASES, CLOCK, MESSY_TAGS, PASS_RATE_FLOOR } from "./cases";
 import { RETRIES, attempt, judge, score, summarise } from "./score";
 
 const trip: Trip = {
@@ -34,6 +34,31 @@ describe("eval cases", () => {
 
   it("include critical cases for never-guess behaviour", () => {
     expect(CASES.filter((c) => c.critical).length).toBeGreaterThanOrEqual(10);
+  });
+
+  it("include at least 20 messier cases, each tag used at least three times", () => {
+    const messy = CASES.filter((c) => (c.tags ?? []).length > 0);
+    expect(messy.length).toBeGreaterThanOrEqual(20);
+    for (const tag of MESSY_TAGS) {
+      const count = messy.filter((c) => c.tags?.includes(tag)).length;
+      expect({ tag, count }).toEqual({ tag, count: expect.any(Number) });
+      expect(count).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("use only known tags, so the docs table never shows a stray one", () => {
+    for (const c of CASES) {
+      for (const tag of c.tags ?? []) expect(MESSY_TAGS).toContain(tag);
+    }
+  });
+
+  it("check both addresses on every note that carries a contact detail, so a number never becomes an address", () => {
+    const withContact = CASES.filter((c) => c.tags?.includes("contact-in-note"));
+    expect(withContact.length).toBeGreaterThanOrEqual(3);
+    for (const c of withContact) {
+      expect(c.expect.pickup_location).not.toBeUndefined();
+      expect(c.expect.dropoff_location).not.toBeUndefined();
+    }
   });
 
   it("include the date cases, each pinned to the eval clock", () => {
