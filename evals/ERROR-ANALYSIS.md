@@ -87,3 +87,22 @@ Two other decisions from these runs:
 - **The honest failures left unfixed:** the two-passenger note loses its 9am on every run (the model
   writes "9 is ambiguous as stated" though the note says 9am), and Sun Valley Clinic is cleared as a
   Sunday mismatch by the weekday check in code.
+
+## Haiku 5.5 against Sonnet 5.5
+
+| Model               | Passed   | Pass rate | Critical failures | Mean ms per call | Median ms per case | Tokens per case (in / out, all attempts) | Cost per case (all attempts) | Cost per 1,000 single parses |
+| ------------------- | -------- | --------- | ----------------- | ---------------- | ------------------ | ---------------------------------------- | ---------------------------- | ---------------------------- |
+| `claude-haiku-5-5`  | 73 of 76 | 96%       | 0                 | 1540             | 1990               | 4416 / 236                               | $0.0006                      | $0.29                        |
+| `claude-sonnet-5-5` | 72 of 76 | 95%       | 1                 | 1693             | 2464               | 4416 / 212                               | $0.0110                      | $5.63                        |
+
+Same 76 cases, same prompt `9cd5b85e`, same judge (criticals three times, must pass all three), the same
+day. "Per case" counts every attempt a case made; "per 1,000 single parses" is what one parse costs
+at list price, times a thousand, since a user's request is one call.
+
+Sonnet failed where Haiku passed: shorthand: STR means stretcher; typos: vowels dropped in a hurry; contact detail: a phone number to call first is not an address. Haiku failed where Sonnet passed:
+'next Friday' is a Friday (this week's or the week after are both fair); second trip: two passengers in one note; the first is captured, the second is flagged. Both fail Sun Valley Clinic, which is cleared in code, not by the model.
+The whole run cost $0.83 on Sonnet against $0.04 on Haiku, a ratio of 20.
+
+Decision: the bigger model lost a case, one of them critical (it returned no passenger name for the
+note with a phone number in it), for about 20 times the cost and no latency gain. RideNote keeps Haiku 5.5.
+Files: `evals/results/2026-11-02-claude-haiku-5-5-after.json`, `evals/results/2026-11-02-claude-sonnet-5-5-after.json`.
