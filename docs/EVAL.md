@@ -107,6 +107,25 @@ and hide every other result.
 `lib/prompt.ts`, `lib/trip.ts` or the `MODEL` setting. Without a key it fails on purpose, so a skipped
 eval cannot be mistaken for a passing one.
 
+## Results files and baselines
+
+Every run writes one file to `evals/results/`, named `<date>-<model>[-<label>].json`, and the files are
+committed. The lesson behind this is simple: a pass rate you remember is an anecdote; a pass rate in a
+dated file next to the prompt version that produced it is evidence anyone can open and rerun. A file
+holds a summary (cases, passed, pass rate, critical failures, tokens, cost, calls made, latency per call
+and per case) and then one row per case: its verdict, the problems found, the model's last answer, and
+what that case's attempts cost. The answers are kept because every note is invented; reading them is
+how the error analysis below was done.
+
+- `EVAL_LABEL=before npm run eval` adds a label to the file name, so the runs around a prompt change
+  sit side by side (`-before`, `-after`).
+- `MODEL=claude-sonnet-5-5 npm run eval` writes a file for that model, so two models can be compared
+  on the same cases and the same prompt version.
+- Cost is computed from the token counts with the list prices in `evals/prices.ts`, taken on the date
+  in `PRICES_AS_OF`. The bill is the truth; this is the estimate.
+- The prompt version in the file is `PROMPT_VERSION` from `lib/prompt.ts`, a hash of the prompt text,
+  so a file can never be mistaken for a run on a different prompt.
+
 ## Adding a case
 
 Add an entry to `CASES` in `evals/cases.ts`. Good sources are real notes (with names changed) and

@@ -32,6 +32,8 @@ export type EvalCase = {
   note: string;
   /** A failure here fails the run outright: it is a wrong guess a dispatcher could act on. */
   critical?: boolean;
+  /** The shapes of a messier note (see MESSY_TAGS); untagged cases are the tidy originals. */
+  tags?: string[];
   expect: Expectation;
 };
 
