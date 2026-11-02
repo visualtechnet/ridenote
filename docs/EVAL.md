@@ -126,6 +126,24 @@ how the error analysis below was done.
 - The prompt version in the file is `PROMPT_VERSION` from `lib/prompt.ts`, a hash of the prompt text,
   so a file can never be mistaken for a run on a different prompt.
 
+## Error analysis
+
+Lesson 3's rule is to look at outputs before building anything: collect the answers, write one line on
+the first thing wrong with each (open coding), group the lines into categories and count them (axial
+coding), then fix the biggest category in the prompt and build automated checks only for what persists.
+`evals/ERROR-ANALYSIS.md` holds the full pass on the messier set, done 2026-11-02 against
+`evals/results/2026-11-02-claude-haiku-5-5-before.json` (73 of 76). The categories it found:
+
+| Category                                                                                    | Count          |
+| ------------------------------------------------------------------------------------------- | -------------- |
+| A stated time returned as `null` because the model doubted something else (day, which trip) | 2 (1 critical) |
+| Code clears a real date because a place name contains a weekday abbreviation ("Sun Valley") | 1              |
+| A shorthand marker left inside a field ("d/o main ent")                                     | 1 (passed)     |
+| A second trip understood but phrased as uncertain                                           | 1 (passed)     |
+
+The first category was the target of the one prompt change recorded in the same file; the second is a
+known limit of `lib/dates.ts`, kept as an honest failure.
+
 ## Adding a case
 
 Add an entry to `CASES` in `evals/cases.ts`. Good sources are real notes (with names changed) and
