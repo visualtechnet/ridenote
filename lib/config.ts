@@ -52,17 +52,24 @@ export const UPSTREAM = {
   // tight ceiling caps the cost of a runaway or manipulated answer. This only holds with reasoning
   // off (below): with it on, the same notes averaged 550 tokens and tricky ones used up the whole cap.
   maxTokens: 600,
-  // Extraction needs no hidden reasoning. With it on, the model spent most of its tokens thinking, a
-  // tricky note could run out of tokens before the JSON was written (a cut-off answer became a 502),
-  // and it cost about 3.5 times as much. With it off, 30 of 30 runs of a hostile note resisted it.
-  // If you set MODEL to a model that rejects this setting, every parse fails with an upstream 400: remove it.
-  thinking: { type: "disabled" } as const,
   // A parse takes 1 to 3 seconds. 12 s is several times that, and short enough that a stalled
   // upstream cannot hold every concurrency slot for a minute while everyone else gets 503s. The
   // SDK retries once, so the worst case is about 24 s; CLIENT.timeoutMs follows from it.
   timeoutMs: 12_000,
   maxRetries: 1,
 } as const;
+
+/**
+ * Extraction needs no hidden reasoning. With it on, the model spent most of its tokens thinking, a
+ * tricky note could run out of tokens before the JSON was written (a cut-off answer became a 502),
+ * and it cost about 3.5 times as much. With it off, 30 of 30 runs of a hostile note resisted it.
+ * Models differ in how they are told: Haiku 5.5 takes { type: "disabled" }; Sonnet 5.5 rejects that
+ * with a 400 and turns thinking off with { type: "between_tools" } instead (its only off switch, at
+ * effort high or below). Any other model gets "disabled"; if it rejects that, every parse is a 400.
+ */
+export function thinkingFor(model: string): { type: "disabled" } | { type: "between_tools" } {
+  return model.startsWith("claude-sonnet-5") ? { type: "between_tools" } : { type: "disabled" };
+}
 
 /** The browser gives up after the server's own worst case (timeout x attempts) plus headroom. */
 export const CLIENT = {

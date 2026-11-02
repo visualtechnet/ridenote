@@ -220,3 +220,24 @@ describe("extractTrip checks the date in code", () => {
     expect(result).toMatchObject({ ok: false, status: HTTP.badGateway });
   });
 });
+
+describe("extractTrip thinking setting", () => {
+  const env = { ...process.env };
+  afterEach(() => {
+    process.env = { ...env };
+  });
+
+  const reply = { stop_reason: "end_turn", content: jsonContent(goodTrip), usage: USAGE };
+
+  it("sends the thinking setting that fits the model", async () => {
+    delete process.env.MODEL;
+    const haiku = jest.fn().mockResolvedValue(reply);
+    await extractTrip({ messages: { create: haiku } } as never, "note", { clock });
+    expect(haiku.mock.calls[0][0].thinking).toEqual({ type: "disabled" });
+
+    process.env.MODEL = "claude-sonnet-5-5";
+    const sonnet = jest.fn().mockResolvedValue(reply);
+    await extractTrip({ messages: { create: sonnet } } as never, "note", { clock });
+    expect(sonnet.mock.calls[0][0].thinking).toEqual({ type: "between_tools" });
+  });
+});
