@@ -46,3 +46,44 @@ and the one failure on the tidy set. Task 6 changes the prompt for A and nothing
 What the messier set did not break, which is worth saying because the review predicted some of it:
 shorthand aids, capitals, typos, third addresses, contact details and pasted email noise all parsed
 correctly on every run.
+
+## The change and its effect
+
+Target: category A, a stated time returned as `null` because the model doubted something else. Three
+wordings were tried, one at a time, each run on the full set and each file kept. None is in the prompt
+now; the record is the result.
+
+| Run       | Prompt     | Change                                                                                                                                                                   | Passed | Failures                                                                                                                                                                                                              |
+| --------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| before    | `9cd5b85e` | none                                                                                                                                                                     | 73/76  | 'next Friday' is a Friday (this week's or the week after are both fair); second trip: two passengers in one note; the first is captured, the second is flagged; date edge: Sun Valley Clinic is a place, not a Sunday |
+| attempt 1 | `f236e88e` | A rule under Pickup time: "Doubt about anything else ... never makes a stated time null: return the time as written and put the doubt in notes."                         | 72/76  | morning given in words; second trip: two passengers in one note; the first is captured, the second is flagged; date edge: a weekday said on that weekday; date edge: Sun Valley Clinic is a place, not a Sunday       |
+| attempt 2 | `cde1c997` | The opening line made per-field: "when unsure about a field, return null for that field ... a doubt about one field (for example, no date given) never empties another". | 74/76  | second trip: two passengers in one note; the first is captured, the second is flagged; date edge: Sun Valley Clinic is a place, not a Sunday                                                                          |
+| attempt 3 | `f0ccdc10` | A rule under Dates: "A time with no date is still a time: return pickup_time and leave pickup_date null."                                                                | 73/76  | morning given in words; second trip: two passengers in one note; the first is captured, the second is flagged; date edge: Sun Valley Clinic is a place, not a Sunday                                                  |
+| after     | `9cd5b85e` | none (original prompt, scorer hardened, see below)                                                                                                                       | 73/76  | 'next Friday' is a Friday (this week's or the week after are both fair); second trip: two passengers in one note; the first is captured, the second is flagged; date edge: Sun Valley Clinic is a place, not a Sunday |
+
+What the runs showed:
+
+- **Attempt 1 made it worse.** It fixed 'next Friday' and lost two other times ("9:30 in the morning",
+  "Monday 8am"), with notes such as "the 8am is read as 08:00 but the time is not confirmed". Telling the
+  model not to doubt made it doubt in new places.
+- **Attempt 2 looked best and was the most dangerous.** 74 of 76, but reading the answers against the
+  `before` file showed three notes with no date now carried `pickup_date: 2026-11-02`, today's date,
+  invented. The scorer had not caught it because those cases did not assert a date. An invented date is
+  the failure this parser exists to prevent, so the attempt was reverted and every undated case now
+  asserts `pickup_date: null` (18 cases). Against that scorer attempt 2 would have scored 71 of 76.
+- **Attempt 3 was neutral**: 73 of 76, no invented dates, one case gained and one lost. The one
+  systematic failure (the two-passenger note, 3 of 3 runs in every attempt) never moved.
+- Differences of one case in 76 are inside this model's run-to-run noise ('next Friday' flips between
+  runs on the same prompt). Only the two-passenger case and Sun Valley Clinic fail every time.
+
+Decision: the prompt is unchanged. The evidence is that category A is wording-sensitive in both
+directions, that a "fix" can trade a visible failure for an invisible worse one, and that the scorer
+needed hardening more than the prompt needed a rule. That hardening is kept.
+
+Two other decisions from these runs:
+
+- The two-passenger case is no longer marked critical. A missed time is a blank the dispatcher is told to
+  confirm, not a wrong value a vehicle could be sent on; "critical" is reserved for guesses.
+- **The honest failures left unfixed:** the two-passenger note loses its 9am on every run (the model
+  writes "9 is ambiguous as stated" though the note says 9am), and Sun Valley Clinic is cleared as a
+  Sunday mismatch by the weekday check in code.

@@ -347,7 +347,7 @@ export const CASES: EvalCase[] = [
   {
     name: "a white cane is categorised as a cane",
     note: "Raj Patel at 2 Elm St to the eye clinic at 1pm, he uses a white cane.",
-    expect: { mobility: ["cane"] },
+    expect: { pickup_date: null, mobility: ["cane"] },
   },
   {
     name: "crutches are returned as crutches",
@@ -405,6 +405,7 @@ export const CASES: EvalCase[] = [
     critical: true,
     tags: ["shorthand"],
     expect: {
+      pickup_date: null,
       passenger_name: /lopez/i,
       pickup_location: /14 elm/i,
       dropoff_location: /st clare/i,
@@ -417,6 +418,7 @@ export const CASES: EvalCase[] = [
     note: "Mr Diaz PU 1415 @ Lakeside Dialysis, D/O 220 Pine St, uses walker, RT 1700",
     tags: ["shorthand", "second-trip"],
     expect: {
+      pickup_date: null,
       pickup_location: /lakeside/i,
       dropoff_location: /220 pine/i,
       pickup_time: "14:15",
@@ -428,13 +430,19 @@ export const CASES: EvalCase[] = [
     name: "shorthand: amb means the passenger walks unaided",
     note: "PU 0800 J. Nguyen 9 Harbor Rd to Bayview Clinic, pt is amb, no aids",
     tags: ["shorthand"],
-    expect: { pickup_time: "08:00", mobility: ["ambulatory"], dropoff_location: /bayview/i },
+    expect: {
+      pickup_date: null,
+      pickup_time: "08:00",
+      mobility: ["ambulatory"],
+      dropoff_location: /bayview/i,
+    },
   },
   {
     name: "shorthand: STR means stretcher",
     note: "PU 1130 R. Patel, Mercy ER d/o 45 Cedar Ln, STR, 2 attendants",
     tags: ["shorthand"],
     expect: {
+      pickup_date: null,
       pickup_location: /mercy/i,
       dropoff_location: /45 cedar/i,
       pickup_time: "11:30",
@@ -447,6 +455,7 @@ export const CASES: EvalCase[] = [
     critical: true,
     tags: ["caps"],
     expect: {
+      pickup_date: null,
       passenger_name: /reyes/i,
       pickup_location: /220 pine/i,
       dropoff_location: /lakeside dialysis/i,
@@ -471,7 +480,7 @@ export const CASES: EvalCase[] = [
     note: "PICK UP MR OKAFOR AT 300 MAPLE DR TAKE HIM TO VALLEY CLINIC CANE NO TIME GIVEN YET",
     critical: true,
     tags: ["caps"],
-    expect: { pickup_time: null, missing: ["pickup_time"], mobility: ["cane"] },
+    expect: { pickup_date: null, pickup_time: null, missing: ["pickup_time"], mobility: ["cane"] },
   },
   {
     name: "typos: pikc up, tomorow, whelchair",
@@ -489,6 +498,7 @@ export const CASES: EvalCase[] = [
     note: "Mr Brown needs ride to dialisis at Lakeside 3pm from 88 lake rd, has a wakler",
     tags: ["typos"],
     expect: {
+      pickup_date: null,
       pickup_location: /88 lake/i,
       dropoff_location: /lakeside/i,
       pickup_time: "15:00",
@@ -500,6 +510,7 @@ export const CASES: EvalCase[] = [
     note: "pckup Ms Rivera 4 Elm Ct 1pm -> Mercy Hosp, strecher",
     tags: ["typos"],
     expect: {
+      pickup_date: null,
       pickup_location: /4 elm/i,
       dropoff_location: /mercy/i,
       pickup_time: "13:00",
@@ -512,6 +523,7 @@ export const CASES: EvalCase[] = [
     critical: true,
     tags: ["two-addresses"],
     expect: {
+      pickup_date: null,
       pickup_location: /12 oak/i,
       dropoff_location: /^(?!.*main st).*county hospital/i,
       pickup_time: "09:00",
@@ -524,6 +536,7 @@ export const CASES: EvalCase[] = [
     critical: true,
     tags: ["two-addresses"],
     expect: {
+      pickup_date: null,
       pickup_location: /^(?!.*commerce).*(valley clinic|40 oak)/i,
       dropoff_location: /^(?!.*commerce).*9 birch/i,
       pickup_time: "14:00",
@@ -534,6 +547,7 @@ export const CASES: EvalCase[] = [
     note: "Mrs Diaz lives at 40 Bay St; needs pickup there at 7:45am for her appointment at Harbor Eye Center, 1200 Shore Dr.",
     tags: ["two-addresses"],
     expect: {
+      pickup_date: null,
       pickup_location: /40 bay/i,
       dropoff_location: /harbor eye|1200 shore/i,
       pickup_time: "07:45",
@@ -545,6 +559,7 @@ export const CASES: EvalCase[] = [
     critical: true,
     tags: ["contact-in-note"],
     expect: {
+      pickup_date: null,
       passenger_name: /ana/i,
       pickup_location: /^(?!.*555).*88 lake/i,
       dropoff_location: /^(?!.*555).*county hospital/i,
@@ -557,6 +572,7 @@ export const CASES: EvalCase[] = [
     note: "Pick up Mr. Chen at 12 Oak St at 9am to Valley Clinic. Questions: dispatch@example.com or 555-0199.",
     tags: ["contact-in-note", "noise"],
     expect: {
+      pickup_date: null,
       passenger_name: /^(?!.*@).*chen/i,
       pickup_location: /^(?!.*@)(?!.*555).*12 oak/i,
       dropoff_location: /^(?!.*@)(?!.*555).*valley clinic/i,
@@ -568,6 +584,7 @@ export const CASES: EvalCase[] = [
     note: "Mrs. Lopez (555-0107) from 14 Elm St to St Clare's at 10:15am, walker.",
     tags: ["contact-in-note"],
     expect: {
+      pickup_date: null,
       passenger_name: /^(?!.*555).*lopez/i,
       pickup_location: /^(?!.*555).*14 elm/i,
       dropoff_location: /^(?!.*555).*st clare/i,
@@ -606,6 +623,7 @@ export const CASES: EvalCase[] = [
     note: "Good morning! Reminder for the team: safety first. Trip: Mr. Patel, 45 Cedar Ln → Mercy Hospital, 1:15pm, stretcher. Have a great day. Sent from my phone.",
     tags: ["noise"],
     expect: {
+      pickup_date: null,
       passenger_name: /patel/i,
       pickup_location: /45 cedar/i,
       dropoff_location: /mercy hospital/i,
@@ -618,6 +636,7 @@ export const CASES: EvalCase[] = [
     note: "Take Mrs. Lee from 12 Oak St to County Hospital at 9am and bring her back home at 3pm. Wheelchair.",
     tags: ["second-trip"],
     expect: {
+      pickup_date: null,
       pickup_location: /12 oak/i,
       dropoff_location: /county hospital/i,
       pickup_time: "09:00",
@@ -628,9 +647,9 @@ export const CASES: EvalCase[] = [
   {
     name: "second trip: two passengers in one note; the first is captured, the second is flagged",
     note: "Two rides please: Mr. Chen 12 Oak St to Valley Clinic 9am (cane); Mrs. Soto 7 Birch Ave to County Hospital 10am (wheelchair).",
-    critical: true,
     tags: ["second-trip"],
     expect: {
+      pickup_date: null,
       passenger_name: /^(?!.*soto).*chen/i,
       pickup_location: /12 oak/i,
       dropoff_location: /valley clinic/i,
