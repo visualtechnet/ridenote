@@ -96,3 +96,23 @@ describe("usage columns", () => {
     }
   });
 });
+
+describe("pickup_date column", () => {
+  const read = (f: string) => fs.readFileSync(path.join(root, f), "utf8").replace(/--.*$/gm, "");
+  const migration = read("db/migrations/2026-11-01-pickup-date.sql");
+
+  it("the migration adds one nullable date column, is safe to run twice, and touches no data or grants", () => {
+    expect(migration).toMatch(/ADD COLUMN IF NOT EXISTS pickup_date date(?!\s+NOT NULL)/i);
+    expect(migration).not.toMatch(/\b(DROP|UPDATE|DELETE|GRANT|TRUNCATE|INSERT)\b/i);
+  });
+
+  it("schema.sql creates the same column for a fresh database", () => {
+    expect(read("db/schema.sql")).toMatch(/pickup_date\s+date/i);
+  });
+
+  it("the store writes and reads the column", () => {
+    const store = fs.readFileSync(path.join(root, "lib/history-postgres.ts"), "utf8");
+    expect(store).toMatch(/INSERT INTO history \([^)]*pickup_date/);
+    expect(store).toMatch(/to_char\(pickup_date, 'YYYY-MM-DD'\) AS pickup_date/);
+  });
+});

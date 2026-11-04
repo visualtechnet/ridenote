@@ -78,6 +78,19 @@ describe("repository automation", () => {
     expect(ci).toContain("npm audit");
   });
 
+  it("CI builds for production and runs the browser tests against that build", () => {
+    expect(ci).toMatch(/run: npm run build/);
+    expect(ci).toContain("E2E_SERVER: production");
+  });
+
+  it("CI runs the schema twice, the migrations and the privilege proof on a real Postgres, then the store's SQL", () => {
+    expect(ci).toContain("image: postgres:");
+    expect(ci.match(/psql -v ON_ERROR_STOP=1 -f db\/schema\.sql/g)).toHaveLength(2);
+    expect(ci).toContain("db/migrations/*.sql");
+    expect(ci).toContain("-f db/verify.sql");
+    expect(ci).toContain("npm run test:db");
+  });
+
   it("dependabot keeps npm packages and the CI actions up to date", () => {
     expect(existsSync(".github/dependabot.yml")).toBe(true);
     const config = text(".github/dependabot.yml");

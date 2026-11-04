@@ -4,6 +4,13 @@ import { Routes } from "../lib/routes";
 import { missingFields, type Trip } from "../lib/trip";
 
 /**
+ * True when the suite runs against a production build (`E2E_SERVER=production`, see
+ * playwright.config.ts). Such a build has the production headers and no model stub, so a test that
+ * parses through the real route must `test.skip(productionServer, ...)`.
+ */
+export const productionServer = process.env.E2E_SERVER === "production";
+
+/**
  * A trip as the server would return it: missing_fields is computed from the data, so a browser test
  * can never show a state the server cannot produce.
  */
@@ -12,6 +19,7 @@ export const tripWith = (overrides: Partial<Trip> = {}): Trip => {
     passenger_name: "Mrs. Lee",
     pickup_location: "12 Oak St",
     dropoff_location: "County Hospital",
+    pickup_date: null,
     pickup_time: "09:30",
     mobility: ["wheelchair"],
     missing_fields: [],

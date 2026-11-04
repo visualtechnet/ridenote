@@ -28,8 +28,12 @@ test.describe("happy path", () => {
     await expect(card.getByText("Usage", { exact: true })).toHaveCount(0);
     // A card, not raw JSON:
     await expect(page.locator("body")).not.toContainText('"passenger_name"');
+    // The browser's time zone goes with the note, so "tomorrow" is the dispatcher's tomorrow.
     expect(calls).toEqual([
-      { note: "Pick up Mrs. Lee at 12 Oak St at 9:30am, to County Hospital, wheelchair" },
+      {
+        note: "Pick up Mrs. Lee at 12 Oak St at 9:30am, to County Hospital, wheelchair",
+        timeZone: expect.any(String),
+      },
     ]);
   });
 

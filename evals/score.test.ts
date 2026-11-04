@@ -1,13 +1,14 @@
 /** @jest-environment node */
 import { validateNote } from "../lib/validation";
 import type { Trip } from "../lib/trip";
-import { CASES, PASS_RATE_FLOOR } from "./cases";
+import { CASES, CLOCK, PASS_RATE_FLOOR } from "./cases";
 import { RETRIES, attempt, judge, score, summarise } from "./score";
 
 const trip: Trip = {
   passenger_name: "Mrs. Lee",
   pickup_location: "12 Oak St",
   dropoff_location: null,
+  pickup_date: null,
   pickup_time: "09:30",
   mobility: [],
   missing_fields: ["dropoff_location"],
@@ -34,6 +35,19 @@ describe("eval cases", () => {
   it("include critical cases for never-guess behaviour", () => {
     expect(CASES.filter((c) => c.critical).length).toBeGreaterThanOrEqual(10);
   });
+
+  it("include the date cases, each pinned to the eval clock", () => {
+    const dated = CASES.filter((c) => c.expect.pickup_date !== undefined);
+    expect(dated.length).toBeGreaterThanOrEqual(9);
+    expect(CLOCK.timeZone).toBe("America/New_York");
+    // Every expected date is within the window for the pinned clock, or null, or a pattern.
+    for (const c of dated) {
+      const want = c.expect.pickup_date;
+      if (typeof want === "string") {
+        expect(want >= "2026-11-02" && want <= "2027-01-01").toBe(true);
+      }
+    }
+  });
 });
 
 describe("score", () => {
@@ -48,6 +62,35 @@ describe("score", () => {
         notes: /tomorrow/i,
       }),
     ).toEqual([]);
+  });
+
+  describe("pickup_date", () => {
+    const dated = { ...trip, pickup_date: "2026-11-06" };
+
+    it("passes an exact match, a pattern, or null when null is expected", () => {
+      expect(score(dated, { pickup_date: "2026-11-06" })).toEqual([]);
+      expect(score(dated, { pickup_date: /^2026-11-(06|13)$/ })).toEqual([]);
+      expect(score(trip, { pickup_date: null })).toEqual([]);
+    });
+
+    it("reports a wrong date, a date where null was expected, and null where a date was expected", () => {
+      expect(score(dated, { pickup_date: "2026-11-13" })).toEqual([
+        'pickup_date: expected "2026-11-13", got "2026-11-06"',
+      ]);
+      expect(score(dated, { pickup_date: /^2026-12/ })).toEqual([
+        'pickup_date: expected /^2026-12/, got "2026-11-06"',
+      ]);
+      expect(score(dated, { pickup_date: null })).toEqual([
+        'pickup_date: expected null, got "2026-11-06"',
+      ]);
+      expect(score(trip, { pickup_date: "2026-11-06" })).toEqual([
+        'pickup_date: expected "2026-11-06", got null',
+      ]);
+    });
+
+    it("is not checked when the case says nothing about it", () => {
+      expect(score(dated, { pickup_time: "09:30" })).toEqual([]);
+    });
   });
 
   it("reports every kind of mismatch", () => {
@@ -160,6 +203,26 @@ describe("judge (a failing case is run again, and passes if it passes most runs)
 
   it("re-runs a failure exactly twice", () => {
     expect(RETRIES).toBe(2);
+  });
+
+  describe("a critical case must pass every run", () => {
+    it("passes only when all three runs pass", () => {
+      expect(judge([ok, ok, ok], true)).toEqual({ problems: [], flaky: false });
+    });
+
+    it("fails at 2 of 3, reporting the failure and marking it flaky", () => {
+      expect(judge([ok, bad, ok], true)).toEqual({ problems: bad, flaky: true });
+      expect(judge([bad, ok, ok], true)).toEqual({ problems: bad, flaky: true });
+    });
+
+    it("fails at 1 of 3 and at 0 of 3", () => {
+      expect(judge([bad, bad, ok], true).problems).toEqual(bad);
+      expect(judge([bad, bad, bad], true)).toEqual({ problems: bad, flaky: false });
+    });
+
+    it("is not satisfied by a single run (the runner must supply all three)", () => {
+      expect(judge([ok], true).problems).toEqual(["critical case: expected 3 runs, got 1"]);
+    });
   });
 });
 

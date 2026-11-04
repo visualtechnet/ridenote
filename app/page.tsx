@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NoteForm } from "@/components/NoteForm";
 import { ResultPanel } from "@/components/ResultPanel";
 import { COPY } from "@/lib/messages";
@@ -19,6 +19,8 @@ export default function Home() {
   // A disabled button only takes effect after React re-renders, so a fast double click can slip
   // through. This ref flips synchronously and is the real lock.
   const inFlight = useRef(false);
+  // Pressing Parse on an already-parsed note does nothing visible otherwise; say so.
+  const [notice, setNotice] = useState<string | null>(null);
   const note = useParserStore((s) => s.note);
   const current = validateNote(note);
   // A shown result belongs to the note that was parsed; flag it once the text has moved on.
@@ -69,12 +71,19 @@ export default function Home() {
             pending={parse.isPending}
             onSubmit={(submitted) => {
               // The result on screen is already for exactly this note: don't pay for the same answer twice.
-              if (parse.isSuccess && parse.variables === submitted) return;
+              if (parse.isSuccess && parse.variables === submitted) {
+                setNotice(COPY.alreadyUpToDate);
+                return;
+              }
               if (inFlight.current) return;
               inFlight.current = true;
+              setNotice(null);
               parse.mutate(submitted, { onSettled: () => (inFlight.current = false) });
             }}
-            onClear={() => parse.reset()}
+            onClear={() => {
+              setNotice(null);
+              parse.reset();
+            }}
           />
         </div>
         <p className="text-sm text-zinc-300">{COPY.historyNotice}</p>
@@ -85,6 +94,8 @@ export default function Home() {
             trip={parse.data?.trip}
             usage={parse.data?.usage}
             stale={stale}
+            // Once the note moves on, "up to date" is no longer true; the stale state takes over.
+            notice={stale ? null : notice}
           />
         </div>
       </main>

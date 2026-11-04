@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { ParseError, parseNote } from "./api-client";
+import { ParseError, browserTimeZone, parseNote } from "./api-client";
 import { MESSAGES } from "./messages";
 import { Routes } from "./routes";
 
@@ -7,6 +7,7 @@ const trip = {
   passenger_name: "Mrs. Lee",
   pickup_location: "12 Oak St",
   dropoff_location: null,
+  pickup_date: null,
   pickup_time: "09:30",
   mobility: ["wheelchair"],
   missing_fields: ["dropoff_location"],
@@ -34,7 +35,25 @@ describe("parseNote", () => {
     expect(url).toBe(Routes.api("parse"));
     expect(init.method).toBe("POST");
     expect(init.headers["Content-Type"]).toBe("application/json");
-    expect(JSON.parse(init.body)).toEqual({ note: "Pick up Lee" });
+    expect(JSON.parse(init.body)).toEqual({ note: "Pick up Lee", timeZone: expect.any(String) });
+  });
+
+  it("sends the browser's time zone, so 'tomorrow' is the dispatcher's tomorrow", () => {
+    const zone = browserTimeZone();
+    expect(typeof zone).toBe("string");
+    expect(zone).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  });
+
+  it("sends no time zone when the browser cannot say, and the server falls back to its default", () => {
+    const original = Intl.DateTimeFormat;
+    (Intl as { DateTimeFormat: unknown }).DateTimeFormat = () => {
+      throw new Error("no Intl");
+    };
+    try {
+      expect(browserTimeZone()).toBeUndefined();
+    } finally {
+      Intl.DateTimeFormat = original;
+    }
   });
 
   it("returns the validated trip and its usage", async () => {

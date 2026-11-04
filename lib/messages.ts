@@ -1,6 +1,8 @@
 import { LIMITS } from "./config";
 import type { Usage } from "./usage";
 
+const DATE_REASON_END = "; confirm the date.";
+
 /** User-facing validation and error text. Written for dispatchers, not developers. */
 export const MESSAGES = {
   noteRequired: "Please enter a dispatcher note before parsing.",
@@ -28,6 +30,20 @@ export const MESSAGES = {
   network: "We couldn't reach the server. Check your connection and try again.",
   notFound: "We couldn't find that page.",
   unexpected: "Something went wrong on our side. Please try again.",
+  /**
+   * Reasons the server clears a pickup date. They go first in the trip's notes, so a person sees why;
+   * the card lifts one out again (lib/format.ts, splitDateReason) by its start and this ending, so
+   * every reason must begin "Date " or "Note says " and end with dateReasonEnd.
+   */
+  dateReasonEnd: "; confirm the date.",
+  dateNotReal: (date: string) => `Date ${date} is not a real calendar date${DATE_REASON_END}`,
+  datePast: (date: string) => `Date ${date} has already passed${DATE_REASON_END}`,
+  dateTooFar: (date: string, days: number) =>
+    `Date ${date} is more than ${days} days away${DATE_REASON_END}`,
+  dateDisagrees: (date: string, written: string) =>
+    `Note says ${written} but the date came back as ${date}${DATE_REASON_END}`,
+  dateWeekdayMismatch: (date: string, named: readonly string[], actual: string) =>
+    `Note says ${named.join(" or ")} but ${date} is a ${actual}${DATE_REASON_END}`,
 } as const;
 
 /** Visible labels and text. */
@@ -61,6 +77,7 @@ export const COPY = {
   notStated: "Not stated",
   fieldPickup: "Pickup",
   fieldDropoff: "Dropoff",
+  fieldPickupDate: "Pickup date",
   fieldPickupTime: "Pickup time",
   fieldMobility: "Mobility",
   mobilityListLabel: "Mobility",
@@ -74,10 +91,28 @@ export const COPY = {
     scooter: "Scooter",
     other: "Other aid",
   },
+  fieldPassenger: "Passenger",
+  /** Readable names for the fields the server can mark missing, shown instead of keys like pickup_time. */
+  fieldLabels: {
+    passenger_name: "Passenger",
+    pickup_location: "Pickup",
+    dropoff_location: "Dropoff",
+    pickup_time: "Pickup time",
+    mobility: "Mobility",
+  },
   missingHeading: "Missing",
+  /** The one rule for a blank: a quiet line under it saying so. Mobility and date have their own wording. */
+  confirmField: (label: string) => `${label} not stated. Confirm before dispatching.`,
   confirmMobility: "Mobility not stated. Confirm before dispatching.",
+  confirmDate: "Date not stated. Confirm before dispatching.",
   missingListLabel: "Missing fields",
+  notesLabel: "Parser note",
+  copyTrip: "Copy trip",
+  copied: "Copied to the clipboard.",
+  copyFailed: "Couldn't copy. Select the card text and copy it instead.",
   staleResult: "The note has changed since this was parsed. Parse again to update it.",
+  staleTag: "Out of date",
+  alreadyUpToDate: "Already up to date: this card is for the note as written.",
   usageLabel: "Usage",
   ratingEfficient: "Efficient",
   ratingProblematic: "Problematic",

@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { SYSTEM, wrapNote } from "./prompt";
+import { SYSTEM, systemPrompt, wrapNote } from "./prompt";
 
 // The prompt is behaviour: each rule below exists because the model would otherwise guess. The live
 // check that the model obeys them is `npm run eval`; this only stops a rule being edited away.
@@ -14,7 +14,24 @@ describe("SYSTEM prompt", () => {
     ["a time with AM or PM never being ambiguous", /has AM or PM[\s\S]*never ambiguous/i],
     ["never converting time zones", /never convert[\s\S]*time zone/i],
     ["keeping a named zone in the notes", /names a time zone[\s\S]*notes/i],
-    ["dates going in notes", /date or day[\s\S]*notes/i],
+    [
+      "pickup_date as YYYY-MM-DD worked out from today",
+      /pickup_date[\s\S]*YYYY-MM-DD[\s\S]*today's date/i,
+    ],
+    [
+      "tomorrow, weekday names and dates with no year",
+      /tomorrow[\s\S]*weekday name[\s\S]*no year[\s\S]*next time that day comes/i,
+    ],
+    [
+      "never inventing a date",
+      /Return null when the note gives no date[\s\S]*Never invent a date/i,
+    ],
+    ["a weekday that disagrees with a date", /weekday and a date[\s\S]*disagree[\s\S]*as written/i],
+    [
+      "a part of the day with no hour being null",
+      /part of the day with no hour[\s\S]*not a time[\s\S]*null/i,
+    ],
+    ["asking for a specific time in notes", /Confirm a specific pickup time/],
     ["several trips", /more than one trip[\s\S]*first[\s\S]*notes/i],
     ["a note with no trip", /no trip details/i],
     [
@@ -47,6 +64,26 @@ describe("SYSTEM prompt: what the model is not asked to do", () => {
 
   it("says what to do with a time window", () => {
     expect(SYSTEM).toMatch(/window[\s\S]*start of the window/i);
+  });
+});
+
+describe("systemPrompt", () => {
+  // Monday 2026-11-02, 10:00 in New York.
+  const clock = { now: new Date("2026-11-02T15:00:00Z"), timeZone: "America/New_York" };
+
+  it("is the fixed rules plus one line giving today's date, weekday and zone", () => {
+    const prompt = systemPrompt(clock);
+    expect(prompt.startsWith(SYSTEM)).toBe(true);
+    expect(prompt.slice(SYSTEM.length)).toBe("\n\nToday is Monday, 2026-11-02 (America/New_York).");
+  });
+
+  it("takes today from the clock's zone, not from UTC", () => {
+    const prompt = systemPrompt({ ...clock, timeZone: "Pacific/Auckland" });
+    expect(prompt).toContain("Today is Tuesday, 2026-11-03 (Pacific/Auckland).");
+  });
+
+  it("does not say there is no date field any more", () => {
+    expect(SYSTEM).not.toMatch(/no date field/i);
   });
 });
 

@@ -5,6 +5,7 @@ const record: HistoryRecord = {
   passenger_name: "Ann",
   pickup_location: "1 Main St",
   dropoff_location: "Clinic",
+  pickup_date: "2026-11-06",
   pickup_time: "09:30",
   mobility: ["wheelchair"],
   input_tokens: 120,
@@ -22,7 +23,7 @@ function fakeQuery(rows: unknown[]) {
 }
 
 describe("createPostgresStore.insert", () => {
-  it("sends one conditional statement with the five values and the cap as parameters", async () => {
+  it("sends one conditional statement with the nine values and the cap as parameters", async () => {
     const { query, calls } = fakeQuery([{ id: "1" }]);
     await createPostgresStore("postgres://unused", query).insert(record, 2000);
     expect(calls).toHaveLength(1);
@@ -30,6 +31,7 @@ describe("createPostgresStore.insert", () => {
       "Ann",
       "1 Main St",
       "Clinic",
+      "2026-11-06",
       "09:30",
       ["wheelchair"],
       120,
@@ -39,6 +41,7 @@ describe("createPostgresStore.insert", () => {
     ]);
     expect(calls[0].text).toContain("now() - interval '1 day'");
     expect(calls[0].text).toMatch(/created_at > now\(\)/);
+    expect(calls[0].text).toMatch(/\$4::date/);
   });
 
   it("returns true when a row was inserted and false when the cap stopped it", async () => {
@@ -70,6 +73,7 @@ describe("createPostgresStore.list", () => {
         passenger_name: "Bo",
         pickup_location: null,
         dropoff_location: null,
+        pickup_date: "2026-11-06",
         pickup_time: "08:00",
         mobility: ["walker"],
       },
@@ -78,6 +82,8 @@ describe("createPostgresStore.list", () => {
     expect(calls[0].params).toEqual([200, 7]);
     expect(calls[0].text).toMatch(/created_at >= now\(\)/);
     expect(calls[0].text).toMatch(/ORDER BY created_at DESC/i);
+    // The date is selected as text, so no driver can shift a calendar day by a time zone.
+    expect(calls[0].text).toMatch(/to_char\(pickup_date, 'YYYY-MM-DD'\) AS pickup_date/);
     expect(rows[0]).toMatchObject({
       id: 7,
       mobility: [],
@@ -88,7 +94,9 @@ describe("createPostgresStore.list", () => {
     });
     expect(rows[1]).toMatchObject({ input_tokens: null, output_tokens: null, latency_ms: null });
     expect(rows[0].created_at).toEqual(new Date("2026-10-27T10:00:00.000Z"));
-    expect(rows[1]).toMatchObject({ id: 6, mobility: ["walker"] });
+    expect(rows[1]).toMatchObject({ id: 6, mobility: ["walker"], pickup_date: "2026-11-06" });
+    // A row from before the column existed, or one the driver left out, is simply undated.
+    expect(rows[0].pickup_date).toBeNull();
     expect(rows[1].created_at).toEqual(new Date("2026-10-26T10:00:00.000Z"));
   });
 });

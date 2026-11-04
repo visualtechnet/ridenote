@@ -8,7 +8,7 @@ RideNote turns a dispatcher's free-text note into a structured trip record (pass
 
 ```bash
 npm run dev            # dev server (needs ANTHROPIC_API_KEY in .env.local, or use `npm run dev:key` on a Mac to read it from the Keychain)
-npm run check          # typecheck + lint + prettier --check + jest; same as the pre-commit hook and CI
+npm run check          # typecheck + lint + prettier --check + jest with the coverage floor; same as the pre-commit hook and CI
 npm test               # jest unit/component tests (jsdom)
 npx jest lib/extract   # single test file (path pattern); add -t "name" for one test
 npm run test:coverage  # jest has a coverage floor (98/95/98/98): the run fails if it erodes
@@ -43,3 +43,8 @@ npm run format         # prettier --write
 - Env vars: `ANTHROPIC_API_KEY` (never `NEXT_PUBLIC_`), optional `MODEL`, and the three History variables (production only). See `.env.example`. `.env.local` is git-ignored.
 - Per-call usage is logged as single-line JSON containing numbers, model name and stop reason only, never the note or anything parsed from it.
 - Plans and specs for features are kept in `docs/superpowers/plans/` and `docs/superpowers/specs/`.
+
+## Tokens
+
+- When using model that cost high demand token usage such as Fable 5, always use and run Sonnet 5 model when using sub-agents
+- It is important to use Sonnet 5 for sub-agents when running high demand token usage such as Fable 5. Notify me if this is not the case when running Fable 5 or other high usage, high demand token models.

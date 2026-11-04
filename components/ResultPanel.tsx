@@ -9,9 +9,11 @@ type Props = {
   trip: Trip | undefined;
   usage?: Usage;
   stale?: boolean;
+  /** A short status for the live region, such as "Already up to date" when Parse had nothing to do. */
+  notice?: string | null;
 };
 
-export function ResultPanel({ pending, error, trip, usage, stale = false }: Props) {
+export function ResultPanel({ pending, error, trip, usage, stale = false, notice }: Props) {
   return (
     <>
       {/* Errors use role="alert", so they sit outside the polite live region to avoid double announcements. */}
@@ -22,8 +24,9 @@ export function ResultPanel({ pending, error, trip, usage, stale = false }: Prop
       )}
       <div data-testid="result-region" aria-live="polite" aria-busy={pending}>
         {pending && <TripCardSkeleton />}
-        {trip && stale && <p className="mb-2 text-sm text-zinc-300">{COPY.staleResult}</p>}
-        {trip && <TripCard trip={trip} usage={usage} />}
+        {notice && <p className="mb-2 text-sm text-zinc-300">{notice}</p>}
+        {trip && stale && <p className="text-missing mb-2 text-sm">{COPY.staleResult}</p>}
+        {trip && <TripCard trip={trip} usage={usage} stale={stale} />}
       </div>
     </>
   );

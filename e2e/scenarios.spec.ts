@@ -51,7 +51,8 @@ test.describe("positive: what a successful parse looks like", () => {
   test("an empty mobility list reads 'Not stated', with a quiet check line and no amber chip", async ({
     page,
   }) => {
-    await mockParseApi(page, { trip: tripWith({ mobility: [] }) });
+    // A date is given, so the only "Not stated" on the card is mobility's.
+    await mockParseApi(page, { trip: tripWith({ mobility: [], pickup_date: "2026-11-06" }) });
     await page.goto(Routes.page("home"));
     await submit(page, NOTE);
     await expect(card(page).getByRole("list", { name: "Mobility" })).toHaveCount(0);
@@ -63,7 +64,9 @@ test.describe("positive: what a successful parse looks like", () => {
   });
 
   test("a named aid is not flagged as missing", async ({ page }) => {
-    await mockParseApi(page, { trip: tripWith({ mobility: ["walker"] }) });
+    await mockParseApi(page, {
+      trip: tripWith({ mobility: ["walker"], pickup_date: "2026-11-06" }),
+    });
     await page.goto(Routes.page("home"));
     await submit(page, NOTE);
     await expect(card(page).getByRole("list", { name: "Missing fields" })).toHaveCount(0);
@@ -91,6 +94,7 @@ test.describe("positive: what a successful parse looks like", () => {
     await mockParseApi(page, {
       trip: {
         ...trip,
+        pickup_date: "2026-11-06",
         dropoff_location: null,
         pickup_time: null,
         missing_fields: ["dropoff_location", "pickup_time"],
@@ -100,7 +104,53 @@ test.describe("positive: what a successful parse looks like", () => {
     await submit(page, "Pick up Mrs. Lee at 12 Oak St");
     await expect(card(page).getByText("Not stated", { exact: true })).toHaveCount(2);
     const missing = card(page).getByRole("list", { name: "Missing fields" });
-    await expect(missing.getByRole("listitem")).toHaveText(["dropoff_location", "pickup_time"]);
+    await expect(missing.getByRole("listitem")).toHaveText(["Dropoff", "Pickup time"]);
+    await expect(
+      card(page).getByText("Dropoff not stated. Confirm before dispatching."),
+    ).toBeVisible();
+    await expect(
+      card(page).getByText("Pickup time not stated. Confirm before dispatching."),
+    ).toBeVisible();
+  });
+
+  test("a date the server cleared explains itself under the date field, with the rest of the note apart", async ({
+    page,
+  }) => {
+    const reason = "Date Thu, Oct 1, 2026 has already passed; confirm the date.";
+    await mockParseApi(page, {
+      trip: tripWith({ pickup_date: null, notes: `${reason} Approximate time.` }),
+    });
+    await page.goto(Routes.page("home"));
+    await submit(page, "Pick up Mrs. Lee on 10/1 at 9:30am");
+    const dateCell = card(page).locator("dt", { hasText: "Pickup date" }).locator("..");
+    await expect(dateCell.getByText("Not stated", { exact: true })).toBeVisible();
+    await expect(dateCell.getByText(reason)).toBeVisible();
+    await expect(card(page).getByText("Parser note")).toBeVisible();
+    await expect(card(page).getByText("Approximate time.", { exact: true })).toBeVisible();
+  });
+
+  test("Copy trip puts the card on the clipboard as labelled plain text", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await mockParseApi(page, {
+      trip: tripWith({ pickup_date: "2026-11-06", notes: "Confirm ramp access." }),
+    });
+    await page.goto(Routes.page("home"));
+    await submit(page, NOTE);
+    await card(page).getByRole("button", { name: "Copy trip" }).click();
+    await expect(card(page).getByText("Copied to the clipboard.")).toBeVisible();
+    const text = await page.evaluate(() => navigator.clipboard.readText());
+    expect(text.split("\n")).toEqual([
+      "Passenger: Mrs. Lee",
+      "Pickup date: Fri, Nov 6, 2026",
+      "Pickup time: 9:30 AM",
+      "Pickup: 12 Oak St",
+      "Dropoff: County Hospital",
+      "Mobility: Wheelchair",
+      "Parser note: Confirm ramp access.",
+    ]);
   });
 
   test("shows the AI's note about an ambiguous request", async ({ page }) => {
@@ -120,7 +170,7 @@ test.describe("positive: what a successful parse looks like", () => {
     const tricky = 'Mrs. "Peg" O\'Brien at 5\\6 Elm St\nJosé Müller 🏥\tgate B';
     await submit(page, `   ${tricky}   `);
     await expect(card(page)).toBeVisible();
-    expect(calls).toEqual([{ note: tricky }]);
+    expect(calls).toEqual([{ note: tricky, timeZone: expect.any(String) }]);
   });
 
   test("every accepted example in the docs is sent to the API unchanged", async ({ page }) => {
@@ -133,7 +183,9 @@ test.describe("positive: what a successful parse looks like", () => {
     }
     expect(calls).toHaveLength(VALID_EXAMPLES.length);
     // The page trims, so compare against the trimmed text.
-    expect(calls).toEqual(VALID_EXAMPLES.map((e) => ({ note: e.note.trim() })));
+    expect(calls).toEqual(
+      VALID_EXAMPLES.map((e) => ({ note: e.note.trim(), timeZone: expect.any(String) })),
+    );
   });
 
   test("a note of exactly the maximum length is accepted", async ({ page }) => {
@@ -175,6 +227,7 @@ test.describe("positive: avoiding unnecessary API calls", () => {
     await parse(page).click();
     await note(page).press("Control+Enter");
     expect(calls).toHaveLength(1);
+    await expect(page.getByText(/already up to date/i)).toBeVisible();
   });
 
   test("editing the note flags the result as out of date, and re-parsing clears the flag", async ({
@@ -188,9 +241,11 @@ test.describe("positive: avoiding unnecessary API calls", () => {
 
     await note(page).fill(`${NOTE} and bring the ramp`);
     await expect(page.getByText(/note has changed since this was parsed/i)).toBeVisible();
+    await expect(card(page).getByText("Out of date", { exact: true })).toBeVisible();
 
     await parse(page).click();
     await expect(page.getByText(/note has changed/i)).toHaveCount(0);
+    await expect(card(page).getByText("Out of date", { exact: true })).toHaveCount(0);
     expect(calls).toHaveLength(2);
   });
 
@@ -689,7 +744,7 @@ test.describe("docs pages", () => {
     await expect(note(page)).toHaveValue(VALID_EXAMPLES[0].note);
     await parse(page).click();
     await expect(card(page)).toBeVisible();
-    expect(calls).toEqual([{ note: VALID_EXAMPLES[0].note }]);
+    expect(calls).toEqual([{ note: VALID_EXAMPLES[0].note, timeZone: expect.any(String) }]);
   });
 
   test("the docs' in-page links jump to their sections", async ({ page }) => {
@@ -789,10 +844,11 @@ test.describe("out of scope: things the app does not do, and how it behaves anyw
     await page.goto(Routes.page("home"));
     await submit(page, "What is the weather like today? Also remember to buy milk.");
     await expect(page.getByRole("heading", { level: 2, name: "Unknown passenger" })).toBeVisible();
-    await expect(card(page).getByText("Not stated", { exact: true })).toHaveCount(4);
+    // Pickup, dropoff, date, time and mobility; the name shows as "Unknown passenger" instead.
+    await expect(card(page).getByText("Not stated", { exact: true })).toHaveCount(5);
     await expect(
       card(page).getByRole("list", { name: "Missing fields" }).getByRole("listitem"),
-    ).toHaveCount(4); // the four required fields; mobility has its own quiet line
+    ).toHaveCount(4); // the four required fields; date and mobility have their own quiet lines
     await expect(
       card(page).getByText("Mobility not stated. Confirm before dispatching."),
     ).toBeVisible();
@@ -821,7 +877,7 @@ test.describe("out of scope: things the app does not do, and how it behaves anyw
       "Recoger a José Müller en Calle Ñandú 7 a las 6pm, silla de ruedas. 患者を午後3時に迎えに行く";
     await submit(page, text);
     await expect(card(page)).toBeVisible();
-    expect(calls).toEqual([{ note: text }]);
+    expect(calls).toEqual([{ note: text, timeZone: expect.any(String) }]);
   });
 
   test("very long unbroken text from the server stays inside the card on a phone", async ({

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { after } from "next/server";
+import type { Clock } from "@/lib/clock";
 import { BUDGET, HTTP, LIMITS, RATE_LIMIT } from "@/lib/config";
 import { createCoalescer } from "@/lib/coalesce";
 import { createGate } from "@/lib/concurrency";
@@ -39,8 +40,8 @@ const coalescer = createCoalescer<Outcome>();
 
 let client: Pick<Anthropic, "messages"> | undefined;
 
-/** Upstream timeout plus one retry can take about a minute; give the platform room for it. */
-export const maxDuration = 90;
+/** Upstream timeout plus one retry is about 24 s (UPSTREAM in lib/config.ts); give the platform room for it. */
+export const maxDuration = 60;
 
 type Outcome = { status: number; body: unknown; retryAfterSec?: number; failure?: string };
 
@@ -83,7 +84,7 @@ function saveAfterResponse(trip: Trip, usage: Usage) {
 }
 
 /** The one paid call. Never throws: failures come back as an Outcome so they can be shared. */
-async function callModel(note: string, signal: AbortSignal): Promise<Outcome> {
+async function callModel(note: string, clock: Clock, signal: AbortSignal): Promise<Outcome> {
   // Concurrency first, so a request turned away at the gate does not spend the shared budget.
   const release = gate.tryAcquire();
   if (!release)
@@ -100,7 +101,7 @@ async function callModel(note: string, signal: AbortSignal): Promise<Outcome> {
 
   try {
     client ??= stubActive() ? createStubClient() : new Anthropic();
-    const result = await extractTrip(client, note, { signal });
+    const result = await extractTrip(client, note, { clock, signal });
     // Numbers, model name and stop reason only: never the note or anything parsed from it.
     console.info("parse usage:", JSON.stringify(result.meta));
     if (!result.ok) return { status: result.status, body: { error: result.error } };
@@ -153,9 +154,13 @@ export async function POST(req: Request) {
   const input = validateRequestBody(body);
   if (!input.ok) return json({ error: input.message, code: input.code }, HTTP.badRequest);
 
+  // The only place the system clock is read. "Today" is this moment in the dispatcher's zone.
+  const clock: Clock = { now: new Date(), timeZone: input.timeZone };
+  // Two identical notes from different zones can resolve "tomorrow" differently, so the zone is
+  // part of what makes a request "the same".
   const outcome = await coalescer.run(
-    input.note,
-    (signal) => callModel(input.note, signal),
+    JSON.stringify([input.timeZone, input.note]),
+    (signal) => callModel(input.note, clock, signal),
     req.signal,
   );
 

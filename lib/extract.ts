@@ -1,9 +1,18 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { HTTP, UPSTREAM } from "./config";
+import type { Clock } from "./clock";
+import { HTTP, OUTPUT_LIMITS, UPSTREAM } from "./config";
+import { checkPickupDate } from "./dates";
 import { MESSAGES } from "./messages";
-import { SYSTEM, wrapNote } from "./prompt";
-import { ModelTripSchema, TripSchema, missingFields, normalizeModelTrip, type Trip } from "./trip";
+import { systemPrompt, wrapNote } from "./prompt";
+import {
+  ModelTripSchema,
+  TripSchema,
+  clampText,
+  missingFields,
+  normalizeModelTrip,
+  type Trip,
+} from "./trip";
 
 /** What one paid model call cost and how it ended. Numbers and labels only, never note content. */
 export type CallMeta = {
@@ -37,12 +46,13 @@ function parseJson(text: string): unknown {
 
 /**
  * The one model call, shared by the API route and the eval suite so both test the same prompt,
- * schema and validation. Throws if the SDK itself fails (network, timeout, abort).
+ * schema and validation. Throws if the SDK itself fails (network, timeout, abort). The clock is
+ * passed in, never read here, so "tomorrow" means the same thing in a test as it did when written.
  */
 export async function extractTrip(
   client: Pick<Anthropic, "messages">,
   note: string,
-  options: { signal?: AbortSignal } = {},
+  options: { clock: Clock; signal?: AbortSignal },
 ): Promise<Extraction> {
   const model = process.env[UPSTREAM.modelEnvVar] ?? UPSTREAM.defaultModel;
   const started = performance.now();
@@ -53,7 +63,7 @@ export async function extractTrip(
       model,
       max_tokens: UPSTREAM.maxTokens,
       thinking: UPSTREAM.thinking,
-      system: SYSTEM,
+      system: systemPrompt(options.clock),
       messages: [{ role: "user", content: wrapNote(note) }],
       output_config: { format: zodOutputFormat(ModelTripSchema) },
     },
@@ -89,5 +99,13 @@ export async function extractTrip(
     return { ok: false, status: HTTP.badGateway, error: MESSAGES.parseFailed, meta };
   }
 
-  return { ok: true, trip: { ...trip.data, missing_fields: missingFields(trip.data) }, meta };
+  // The model resolves the date; code decides whether it can stand (real, in the window, on the
+  // named weekday). A cleared date puts its reason first in notes, where a person will read it.
+  const date = checkPickupDate(trip.data.pickup_date, note, options.clock);
+  const notes = date.reason
+    ? clampText([date.reason, trip.data.notes].filter(Boolean).join(" "), OUTPUT_LIMITS.notes)
+    : trip.data.notes;
+  const checked = { ...trip.data, pickup_date: date.date, notes };
+
+  return { ok: true, trip: { ...checked, missing_fields: missingFields(checked) }, meta };
 }

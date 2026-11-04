@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS history (
   passenger_name   text,
   pickup_location  text,
   dropoff_location text,
+  -- The calendar day of the pickup; null when the note gave none or the date failed its checks.
+  pickup_date      date,
   pickup_time      text,
   mobility         text[] NOT NULL DEFAULT '{}',
   -- Per-call usage; null on rows saved before these columns existed.

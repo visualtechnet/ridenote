@@ -1,5 +1,13 @@
+import type { Clock } from "../lib/clock";
 import type { REQUIRED_TRIP_FIELDS } from "../lib/config";
 import type { Trip } from "../lib/trip";
+
+/**
+ * Every case runs against this clock, never the real one: Monday 2026-11-02, 10:00 in New York. So
+ * "tomorrow" is always 2026-11-03, "Friday" is always 2026-11-06, and a case that passes today still
+ * passes next month. The window for a date is today to today + 60 days, which ends 2027-01-01.
+ */
+export const CLOCK: Clock = { now: new Date("2026-11-02T15:00:00Z"), timeZone: "America/New_York" };
 
 type Text = RegExp | null;
 
@@ -8,6 +16,8 @@ export type Expectation = {
   passenger_name?: Text;
   pickup_location?: Text;
   dropoff_location?: Text;
+  /** Exact YYYY-MM-DD, a pattern when more than one day is a fair reading, or null when no date may stand. */
+  pickup_date?: string | RegExp | null;
   /** Exact 24-hour HH:MM, or null when the note does not give a usable time. */
   pickup_time?: string | null;
   mobility?: Trip["mobility"];
@@ -188,24 +198,81 @@ export const CASES: EvalCase[] = [
     expect: { pickup_time: "09:00", notes: /approx|around/i },
   },
 
-  // --- Dates have no field, so the notes must carry them ---
+  // --- Dates resolve against the pinned clock (Monday 2026-11-02); code checks the result ---
   {
-    name: "tomorrow is surfaced in notes",
+    name: "tomorrow resolves to the next calendar day",
     note: "Pick up Mrs. Lee at 12 Oak St tomorrow at 9:30am, to County Hospital.",
     critical: true,
-    expect: { pickup_time: "09:30", notes: /tomorrow/i },
+    expect: { pickup_date: "2026-11-03", pickup_time: "09:30" },
   },
   {
-    name: "weekday is surfaced in notes",
+    name: "a weekday name resolves to the next such day",
     note: "Mr. Chen, Friday 3pm, 88 Lake Rd to Lakeside Dialysis.",
     critical: true,
-    expect: { pickup_time: "15:00", notes: /friday/i },
+    expect: { pickup_date: "2026-11-06", pickup_time: "15:00" },
   },
   {
-    name: "calendar date is surfaced in notes",
-    note: "On 3/14 pick up Mrs. Diaz at 40 Bay St at 2pm for Mercy Hospital.",
+    name: "'next Friday' is a Friday (this week's or the week after are both fair)",
+    note: "Pick up Mrs. Diaz at 40 Bay St next Friday at 2pm for Mercy Hospital.",
+    expect: { pickup_date: /^2026-11-(06|13)$/, pickup_time: "14:00" },
+  },
+  {
+    name: "an explicit date is returned as written",
+    note: "On 11/20 pick up Mrs. Diaz at 40 Bay St at 2pm for Mercy Hospital.",
     critical: true,
-    expect: { pickup_time: "14:00", notes: /3\/14|march|14/i },
+    expect: { pickup_date: "2026-11-20", pickup_time: "14:00" },
+  },
+  {
+    name: "a date with no time keeps the date and leaves the time missing",
+    note: "Pick up Mrs. Lee at 12 Oak St tomorrow, taking her to County Hospital.",
+    critical: true,
+    expect: { pickup_date: "2026-11-03", pickup_time: null, missing: ["pickup_time"] },
+  },
+  {
+    name: "no date at all stays null",
+    note: "Pick up Mrs. Lee at 12 Oak St at 9:30am, taking her to County Hospital.",
+    critical: true,
+    expect: { pickup_date: null, pickup_time: "09:30" },
+  },
+  {
+    name: "a vague part of the day leaves the time blank and asks for a specific one",
+    note: "Pick up Mrs. Lee at 12 Oak St tomorrow morning, to County Hospital.",
+    critical: true,
+    expect: {
+      pickup_date: "2026-11-03",
+      pickup_time: null,
+      missing: ["pickup_time"],
+      notes: /morning[\s\S]*(specific|confirm|exact)|(specific|confirm|exact)[\s\S]*morning/i,
+    },
+  },
+  {
+    // 10/1 on 2026-11-02 is either last month (past) or 2027-10-01 (too far). Both must clear.
+    name: "a date that has passed is cleared and flagged",
+    note: "On 10/1 pick up Mrs. Diaz at 40 Bay St at 2pm for Mercy Hospital.",
+    critical: true,
+    expect: {
+      pickup_date: null,
+      pickup_time: "14:00",
+      notes: /passed|past|already|60 days|10\/1|october|2026-10-01|2027-10-01/i,
+    },
+  },
+  {
+    name: "a year-less date for later this year is kept (the clock is in November)",
+    note: "Pick up Mrs. Diaz at 40 Bay St on 12/30 at 2pm for Mercy Hospital.",
+    expect: { pickup_date: "2026-12-30", pickup_time: "14:00" },
+  },
+  {
+    name: "a date more than 60 days out is cleared and flagged",
+    note: "Pick up Mrs. Diaz at 40 Bay St on January 15, 2027 at 2pm for Mercy Hospital.",
+    critical: true,
+    expect: { pickup_date: null, pickup_time: "14:00", notes: /60 days|far|january|2027-01-15/i },
+  },
+  {
+    name: "a weekday that disagrees with the date is cleared and flagged",
+    // 2026-11-05 is a Thursday.
+    note: "Mr. Chen, Friday 11/5 at 3pm, 88 Lake Rd to Lakeside Dialysis.",
+    critical: true,
+    expect: { pickup_date: null, pickup_time: "15:00", notes: /thursday|friday/i },
   },
 
   // --- Mobility ---

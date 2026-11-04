@@ -6,6 +6,7 @@ const rec = (name: string): HistoryRecord => ({
   passenger_name: name,
   pickup_location: null,
   dropoff_location: null,
+  pickup_date: null,
   pickup_time: null,
   mobility: [],
 });
