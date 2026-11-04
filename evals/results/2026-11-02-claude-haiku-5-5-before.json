@@ -1,0 +1,1933 @@
+{
+  "model": "claude-haiku-5-5",
+  "promptVersion": "9cd5b85e",
+  "date": "2026-11-02",
+  "cases": 76,
+  "passed": 73,
+  "passRate": 0.9605263157894737,
+  "criticalFailed": 1,
+  "inputTokens": 335634,
+  "outputTokens": 18030,
+  "costUsd": 0.0425784,
+  "costPerCaseUsd": 0.000560242105263158,
+  "calls": 148,
+  "meanLatencyPerCallMs": 1540.8783783783783,
+  "meanLatencyMs": 3000.657894736842,
+  "medianLatencyMs": 2123,
+  "rows": [
+    {
+      "name": "afternoon time converts to 24 hour",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Chen",
+        "pickup_location": "88 Lake Rd",
+        "dropoff_location": "Lakeside Dialysis",
+        "pickup_date": null,
+        "pickup_time": "16:15",
+        "mobility": [
+          "ambulatory"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given; confirm the date. Passenger walks without help, so mobility is ambulatory."
+      },
+      "inputTokens": 2266,
+      "outputTokens": 124,
+      "latencyMs": 1606
+    },
+    {
+      "name": "24 hour time passes through",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Sam Ortiz",
+        "pickup_location": "3 Elm St",
+        "dropoff_location": "City Library",
+        "pickup_date": null,
+        "pickup_time": "14:45",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Note gives no pickup date and does not mention any mobility aid."
+      },
+      "inputTokens": 2258,
+      "outputTokens": 98,
+      "latencyMs": 1644
+    },
+    {
+      "name": "complete note",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:30",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [],
+        "notes": "Note gives no pickup date, so pickup_date is null; confirm the date."
+      },
+      "inputTokens": 2272,
+      "outputTokens": 110,
+      "latencyMs": 1648
+    },
+    {
+      "name": "noon is 12:00",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Ann Wu",
+        "pickup_location": "5 Pine Ct",
+        "dropoff_location": "the clinic",
+        "pickup_date": null,
+        "pickup_time": "12:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given; confirm the date. Clinic address not stated; confirm the dropoff location."
+      },
+      "inputTokens": 2255,
+      "outputTokens": 110,
+      "latencyMs": 1736
+    },
+    {
+      "name": "a leading zero with am is read as 09:30",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:30",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [],
+        "notes": "Note gives no pickup date; confirm the date for this trip."
+      },
+      "inputTokens": 2272,
+      "outputTokens": 105,
+      "latencyMs": 2105
+    },
+    {
+      "name": "a named time zone is kept as written, never converted",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Chen",
+        "pickup_location": "88 Lake Rd",
+        "dropoff_location": "Lakeside Dialysis",
+        "pickup_date": null,
+        "pickup_time": "15:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given. Time zone EST noted; clock time kept as written. No mobility aid stated."
+      },
+      "inputTokens": 6798,
+      "outputTokens": 369,
+      "latencyMs": 3511
+    },
+    {
+      "name": "midnight is 00:00",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Raj Patel",
+        "pickup_location": "Airport Terminal B",
+        "dropoff_location": "9 Hill Rd",
+        "pickup_date": null,
+        "pickup_time": "00:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Pickup at midnight is 00:00; no date given, so pickup_date is null. No mobility aid mentioned."
+      },
+      "inputTokens": 2263,
+      "outputTokens": 120,
+      "latencyMs": 1740
+    },
+    {
+      "name": "an evening time becomes 24-hour with no am or pm",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Sam Ortiz",
+        "pickup_location": "3 Elm St",
+        "dropoff_location": "City Library",
+        "pickup_date": null,
+        "pickup_time": "21:30",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given; confirm the date. No mobility aids mentioned."
+      },
+      "inputTokens": 2260,
+      "outputTokens": 101,
+      "latencyMs": 1861
+    },
+    {
+      "name": "a time window returns its start, and says so",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Pickup is a window between 9 and 10am, so 09:00 is its start; no date given and mobility not stated."
+      },
+      "inputTokens": 2261,
+      "outputTokens": 116,
+      "latencyMs": 1861
+    },
+    {
+      "name": "a different time zone is also left alone",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Diaz",
+        "pickup_location": "40 Bay St",
+        "dropoff_location": "Mercy Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:30",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given; time is 9:30am Pacific, returned as written with no conversion. No mobility aids mentioned."
+      },
+      "inputTokens": 6789,
+      "outputTokens": 371,
+      "latencyMs": 5838
+    },
+    {
+      "name": "morning given in words",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Kim",
+        "pickup_location": "7 Cedar Ln",
+        "dropoff_location": "VA clinic",
+        "pickup_date": null,
+        "pickup_time": "09:30",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Note gives no pickup date. Confirm the date. No mobility aid is named; confirm whether the passenger needs one."
+      },
+      "inputTokens": 2261,
+      "outputTokens": 120,
+      "latencyMs": 1114
+    },
+    {
+      "name": "an approximate time with a part of the day is still read",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Time is approximate ('9ish in the morning'), so 09:00 is taken from the hour and approximate. No pickup date given. No mobility aid mentioned."
+      },
+      "inputTokens": 2262,
+      "outputTokens": 132,
+      "latencyMs": 1695
+    },
+    {
+      "name": "time in words",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Diaz",
+        "pickup_location": "40 Bay St",
+        "dropoff_location": "Mercy Hospital",
+        "pickup_date": null,
+        "pickup_time": "14:30",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Note gives no pickup date. Time 'half past 2 in the afternoon' taken as 14:30. No mobility aids mentioned."
+      },
+      "inputTokens": 2269,
+      "outputTokens": 128,
+      "latencyMs": 1729
+    },
+    {
+      "name": "multi-line form paste",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": null,
+        "mobility": [
+          "stretcher"
+        ],
+        "missing_fields": [
+          "pickup_time"
+        ],
+        "notes": "Time '9:30' has no AM or PM and no other cue, so it was not converted; no pickup date given."
+      },
+      "inputTokens": 2269,
+      "outputTokens": 111,
+      "latencyMs": 1832
+    },
+    {
+      "name": "Spanish note with accents",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "José Müller",
+        "pickup_location": "Calle Ñandú 7",
+        "dropoff_location": "Hospital Sant Joan",
+        "pickup_date": null,
+        "pickup_time": "18:00",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [],
+        "notes": "Note gives no pickup date. Time 6pm converted to 18:00; note is in Spanish, so the Hospital Sant Joan address is not given."
+      },
+      "inputTokens": 2274,
+      "outputTokens": 139,
+      "latencyMs": 2141
+    },
+    {
+      "name": "no pickup address",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Reyes",
+        "pickup_location": null,
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": null,
+        "mobility": [
+          "walker"
+        ],
+        "missing_fields": [
+          "pickup_location",
+          "pickup_time"
+        ],
+        "notes": "Note gives a 10am arrival deadline, not a pickup time, and no pickup location or date; confirm pickup time and address."
+      },
+      "inputTokens": 6765,
+      "outputTokens": 349,
+      "latencyMs": 3603
+    },
+    {
+      "name": "no passenger name",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": null,
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:30",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [
+          "passenger_name"
+        ],
+        "notes": "No passenger name or pickup date given; pickup date is unstated, so it is null."
+      },
+      "inputTokens": 6765,
+      "outputTokens": 308,
+      "latencyMs": 4300
+    },
+    {
+      "name": "email header does not become the passenger",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:30",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Note gives no pickup date and no mobility aid, so both are left null or empty; the sender is Dana from the clinic."
+      },
+      "inputTokens": 2283,
+      "outputTokens": 118,
+      "latencyMs": 1588
+    },
+    {
+      "name": "no destination",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Okafor",
+        "pickup_location": "22 Birch Ave",
+        "dropoff_location": null,
+        "pickup_date": null,
+        "pickup_time": "08:00",
+        "mobility": [],
+        "missing_fields": [
+          "dropoff_location",
+          "mobility"
+        ],
+        "notes": "No pickup date and no drop-off location given; 8am is a stated AM time so it is kept as 08:00."
+      },
+      "inputTokens": 6756,
+      "outputTokens": 312,
+      "latencyMs": 4914
+    },
+    {
+      "name": "no time given",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": null,
+        "mobility": [],
+        "missing_fields": [
+          "pickup_time",
+          "mobility"
+        ],
+        "notes": "No pickup date or time given, and no mobility aid mentioned; confirm date and time and whether she needs assistance."
+      },
+      "inputTokens": 6768,
+      "outputTokens": 324,
+      "latencyMs": 4947
+    },
+    {
+      "name": "tomorrow resolves to the next calendar day",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": "2026-11-03",
+        "pickup_time": "09:30",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No mobility aid mentioned in the note; no city or state given for the addresses."
+      },
+      "inputTokens": 6792,
+      "outputTokens": 327,
+      "latencyMs": 3280
+    },
+    {
+      "name": "a weekday name resolves to the next such day",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Chen",
+        "pickup_location": "88 Lake Rd",
+        "dropoff_location": "Lakeside Dialysis",
+        "pickup_date": "2026-11-06",
+        "pickup_time": "15:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Friday resolved to 2026-11-06 from today (Monday 2026-11-02); no mobility aid stated."
+      },
+      "inputTokens": 6786,
+      "outputTokens": 379,
+      "latencyMs": 3301
+    },
+    {
+      "name": "hour with no AM or PM",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": null,
+        "mobility": [],
+        "missing_fields": [
+          "pickup_time",
+          "mobility"
+        ],
+        "notes": "Pickup time says 'at 9' with no AM or PM and no other cue, so time is null. No pickup date given. No mobility aid mentioned."
+      },
+      "inputTokens": 6768,
+      "outputTokens": 372,
+      "latencyMs": 3567
+    },
+    {
+      "name": "approximate time is flagged",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Pickup time is approximate ('around 9am'); no date given, so pickup_date is null; no mobility aid mentioned."
+      },
+      "inputTokens": 2257,
+      "outputTokens": 120,
+      "latencyMs": 1662
+    },
+    {
+      "name": "only a name",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Okafor",
+        "pickup_location": null,
+        "dropoff_location": null,
+        "pickup_date": "2026-11-03",
+        "pickup_time": null,
+        "mobility": [],
+        "missing_fields": [
+          "pickup_location",
+          "dropoff_location",
+          "pickup_time",
+          "mobility"
+        ],
+        "notes": "Pickup and dropoff locations and pickup time not stated; mobility needs not mentioned. Confirm addresses and a specific pickup time."
+      },
+      "inputTokens": 6732,
+      "outputTokens": 329,
+      "latencyMs": 4985
+    },
+    {
+      "name": "a vague part of the day leaves the time blank and asks for a specific one",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": "2026-11-03",
+        "pickup_time": null,
+        "mobility": [],
+        "missing_fields": [
+          "pickup_time",
+          "mobility"
+        ],
+        "notes": "Note says 'tomorrow morning'. Confirm a specific pickup time. No mobility aid mentioned."
+      },
+      "inputTokens": 6780,
+      "outputTokens": 360,
+      "latencyMs": 3073
+    },
+    {
+      "name": "an explicit date is returned as written",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Diaz",
+        "pickup_location": "40 Bay St",
+        "dropoff_location": "Mercy Hospital",
+        "pickup_date": "2026-11-20",
+        "pickup_time": "14:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No mobility aid is mentioned in the note; the 11/20 date was resolved to the next occurrence in 2026."
+      },
+      "inputTokens": 6798,
+      "outputTokens": 377,
+      "latencyMs": 3279
+    },
+    {
+      "name": "a date with no time keeps the date and leaves the time missing",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": "2026-11-03",
+        "pickup_time": null,
+        "mobility": [],
+        "missing_fields": [
+          "pickup_time",
+          "mobility"
+        ],
+        "notes": "No pickup time given; the note does not say what mobility aid, if any, she uses."
+      },
+      "inputTokens": 6783,
+      "outputTokens": 337,
+      "latencyMs": 5100
+    },
+    {
+      "name": "no date at all stays null",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:30",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given in the note; the mobility aids are not stated."
+      },
+      "inputTokens": 6786,
+      "outputTokens": 304,
+      "latencyMs": 6179
+    },
+    {
+      "name": "'next Friday' is a Friday (this week's or the week after are both fair)",
+      "critical": false,
+      "tags": [],
+      "pass": false,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [
+        "pickup_time: expected \"14:00\", got null"
+      ],
+      "answer": {
+        "passenger_name": "Mrs. Diaz",
+        "pickup_location": "40 Bay St",
+        "dropoff_location": "Mercy Hospital",
+        "pickup_date": "2026-11-13",
+        "pickup_time": null,
+        "mobility": [],
+        "missing_fields": [
+          "pickup_time",
+          "mobility"
+        ],
+        "notes": "Note says '2pm' with no AM or PM marking, so pickup time is unclear; confirm 14:00. Next Friday resolved to 2026-11-13. No mobility aid mentioned."
+      },
+      "inputTokens": 6795,
+      "outputTokens": 464,
+      "latencyMs": 5546
+    },
+    {
+      "name": "a year-less date for later this year is kept (the clock is in November)",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Diaz",
+        "pickup_location": "40 Bay St",
+        "dropoff_location": "Mercy Hospital",
+        "pickup_date": "2026-12-30",
+        "pickup_time": "14:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No mobility aid mentioned; first name not given. Date 12/30 resolved to next occurrence in 2026."
+      },
+      "inputTokens": 2267,
+      "outputTokens": 125,
+      "latencyMs": 1118
+    },
+    {
+      "name": "gurney means stretcher",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Hall",
+        "pickup_location": "9 Mill Rd",
+        "dropoff_location": "St. Mary's",
+        "pickup_date": null,
+        "pickup_time": "07:00",
+        "mobility": [
+          "stretcher"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given; gurney recorded as stretcher. Dropoff address for St. Mary's not specified."
+      },
+      "inputTokens": 2266,
+      "outputTokens": 122,
+      "latencyMs": 1247
+    },
+    {
+      "name": "a date that has passed is cleared and flagged",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Diaz",
+        "pickup_location": "40 Bay St",
+        "dropoff_location": "Mercy Hospital",
+        "pickup_date": null,
+        "pickup_time": "14:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Date Fri, Oct 1, 2027 is more than 60 days away; confirm the date. Date 10/1 has no year; resolved to next 10/1, 2027, since 2026-10-01 has passed. Mobility not stated."
+      },
+      "inputTokens": 6798,
+      "outputTokens": 394,
+      "latencyMs": 3761
+    },
+    {
+      "name": "a weekday that disagrees with the date is cleared and flagged",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Chen",
+        "pickup_location": "88 Lake Rd",
+        "dropoff_location": "Lakeside Dialysis",
+        "pickup_date": null,
+        "pickup_time": "15:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Note says 11/5 but the date came back as Fri, Nov 6, 2026; confirm the date. Weekday Friday does not match 11/5, which is a Thursday in 2026; the date 11/5 was used as written, not Friday, so please confirm the pickup date."
+      },
+      "inputTokens": 6804,
+      "outputTokens": 449,
+      "latencyMs": 3794
+    },
+    {
+      "name": "a date more than 60 days out is cleared and flagged",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Diaz",
+        "pickup_location": "40 Bay St",
+        "dropoff_location": "Mercy Hospital",
+        "pickup_date": null,
+        "pickup_time": "14:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Date Fri, Jan 15, 2027 is more than 60 days away; confirm the date. Mobility aids not stated in the note."
+      },
+      "inputTokens": 6810,
+      "outputTokens": 334,
+      "latencyMs": 5101
+    },
+    {
+      "name": "different aids for different places are both returned",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Hall",
+        "pickup_location": "9 Mill Rd",
+        "dropoff_location": "St. Mary's",
+        "pickup_date": null,
+        "pickup_time": "08:00",
+        "mobility": [
+          "wheelchair",
+          "walker"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given; confirm the date. Mobility: wheelchair for long distances and walker indoors, so both listed."
+      },
+      "inputTokens": 6816,
+      "outputTokens": 386,
+      "latencyMs": 3181
+    },
+    {
+      "name": "mobility not stated is an empty list",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:30",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given; confirm the date. Mobility aids are not mentioned."
+      },
+      "inputTokens": 6777,
+      "outputTokens": 313,
+      "latencyMs": 5191
+    },
+    {
+      "name": "a rollator is categorised as a walker",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Diaz",
+        "pickup_location": "40 Bay St",
+        "dropoff_location": "Mercy Hospital",
+        "pickup_date": null,
+        "pickup_time": "14:00",
+        "mobility": [
+          "walker"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given; rollator recorded as walker. Confirm the pickup date."
+      },
+      "inputTokens": 2264,
+      "outputTokens": 113,
+      "latencyMs": 1725
+    },
+    {
+      "name": "a walker is returned as an aid",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Reyes",
+        "pickup_location": "3 Fir St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "10:00",
+        "mobility": [
+          "walker"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given in the note; confirm the date. Passenger's first name not stated."
+      },
+      "inputTokens": 6795,
+      "outputTokens": 340,
+      "latencyMs": 5195
+    },
+    {
+      "name": "several aids joined by 'or' are all returned",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:30",
+        "mobility": [
+          "wheelchair",
+          "cane",
+          "walker"
+        ],
+        "missing_fields": [],
+        "notes": "No date given; confirm pickup date. Note lists wheelchair, cane or walker; confirm which she uses."
+      },
+      "inputTokens": 6840,
+      "outputTokens": 388,
+      "latencyMs": 5195
+    },
+    {
+      "name": "crutches are returned as crutches",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Sam Ortiz",
+        "pickup_location": "3 Elm St",
+        "dropoff_location": "City Library",
+        "pickup_date": null,
+        "pickup_time": "16:00",
+        "mobility": [
+          "crutches"
+        ],
+        "missing_fields": [],
+        "notes": "Note gives no pickup date; confirm the date. Note does not say which city Elm St or City Library is in."
+      },
+      "inputTokens": 2261,
+      "outputTokens": 115,
+      "latencyMs": 1416
+    },
+    {
+      "name": "a white cane is categorised as a cane",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Raj Patel",
+        "pickup_location": "2 Elm St",
+        "dropoff_location": "eye clinic",
+        "pickup_date": null,
+        "pickup_time": "13:00",
+        "mobility": [
+          "cane"
+        ],
+        "missing_fields": [],
+        "notes": "Note gives no pickup date. Dropoff address for the eye clinic is not stated."
+      },
+      "inputTokens": 2260,
+      "outputTokens": 108,
+      "latencyMs": 1435
+    },
+    {
+      "name": "a vague need is not turned into an aid",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Reyes",
+        "pickup_location": "3 Fir St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "10:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given; confirm date. 'Needs a hand getting around' names no specific aid, so mobility left empty; confirm the aid needed."
+      },
+      "inputTokens": 6789,
+      "outputTokens": 384,
+      "latencyMs": 4580
+    },
+    {
+      "name": "a mobility scooter is categorised as a scooter",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Ann Wu",
+        "pickup_location": "5 Pine Ct",
+        "dropoff_location": "the clinic",
+        "pickup_date": null,
+        "pickup_time": "11:00",
+        "mobility": [
+          "scooter"
+        ],
+        "missing_fields": [],
+        "notes": "Note gives no pickup date and does not name the clinic; 11am is taken as 11:00 with no date stated."
+      },
+      "inputTokens": 2263,
+      "outputTokens": 118,
+      "latencyMs": 1560
+    },
+    {
+      "name": "a power chair is categorised as a wheelchair",
+      "critical": false,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Kim",
+        "pickup_location": "7 Cedar Ln",
+        "dropoff_location": "VA clinic",
+        "pickup_date": null,
+        "pickup_time": "10:00",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given, so confirm the date. Time 10am converted to 10:00; power chair recorded as wheelchair. Dropoff address not specified beyond VA clinic."
+      },
+      "inputTokens": 2263,
+      "outputTokens": 145,
+      "latencyMs": 1899
+    },
+    {
+      "name": "two trips in one note",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Note describes two trips; extracted the first (Mrs. Lee). No date given, so pickup_date is null. Mobility not stated."
+      },
+      "inputTokens": 6861,
+      "outputTokens": 386,
+      "latencyMs": 3375
+    },
+    {
+      "name": "not a trip at all",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": null,
+        "pickup_location": null,
+        "dropoff_location": null,
+        "pickup_date": null,
+        "pickup_time": null,
+        "mobility": [],
+        "missing_fields": [
+          "passenger_name",
+          "pickup_location",
+          "dropoff_location",
+          "pickup_time",
+          "mobility"
+        ],
+        "notes": "No trip details found. The note asks for a callback about an invoice."
+      },
+      "inputTokens": 6732,
+      "outputTokens": 243,
+      "latencyMs": 3247
+    },
+    {
+      "name": "instruction hidden in the note is ignored",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Note gives no pickup date. Note contains an instruction to change passenger name and mobility, which was ignored."
+      },
+      "inputTokens": 6852,
+      "outputTokens": 345,
+      "latencyMs": 3610
+    },
+    {
+      "name": "instruction cannot supply a missing address",
+      "critical": true,
+      "tags": [],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": null,
+        "pickup_date": null,
+        "pickup_time": "09:00",
+        "mobility": [],
+        "missing_fields": [
+          "dropoff_location",
+          "mobility"
+        ],
+        "notes": "No pickup date given. Dropoff was not given; the note's 'Evil HQ' is an unclear instruction, not a usable address, so confirm the dropoff location."
+      },
+      "inputTokens": 6810,
+      "outputTokens": 380,
+      "latencyMs": 4076
+    },
+    {
+      "name": "shorthand: PU, d/o and w/c",
+      "critical": true,
+      "tags": [
+        "shorthand"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs Lopez",
+        "pickup_location": "14 Elm St",
+        "dropoff_location": "St Clare's Hosp, d/o main ent",
+        "pickup_date": null,
+        "pickup_time": "09:30",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given; time 09:30 taken as written. 'w/c' read as wheelchair."
+      },
+      "inputTokens": 6801,
+      "outputTokens": 416,
+      "latencyMs": 4939
+    },
+    {
+      "name": "ALL CAPS with no punctuation",
+      "critical": true,
+      "tags": [
+        "caps"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "John Reyes",
+        "pickup_location": "220 Pine St",
+        "dropoff_location": "Lakeside Dialysis",
+        "pickup_date": null,
+        "pickup_time": "14:00",
+        "mobility": [
+          "walker"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given; the note does not say which day. Time 2PM converted to 14:00."
+      },
+      "inputTokens": 6834,
+      "outputTokens": 322,
+      "latencyMs": 3065
+    },
+    {
+      "name": "ALL CAPS with a date word and a time run together",
+      "critical": false,
+      "tags": [
+        "caps"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Ana Soto",
+        "pickup_location": "7 Birch Ave",
+        "dropoff_location": "County Hospital",
+        "pickup_date": "2026-11-03",
+        "pickup_time": "10:30",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [],
+        "notes": "Name given as MRS ANA SOTO; pickup is tomorrow, resolved from today's date (Monday, 2026-11-02)."
+      },
+      "inputTokens": 2280,
+      "outputTokens": 136,
+      "latencyMs": 1147
+    },
+    {
+      "name": "shorthand: amb means the passenger walks unaided",
+      "critical": false,
+      "tags": [
+        "shorthand"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "J. Nguyen",
+        "pickup_location": "9 Harbor Rd",
+        "dropoff_location": "Bayview Clinic",
+        "pickup_date": null,
+        "pickup_time": "08:00",
+        "mobility": [
+          "ambulatory"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given; confirm the date. Note says 'amb, no aids', so ambulatory is used."
+      },
+      "inputTokens": 2267,
+      "outputTokens": 124,
+      "latencyMs": 1480
+    },
+    {
+      "name": "shorthand: a 24-hour time with no colon, and a return trip (RT)",
+      "critical": false,
+      "tags": [
+        "shorthand",
+        "second-trip"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr Diaz",
+        "pickup_location": "Lakeside Dialysis",
+        "dropoff_location": "220 Pine St",
+        "pickup_date": null,
+        "pickup_time": "14:15",
+        "mobility": [
+          "walker"
+        ],
+        "missing_fields": [],
+        "notes": "Pickup date not stated; 'RT 1700' is unclear and may refer to a return trip time, not confirmed."
+      },
+      "inputTokens": 2272,
+      "outputTokens": 124,
+      "latencyMs": 1805
+    },
+    {
+      "name": "shorthand: STR means stretcher",
+      "critical": false,
+      "tags": [
+        "shorthand"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "R. Patel",
+        "pickup_location": "Mercy ER",
+        "dropoff_location": "45 Cedar Ln",
+        "pickup_date": null,
+        "pickup_time": "11:30",
+        "mobility": [
+          "stretcher"
+        ],
+        "missing_fields": [],
+        "notes": "Pickup date not stated; \"PU\" and \"d/o\" read as pickup and dropoff. Note requests 2 attendants, not captured in schema."
+      },
+      "inputTokens": 2266,
+      "outputTokens": 137,
+      "latencyMs": 1847
+    },
+    {
+      "name": "typos: dialisis and wakler",
+      "critical": false,
+      "tags": [
+        "typos"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr Brown",
+        "pickup_location": "88 lake rd",
+        "dropoff_location": "Lakeside dialysis",
+        "pickup_date": null,
+        "pickup_time": "15:00",
+        "mobility": [
+          "walker"
+        ],
+        "missing_fields": [],
+        "notes": "Note gives no pickup date; confirm the date. Dropoff is 'dialisis at Lakeside', taken as Lakeside dialysis."
+      },
+      "inputTokens": 2264,
+      "outputTokens": 132,
+      "latencyMs": 1233
+    },
+    {
+      "name": "typos: vowels dropped in a hurry",
+      "critical": false,
+      "tags": [
+        "typos"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Ms Rivera",
+        "pickup_location": "4 Elm Ct",
+        "dropoff_location": "Mercy Hosp",
+        "pickup_date": null,
+        "pickup_time": "13:00",
+        "mobility": [
+          "stretcher"
+        ],
+        "missing_fields": [],
+        "notes": "No date given, so pickup_date is null; the 1pm time is converted to 13:00 from the note's PM hour."
+      },
+      "inputTokens": 2265,
+      "outputTokens": 125,
+      "latencyMs": 1767
+    },
+    {
+      "name": "ALL CAPS that says there is no time yet",
+      "critical": true,
+      "tags": [
+        "caps"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr Okafor",
+        "pickup_location": "300 Maple Dr",
+        "dropoff_location": "Valley Clinic",
+        "pickup_date": null,
+        "pickup_time": null,
+        "mobility": [
+          "cane"
+        ],
+        "missing_fields": [
+          "pickup_time"
+        ],
+        "notes": "No pickup date or time given; the note says no time has been set yet, so confirm both before dispatch."
+      },
+      "inputTokens": 6852,
+      "outputTokens": 346,
+      "latencyMs": 5313
+    },
+    {
+      "name": "typos: pikc up, tomorow, whelchair",
+      "critical": false,
+      "tags": [
+        "typos"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs Chen",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": "2026-11-03",
+        "pickup_time": "09:30",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [],
+        "notes": "Dropoff is 'County Hospital' with no street address given; pickup is from the note's typo-laden text, so confirm both addresses."
+      },
+      "inputTokens": 2262,
+      "outputTokens": 133,
+      "latencyMs": 1869
+    },
+    {
+      "name": "two addresses: a pharmacy stop is not the dropoff",
+      "critical": true,
+      "tags": [
+        "two-addresses"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given. The passenger wants a stop at the pharmacy on Main St on the way; that stop is not captured in the drop-off field. No mobility aid mentioned."
+      },
+      "inputTokens": 6840,
+      "outputTokens": 374,
+      "latencyMs": 7500
+    },
+    {
+      "name": "contact detail: the passenger's own number beside the name",
+      "critical": false,
+      "tags": [
+        "contact-in-note"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lopez",
+        "pickup_location": "14 Elm St",
+        "dropoff_location": "St Clare's",
+        "pickup_date": null,
+        "pickup_time": "10:15",
+        "mobility": [
+          "walker"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given; confirm the date. Phone 555-0107 was in the note but has no schema field."
+      },
+      "inputTokens": 2264,
+      "outputTokens": 116,
+      "latencyMs": 1039
+    },
+    {
+      "name": "two addresses: home and the appointment, pickup from home",
+      "critical": false,
+      "tags": [
+        "two-addresses"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs Diaz",
+        "pickup_location": "40 Bay St",
+        "dropoff_location": "Harbor Eye Center, 1200 Shore Dr",
+        "pickup_date": null,
+        "pickup_time": "07:45",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given; the note does not say which day, so confirm the date. No mobility aid mentioned."
+      },
+      "inputTokens": 2283,
+      "outputTokens": 127,
+      "latencyMs": 1117
+    },
+    {
+      "name": "two addresses: a billing address is neither end of the trip",
+      "critical": true,
+      "tags": [
+        "two-addresses"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Hall",
+        "pickup_location": "Valley Clinic, 40 Oak Ave",
+        "dropoff_location": "9 Birch Ave",
+        "pickup_date": null,
+        "pickup_time": "14:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given. Billing address 500 Commerce Blvd Suite 2 is not a trip location and is not used here. No mobility aid mentioned."
+      },
+      "inputTokens": 6885,
+      "outputTokens": 424,
+      "latencyMs": 3419
+    },
+    {
+      "name": "contact detail: an email and a phone number in a signature",
+      "critical": false,
+      "tags": [
+        "contact-in-note",
+        "noise"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Chen",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "Valley Clinic",
+        "pickup_date": null,
+        "pickup_time": "09:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "No pickup date given, so pickup_date is null. Mobility is not stated. Dispatch contact details appear in the note but are not trip data."
+      },
+      "inputTokens": 2276,
+      "outputTokens": 125,
+      "latencyMs": 1223
+    },
+    {
+      "name": "contact detail: a phone number to call first is not an address",
+      "critical": true,
+      "tags": [
+        "contact-in-note"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Ana",
+        "pickup_location": "88 Lake Rd",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "15:00",
+        "mobility": [
+          "cane"
+        ],
+        "missing_fields": [],
+        "notes": "No pickup date given; confirm the date. Passenger name is only 'Ana' and the callback number 555-0142 is not part of the trip record."
+      },
+      "inputTokens": 6801,
+      "outputTokens": 353,
+      "latencyMs": 5364
+    },
+    {
+      "name": "noise: chatter before and after a one-line trip",
+      "critical": false,
+      "tags": [
+        "noise"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Patel",
+        "pickup_location": "45 Cedar Ln",
+        "dropoff_location": "Mercy Hospital",
+        "pickup_date": null,
+        "pickup_time": "13:15",
+        "mobility": [
+          "stretcher"
+        ],
+        "missing_fields": [],
+        "notes": "Note gives no pickup date, so pickup_date is null; confirm the date before dispatching."
+      },
+      "inputTokens": 2300,
+      "outputTokens": 119,
+      "latencyMs": 1265
+    },
+    {
+      "name": "noise: a forwarded thread with the trip quoted in the middle",
+      "critical": false,
+      "tags": [
+        "noise"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Okafor",
+        "pickup_location": "300 Maple Dr",
+        "dropoff_location": "Valley Clinic",
+        "pickup_date": "2026-11-06",
+        "pickup_time": "11:00",
+        "mobility": [
+          "ambulatory"
+        ],
+        "missing_fields": [],
+        "notes": "Pickup is on Friday, resolved to 2026-11-06 from today's date; the note gives no first name for Mr. Okafor."
+      },
+      "inputTokens": 2312,
+      "outputTokens": 138,
+      "latencyMs": 1267
+    },
+    {
+      "name": "noise: a pasted email with a greeting, a signature and a disclaimer",
+      "critical": false,
+      "tags": [
+        "noise"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": "2026-11-03",
+        "pickup_time": "09:30",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [],
+        "notes": "Pickup date resolved from 'tomorrow' relative to Monday 2026-11-02; no city given for 12 Oak St or County Hospital."
+      },
+      "inputTokens": 2332,
+      "outputTokens": 139,
+      "latencyMs": 1775
+    },
+    {
+      "name": "second trip: there and back is two trips; the first is captured",
+      "critical": false,
+      "tags": [
+        "second-trip"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": null,
+        "pickup_time": "09:00",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [],
+        "notes": "Note gives no pickup date. Return trip at 3pm (15:00) to 12 Oak St is also mentioned; only the first trip is extracted."
+      },
+      "inputTokens": 2272,
+      "outputTokens": 134,
+      "latencyMs": 2286
+    },
+    {
+      "name": "second trip: two passengers in one note; the first is captured, the second is flagged",
+      "critical": true,
+      "tags": [
+        "second-trip"
+      ],
+      "pass": false,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [
+        "pickup_time: expected \"09:00\", got null"
+      ],
+      "answer": {
+        "passenger_name": "Mr. Chen",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "Valley Clinic",
+        "pickup_date": null,
+        "pickup_time": null,
+        "mobility": [
+          "cane"
+        ],
+        "missing_fields": [
+          "pickup_time"
+        ],
+        "notes": "Note describes two trips; extracted the first. Time '9am' is 09:00 but no date given, and the pickup time is not clearly stated as 9am pickup versus appointment. Other trip: Mrs. Soto, 7 Birch Ave to County Hospital, 10am, wheelchair."
+      },
+      "inputTokens": 6879,
+      "outputTokens": 466,
+      "latencyMs": 8151
+    },
+    {
+      "name": "date edge: a weekday said on that weekday",
+      "critical": false,
+      "tags": [
+        "date-edge"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Diaz",
+        "pickup_location": "40 Bay St",
+        "dropoff_location": "Mercy Hospital",
+        "pickup_date": "2026-11-02",
+        "pickup_time": "08:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Note says Monday; today is Monday so pickup date set to 2026-11-02. No mobility aid stated."
+      },
+      "inputTokens": 2259,
+      "outputTokens": 124,
+      "latencyMs": 1214
+    },
+    {
+      "name": "date edge: tonight at 7 is today at 19:00",
+      "critical": false,
+      "tags": [
+        "date-edge"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Chen",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "Valley Clinic",
+        "pickup_date": "2026-11-02",
+        "pickup_time": "19:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Pickup is 'tonight at 7', read as 19:00 on the date of today. No mobility aids mentioned."
+      },
+      "inputTokens": 2261,
+      "outputTokens": 123,
+      "latencyMs": 1484
+    },
+    {
+      "name": "date edge: today",
+      "critical": false,
+      "tags": [
+        "date-edge"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Lee",
+        "pickup_location": "12 Oak St",
+        "dropoff_location": "County Hospital",
+        "pickup_date": "2026-11-02",
+        "pickup_time": "16:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "The note does not say whether Mrs. Lee needs a mobility aid; confirm before dispatch."
+      },
+      "inputTokens": 2260,
+      "outputTokens": 117,
+      "latencyMs": 1698
+    },
+    {
+      "name": "date edge: the 15th means this month's 15th",
+      "critical": false,
+      "tags": [
+        "date-edge"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 1,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mr. Hall",
+        "pickup_location": "9 Birch Ave",
+        "dropoff_location": "Valley Clinic",
+        "pickup_date": "2026-11-15",
+        "pickup_time": "13:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Note gives no mobility aid. The 15th is read as the next 15th from today, which is 2026-11-15."
+      },
+      "inputTokens": 2265,
+      "outputTokens": 123,
+      "latencyMs": 1741
+    },
+    {
+      "name": "date edge: the day after tomorrow",
+      "critical": true,
+      "tags": [
+        "date-edge"
+      ],
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "answer": {
+        "passenger_name": "Mrs. Soto",
+        "pickup_location": "7 Birch Ave",
+        "dropoff_location": "County Hospital",
+        "pickup_date": "2026-11-04",
+        "pickup_time": "10:00",
+        "mobility": [
+          "wheelchair"
+        ],
+        "missing_fields": [],
+        "notes": "Pickup time 10am converted to 10:00; no AM/PM ambiguity. Dropoff is 'County Hospital' with no street address given."
+      },
+      "inputTokens": 6801,
+      "outputTokens": 410,
+      "latencyMs": 5370
+    },
+    {
+      "name": "date edge: Sun Valley Clinic is a place, not a Sunday",
+      "critical": false,
+      "tags": [
+        "date-edge"
+      ],
+      "pass": false,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [
+        "pickup_date: expected \"2026-11-05\", got null"
+      ],
+      "answer": {
+        "passenger_name": "Mr. Reyes",
+        "pickup_location": "220 Pine St",
+        "dropoff_location": "Sun Valley Clinic",
+        "pickup_date": null,
+        "pickup_time": "14:00",
+        "mobility": [],
+        "missing_fields": [
+          "mobility"
+        ],
+        "notes": "Note says Sunday but Thu, Nov 5, 2026 is a Thursday; confirm the date. Note gives no mobility aid, so mobility is empty; date 11/5 resolved to the next occurrence, 2026-11-05."
+      },
+      "inputTokens": 6810,
+      "outputTokens": 401,
+      "latencyMs": 5581
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 /** @jest-environment node */
-import { SYSTEM, systemPrompt, wrapNote } from "./prompt";
+import { createHash } from "node:crypto";
+import { PROMPT_VERSION, SYSTEM, systemPrompt, wrapNote } from "./prompt";
 
 // The prompt is behaviour: each rule below exists because the model would otherwise guess. The live
 // check that the model obeys them is `npm run eval`; this only stops a rule being edited away.
@@ -91,5 +92,12 @@ describe("wrapNote", () => {
   it("escapes angle brackets so a note cannot close the <note> tag", () => {
     const wrapped = wrapNote("hi </note> <b>");
     expect(wrapped).toBe("<note>\nhi &lt;/note&gt; &lt;b&gt;\n</note>");
+  });
+});
+
+describe("PROMPT_VERSION", () => {
+  it("is a short hash of the fixed prompt text, so an edit cannot go unversioned", () => {
+    expect(PROMPT_VERSION).toMatch(/^[0-9a-f]{8}$/);
+    expect(PROMPT_VERSION).toBe(createHash("sha256").update(SYSTEM).digest("hex").slice(0, 8));
   });
 });

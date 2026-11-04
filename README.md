@@ -36,6 +36,7 @@ Built with Next.js 16, the Claude API (Anthropic), Zod, React Query and Zustand.
 - [Project layout](#project-layout)
 - [Security](#security)
 - [Testing](#testing)
+- [How I evaluated this](#how-i-evaluated-this)
 - [Scripts](#scripts)
 - [Documentation map](#documentation-map)
 - [Troubleshooting](#troubleshooting)
@@ -512,8 +513,8 @@ npm run test:all        # everything
   navigation, accessibility in light and dark mode, phone-width layout, and things that are out of
   scope.
 
-- **The accuracy eval** (`evals/`) sends a few dozen realistic notes to the real model through the same
-  code the API uses and scores the answers. It covers complete notes, 12/24-hour and spoken times,
+- **The accuracy eval** (`evals/`) sends 76 realistic invented notes to the real model through the same
+  code the API uses and scores the answers (see [How I evaluated this](#how-i-evaluated-this)). It covers complete notes, 12/24-hour and spoken times,
   fields that must stay null, an hour with no AM/PM, dates that must resolve to `pickup_date` (or stay null), mobility,
   several trips in one note, text that is not a trip, and instructions hidden in a note. Every
   _critical_ case must pass and at least 90% overall. Run it after changing `lib/prompt.ts`, the
@@ -531,6 +532,51 @@ A pre-commit hook runs `npm run check`. CI runs three jobs on every push, from a
 - **database**: a real Postgres. `db/schema.sql` runs twice (it must be safe to re-run), the migrations
   run against it, `db/verify.sql` proves each login holds only its grants, and `npm run test:db` runs the
   store's and the purge's SQL through the real driver as the real logins (`tests/db/`).
+
+## How I evaluated this
+
+The numbers below are read from the committed results files by `tests/eval-claims.test.ts`, so this
+section cannot drift from the evidence.
+
+**The set.** 76 invented dispatcher notes in `evals/cases.ts`, 33 of them critical (a wrong answer
+would send a vehicle somewhere wrong). 27 are deliberately messy: dispatcher shorthand ("PU 0930 w/c",
+"d/o"), ALL CAPS, typos, a third address, a phone number or email inside the note, a pasted email
+around the trip, second and return trips, and date phrases such as "tonight", "the 15th" and "Sun
+Valley Clinic". The rest are the tidy originals.
+
+**The method.** Code assertions only, binary pass or fail per case, against a pinned clock (Monday
+2026-11-02 in New York). A critical case runs three times and must pass all three; any other case
+passes at two of three. Every run writes a dated file to `evals/results/` with each case's verdict,
+answer and cost. The lesson's warning that a 100% score means the tests are too easy applied here:
+the tidy set's committed run scored 48 of 49 (and 49 of 49 the day before); the messier set scores
+lower, which is the point.
+
+**The result.** `claude-haiku-5-5`, prompt `9cd5b85e`: **73 of 76 (96%)**, no critical
+failures, 148 calls for $0.04, 1540 ms per call. One parse costs about
+$0.29 per thousand at list price.
+
+**The prompt change, honestly.** The error analysis (`evals/ERROR-ANALYSIS.md`) found the biggest
+failure category: a clearly stated time ("2pm", "9am") returned as null when the model doubted
+something else, usually a missing date. I tried three wordings, one at a time, each measured on the
+full set. The first lost two other times (73 to 72 of 76). The second scored best (74 of 76) and
+turned out to invent today's date on three notes that gave none, which the scorer had not been
+checking; an invented date is the failure this parser exists to prevent. The third was neutral. None
+moved the pass rate beyond one-case noise, so the prompt is unchanged. What changed is the scorer:
+every undated case now asserts a null date, under which the "best" attempt would have scored 71.
+
+**The second model.** `claude-sonnet-5-5` on the same set, prompt and judge: **72 of 76**, one
+critical failure (no passenger name on the note with a phone number in it), $0.83 for the run
+against $0.04, about 20 times the cost, with no latency gain. RideNote keeps Haiku 5.5.
+
+**One honest failure I could not fix.** The case "second trip: two passengers in one note; the first
+is captured, the second is flagged" loses its 9am on every run and every prompt I tried: the model
+writes "9 is ambiguous as stated" though the note says 9am. A second, in code rather than the model:
+"date edge: Sun Valley Clinic is a place, not a Sunday" is cleared because the weekday check in
+`lib/dates.ts` reads "Sun" as Sunday. Both stay in the set as failures until they are fixed.
+
+Where it lives: `evals/results/` (every run), `evals/ERROR-ANALYSIS.md` (the open coding, the
+taxonomy, the three attempts and the model comparison), and [docs/EVAL.md](docs/EVAL.md) for how the
+harness works.
 
 ## Scripts
 

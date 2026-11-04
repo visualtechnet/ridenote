@@ -10,6 +10,7 @@ jest.mock("@anthropic-ai/sdk", () => ({
 
 import { DATES, HTTP, LIMITS, OUTPUT_LIMITS, UPSTREAM } from "@/lib/config";
 import { MESSAGES } from "@/lib/messages";
+import { PROMPT_VERSION } from "@/lib/prompt";
 import { POST } from "./route";
 import { jsonContent } from "@/tests/model-reply";
 
@@ -535,6 +536,10 @@ describe("POST /api/parse usage log", () => {
     expect(line).not.toContain("\n");
     const meta = JSON.parse(line);
     expect(meta).toMatchObject({
+      event: "llm_call",
+      requestId: expect.stringMatching(/^[0-9a-f-]{36}$/),
+      at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      promptVersion: PROMPT_VERSION,
       stopReason: "end_turn",
       inputTokens: 120,
       outputTokens: 160,
@@ -542,6 +547,19 @@ describe("POST /api/parse usage log", () => {
     });
     expect(infoCalls().flat().map(String).join(" ")).not.toContain("Oak St");
     expect(line).not.toContain("Lee");
+  });
+
+  it("gives every call its own request id, so one bad answer can be found in the log", async () => {
+    mockParse.mockResolvedValue({
+      stop_reason: "end_turn",
+      content: jsonContent(goodTrip),
+      usage: { input_tokens: 120, output_tokens: 160 },
+    });
+    await POST(request({ note: "Mrs. Lee 12 Oak St wheelchair" }));
+    await POST(request({ note: "Mr. Chen 88 Lake Rd walker" }));
+    const ids = infoCalls().map(([, line]) => JSON.parse(line).requestId);
+    expect(ids).toHaveLength(2);
+    expect(ids[0]).not.toBe(ids[1]);
   });
 
   it("still logs usage when the model refuses", async () => {

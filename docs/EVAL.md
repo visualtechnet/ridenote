@@ -107,6 +107,66 @@ and hide every other result.
 `lib/prompt.ts`, `lib/trip.ts` or the `MODEL` setting. Without a key it fails on purpose, so a skipped
 eval cannot be mistaken for a passing one.
 
+## Results files and baselines
+
+Every run writes one file to `evals/results/`, named `<date>-<model>[-<label>].json`, and the files are
+committed. The lesson behind this is simple: a pass rate you remember is an anecdote; a pass rate in a
+dated file next to the prompt version that produced it is evidence anyone can open and rerun. A file
+holds a summary (cases, passed, pass rate, critical failures, tokens, cost, calls made, latency per call
+and per case) and then one row per case: its verdict, the problems found, the model's last answer, and
+what that case's attempts cost. The answers are kept because every note is invented; reading them is
+how the error analysis below was done.
+
+- `EVAL_LABEL=before npm run eval` adds a label to the file name, so the runs around a prompt change
+  sit side by side (`-before`, `-after`).
+- `MODEL=claude-sonnet-5-5 npm run eval` writes a file for that model, so two models can be compared
+  on the same cases and the same prompt version.
+- Cost is computed from the token counts with the list prices in `evals/prices.ts`, taken on the date
+  in `PRICES_AS_OF`. The bill is the truth; this is the estimate.
+- The prompt version in the file is `PROMPT_VERSION` from `lib/prompt.ts`, a hash of the prompt text,
+  so a file can never be mistaken for a run on a different prompt.
+
+## Error analysis
+
+Lesson 3's rule is to look at outputs before building anything: collect the answers, write one line on
+the first thing wrong with each (open coding), group the lines into categories and count them (axial
+coding), then fix the biggest category in the prompt and build automated checks only for what persists.
+`evals/ERROR-ANALYSIS.md` holds the full pass on the messier set, done 2026-11-02 against
+`evals/results/2026-11-02-claude-haiku-5-5-before.json` (73 of 76). The categories it found:
+
+| Category                                                                                    | Count          |
+| ------------------------------------------------------------------------------------------- | -------------- |
+| A stated time returned as `null` because the model doubted something else (day, which trip) | 2 (1 critical) |
+| Code clears a real date because a place name contains a weekday abbreviation ("Sun Valley") | 1              |
+| A shorthand marker left inside a field ("d/o main ent")                                     | 1 (passed)     |
+| A second trip understood but phrased as uncertain                                           | 1 (passed)     |
+
+The first category was the target of the one prompt change recorded in the same file; the second is a
+known limit of `lib/dates.ts`, kept as an honest failure.
+
+## Comparing models
+
+`MODEL=<id> npm run eval` runs the same cases and prompt on another model and writes its own results
+file, so two models can be set side by side. Done on 2026-11-02 for Haiku 5.5 against Sonnet 5.5
+(prices from `evals/prices.ts`, list rates as of 2026-10-06):
+
+| Model               | Passed   | Pass rate | Critical failures | Mean ms per call | Median ms per case | Tokens per case (in / out, all attempts) | Cost per case (all attempts) | Cost per 1,000 single parses |
+| ------------------- | -------- | --------- | ----------------- | ---------------- | ------------------ | ---------------------------------------- | ---------------------------- | ---------------------------- |
+| `claude-haiku-5-5`  | 73 of 76 | 96%       | 0                 | 1540             | 1990               | 4416 / 236                               | $0.0006                      | $0.29                        |
+| `claude-sonnet-5-5` | 72 of 76 | 95%       | 1                 | 1693             | 2464               | 4416 / 212                               | $0.0110                      | $5.63                        |
+
+Same 76 cases, same prompt `9cd5b85e`, same judge (criticals three times, must pass all three), the same
+day. "Per case" counts every attempt a case made; "per 1,000 single parses" is what one parse costs
+at list price, times a thousand, since a user's request is one call.
+
+Sonnet failed where Haiku passed: shorthand: STR means stretcher; typos: vowels dropped in a hurry; contact detail: a phone number to call first is not an address. Haiku failed where Sonnet passed:
+'next Friday' is a Friday (this week's or the week after are both fair); second trip: two passengers in one note; the first is captured, the second is flagged. Both fail Sun Valley Clinic, which is cleared in code, not by the model.
+The whole run cost $0.83 on Sonnet against $0.04 on Haiku, a ratio of 20.
+
+Decision: the bigger model lost a case, one of them critical (it returned no passenger name for the
+note with a phone number in it), for about 20 times the cost and no latency gain. RideNote keeps Haiku 5.5.
+Files: `evals/results/2026-11-02-claude-haiku-5-5-after.json`, `evals/results/2026-11-02-claude-sonnet-5-5-after.json`.
+
 ## Adding a case
 
 Add an entry to `CASES` in `evals/cases.ts`. Good sources are real notes (with names changed) and

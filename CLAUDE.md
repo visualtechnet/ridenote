@@ -41,7 +41,7 @@ npm run format         # prettier --write
 ## Conventions
 
 - Env vars: `ANTHROPIC_API_KEY` (never `NEXT_PUBLIC_`), optional `MODEL`, and the three History variables (production only). See `.env.example`. `.env.local` is git-ignored.
-- Per-call usage is logged as single-line JSON containing numbers, model name and stop reason only, never the note or anything parsed from it.
+- Per-call usage is logged as single-line JSON (`event: "llm_call"`) containing a request id, a timestamp, the prompt version (`PROMPT_VERSION`, a hash of the prompt text), numbers, model name and stop reason only, never the note or anything parsed from it.
 - Plans and specs for features are kept in `docs/superpowers/plans/` and `docs/superpowers/specs/`.
 
 ## Tokens

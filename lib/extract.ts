@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { Clock } from "./clock";
-import { HTTP, OUTPUT_LIMITS, UPSTREAM } from "./config";
+import { HTTP, OUTPUT_LIMITS, UPSTREAM, thinkingFor } from "./config";
 import { checkPickupDate } from "./dates";
 import { MESSAGES } from "./messages";
 import { systemPrompt, wrapNote } from "./prompt";
@@ -62,7 +62,7 @@ export async function extractTrip(
     {
       model,
       max_tokens: UPSTREAM.maxTokens,
-      thinking: UPSTREAM.thinking,
+      thinking: thinkingFor(model),
       system: systemPrompt(options.clock),
       messages: [{ role: "user", content: wrapNote(note) }],
       output_config: { format: zodOutputFormat(ModelTripSchema) },
