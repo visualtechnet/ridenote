@@ -897,3 +897,29 @@ This spends API credit: one Haiku call of roughly 1,500 input tokens, under one 
 ## Not in this plan (week 5)
 
 The loop and its stop rules, the system prompt, the model guard for forced tool choice, `scripts/agent.ts`, the step log and replay, the route, Approve, the page, `DRAFT_SIGNING_SECRET` and `server-only`, the agent evals, and every doc change.
+
+## Build record (2026-11-13)
+
+Built on `feature/agent-tools` by Sonnet subagents, reviewed per batch and once for the whole branch.
+
+**Changed from this plan during the build**
+
+- `FieldSource`, `MergedTrip` and `AskOption` are defined in `lib/agent/types.ts`, so Task 1 type-checks on its own.
+- `propose_trip` refuses any mobility with no vehicle class (an empty list or any `other`), not only an empty list.
+- Signed tokens carry `kind` (`draft` or `resume`), and `verify` takes the expected kind. A token of one kind is never accepted as the other.
+- `verify` rejects a secret shorter than 32 characters with `bad_signature`.
+- When an `ask_dispatcher` option has a `rider_id`, code writes its label as "name, home" from the rider file.
+- Tool error text built from a Zod issue is cut to `AGENT.issueMax` (200) characters.
+- Rider search treats tabs and line breaks as spaces, and `verify` fails closed on an invalid clock.
+
+**Not done**
+
+- Task 10, steps 3 and 4: the live call that confirms the API accepts the strict schemas. It spends credit and waits for Mark's go-ahead. PRD finding 3 stays open until then.
+- Node 22: this machine has only Node 20.14.0, so the build ran on Node 20.
+
+**Carry into the week 5 plan**
+
+- The loop must accept only rider ids that `find_rider` returned in the same run, for `check_vehicle_availability`, `propose_trip` and `ask_dispatcher`. Today a model steered by planted text could pass another rider's valid id.
+- The loop ends a run when a result has `end`, not when the tool's name is in `ENDING_TOOLS`: a failed ending tool has no `end`. If one reply holds two ending calls, only the first counts.
+- `propose_trip` passes the first `TripSchema` message into its error without a length cut. Cut it when the loop is built.
+- Without an API key, `npm run eval` fails on the new eval the same way it does on the parser eval.
