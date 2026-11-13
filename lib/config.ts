@@ -24,6 +24,21 @@ export const DATES = {
   maxDaysAhead: 60,
 } as const;
 
+/** The agent tools (lib/agent/): limits on what a tool accepts and returns, and how long a token lives. */
+export const AGENT = {
+  maxMatches: 3, // riders returned by find_rider
+  nameMax: 100, // characters accepted in find_rider's name
+  riderNotesMax: 200, // characters of a rider's notes returned
+  maxOptions: 4, // options in ask_dispatcher
+  questionMax: 200,
+  optionLabelMax: 80,
+  maxReasons: 5, // reasons in propose_trip
+  reasonMax: 120,
+  tokenTtlMs: 15 * 60_000, // drafts and resume tokens
+  secretMinLength: 32,
+  serviceDownDayOfMonth: 13, // the fake vehicle service fails on this day
+} as const;
+
 export const RATE_LIMIT = {
   /** Per client, counting every request, valid or not, so junk traffic is throttled too. */
   maxRequests: 10,

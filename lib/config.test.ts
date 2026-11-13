@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { UPSTREAM, thinkingFor } from "./config";
+import { AGENT, UPSTREAM, thinkingFor } from "./config";
 
 describe("thinkingFor (how each model is told not to think)", () => {
   it("sends disabled to the default model and to any model that accepts it", () => {
@@ -11,5 +11,14 @@ describe("thinkingFor (how each model is told not to think)", () => {
   it("sends between_tools to Sonnet 5.x, which rejects disabled with a 400", () => {
     expect(thinkingFor("claude-sonnet-5-5")).toEqual({ type: "between_tools" });
     expect(thinkingFor("claude-sonnet-5")).toEqual({ type: "between_tools" });
+  });
+});
+
+describe("AGENT limits", () => {
+  it("agent limits match the design", () => {
+    expect(AGENT.maxMatches).toBe(3);
+    expect(AGENT.riderNotesMax).toBe(200);
+    expect(AGENT.maxOptions).toBe(4);
+    expect(AGENT.tokenTtlMs).toBe(900_000);
   });
 });
