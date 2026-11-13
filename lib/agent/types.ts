@@ -1,3 +1,4 @@
+import type Anthropic from "@anthropic-ai/sdk";
 import type { Clock } from "../clock";
 import type { Trip } from "../trip";
 
@@ -45,3 +46,15 @@ export type ToolDef = {
   strict: true;
   input_schema: Record<string, unknown>;
 };
+
+export type ModelReply = {
+  content: Anthropic.ContentBlock[];
+  stop_reason: string | null;
+  usage: { input_tokens: number; output_tokens: number; cache_read_input_tokens?: number | null };
+};
+
+/** One model step: the conversation so far in, one forced tool call out. */
+export type AgentModel = (req: {
+  messages: Anthropic.MessageParam[];
+  signal: AbortSignal;
+}) => Promise<ModelReply>;
