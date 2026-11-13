@@ -5,6 +5,7 @@ import { TOOL_ERRORS } from "./errors";
 import { mergedMobility, mergeTrip } from "./merge";
 import { riderById } from "./riders";
 import { sign } from "./sign";
+import { vehicleClassFor } from "./vehicles";
 import type { MergedTrip, ToolContext, ToolDef, ToolResult } from "./types";
 import { checkWhen } from "./when";
 
@@ -56,7 +57,7 @@ export function proposeTrip(input: z.infer<typeof ProposeTripInput>, ctx: ToolCo
   if (ctx.parsed.dropoff_location === null) {
     return { content: TOOL_ERRORS.dropoffMissing, is_error: true };
   }
-  if (mergedMobility(ctx.parsed, rider).mobility.length === 0) {
+  if (vehicleClassFor(mergedMobility(ctx.parsed, rider).mobility) === null) {
     return { content: TOOL_ERRORS.mobilityUnknown, is_error: true };
   }
   const merged = mergeTrip(ctx.parsed, rider, {

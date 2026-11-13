@@ -92,6 +92,12 @@ describe("proposeTrip", () => {
     ).toEqual({ content: TOOL_ERRORS.mobilityUnknown, is_error: true });
   });
 
+  it("returns an error result when mobility is only other", () => {
+    const r = propose({}, testContext({ parsed: makeTrip({ mobility: ["other"] }) }));
+    expect(r).toEqual({ content: TOOL_ERRORS.mobilityUnknown, is_error: true });
+    expect(r.end).toBeUndefined();
+  });
+
   it("returns an error result for a trip that fails TripSchema", () => {
     const r = propose({}, testContext({ parsed: makeTrip({ pickup_location: "x".repeat(301) }) }));
     expect(r.is_error).toBe(true);

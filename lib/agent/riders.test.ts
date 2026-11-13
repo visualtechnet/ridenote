@@ -4,6 +4,10 @@ import { RIDERS, riderById, searchRiders } from "./riders";
 const ids = (q: string) => searchRiders(RIDERS, q).map((r) => r.id);
 
 describe("searchRiders", () => {
+  it("treats a tab or a line break as a space between words", () => {
+    expect(ids("maria\tlopez")).toEqual(["r1"]);
+    expect(ids("maria\nlopez")).toEqual(["r1"]);
+  });
   it("matches a first name and keeps fixture order", () => {
     expect(ids("maria")).toEqual(["r1", "r2"]);
   });

@@ -40,12 +40,13 @@ export const RIDERS: readonly Rider[] = [
   },
 ];
 
-/** Lower case, no accents, only letters, digits and spaces, split into words. */
+/** Lower case, no accents, only letters, digits and spaces (tabs and line breaks count as spaces), split into words. */
 function words(text: string): string[] {
   return text
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
+    .replace(/[\t\n\r]/g, " ")
     .replace(/[^\p{L}\p{N} ]/gu, "")
     .split(" ")
     .filter((w) => w !== "");

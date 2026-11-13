@@ -84,6 +84,10 @@ describe("sign and verify", () => {
       reason: "malformed",
     });
   });
+  it("fails closed when the clock is an invalid date", () => {
+    const token = sign({ exp }, secret);
+    expect(verify(token, secret, new Date(NaN))).toEqual({ ok: false, reason: "expired" });
+  });
   it("refuses to sign with a short secret", () => {
     expect(() => sign({ exp }, "short")).toThrow();
   });

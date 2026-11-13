@@ -64,6 +64,6 @@ export function verify<T extends { exp: number }>(
     return { ok: false, reason: "malformed" };
   }
   const typed = payload as T;
-  if (typed.exp <= now.getTime()) return { ok: false, reason: "expired" };
+  if (!(typed.exp > now.getTime())) return { ok: false, reason: "expired" };
   return { ok: true, payload: typed };
 }
