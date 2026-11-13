@@ -28,7 +28,7 @@ describe("proposeTrip", () => {
     expect(ok.content).toBe('{"draft_id":"draft-1"}');
     expect(ok.end).toMatchObject({ status: "proposed", draftId: "draft-1" });
     if (ok.end?.status !== "proposed") throw new Error("expected a proposed end");
-    const verified = verify<DraftPayload>(ok.end.draft, ctx.secret, ctx.clock.now);
+    const verified = verify<DraftPayload>(ok.end.draft, ctx.secret, ctx.clock.now, "draft");
     expect(verified).toMatchObject({
       ok: true,
       payload: {
@@ -59,6 +59,7 @@ describe("proposeTrip", () => {
         ok.end.draft.replace(/.$/, (c) => (c === "A" ? "B" : "A")),
         ctx.secret,
         ctx.clock.now,
+        "draft",
       ).ok,
     ).toBe(false);
   });

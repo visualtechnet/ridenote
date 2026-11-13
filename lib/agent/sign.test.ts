@@ -31,62 +31,100 @@ describe("canonicalJson", () => {
 });
 
 describe("sign and verify", () => {
-  const token = sign({ exp, draft_id: "d1" }, secret);
+  const token = sign({ exp, kind: "draft", draft_id: "d1" }, secret);
 
   it("round-trips a payload", () => {
-    expect(verify(token, secret, now)).toEqual({ ok: true, payload: { exp, draft_id: "d1" } });
+    expect(verify(token, secret, now, "draft")).toEqual({
+      ok: true,
+      payload: { exp, kind: "draft", draft_id: "d1" },
+    });
   });
   it("does not depend on key order", () => {
-    expect(sign({ draft_id: "d1", exp }, secret)).toBe(token);
+    expect(sign({ draft_id: "d1", kind: "draft", exp }, secret)).toBe(token);
   });
   it("rejects one changed character in the payload part", () => {
-    expect(verify(flipChar(token, 3), secret, now)).toEqual({ ok: false, reason: "bad_signature" });
+    expect(verify(flipChar(token, 3), secret, now, "draft")).toEqual({
+      ok: false,
+      reason: "bad_signature",
+    });
   });
   it("rejects one changed character in the signature part", () => {
-    expect(verify(flipChar(token, token.length - 2), secret, now)).toEqual({
+    expect(verify(flipChar(token, token.length - 2), secret, now, "draft")).toEqual({
       ok: false,
       reason: "bad_signature",
     });
   });
   it("rejects a different secret", () => {
-    expect(verify(token, "t".repeat(32), now)).toEqual({ ok: false, reason: "bad_signature" });
+    expect(verify(token, "t".repeat(32), now, "draft")).toEqual({
+      ok: false,
+      reason: "bad_signature",
+    });
   });
   it("rejects a signature of the wrong length", () => {
     const [body] = token.split(".");
-    expect(verify(`${body}.AAAA`, secret, now)).toEqual({ ok: false, reason: "bad_signature" });
+    expect(verify(`${body}.AAAA`, secret, now, "draft")).toEqual({
+      ok: false,
+      reason: "bad_signature",
+    });
   });
   it("expires at exp, not before", () => {
-    expect(verify(token, secret, new Date(exp))).toEqual({ ok: false, reason: "expired" });
-    expect(verify(token, secret, new Date(exp - 1)).ok).toBe(true);
+    expect(verify(token, secret, new Date(exp), "draft")).toEqual({ ok: false, reason: "expired" });
+    expect(verify(token, secret, new Date(exp - 1), "draft").ok).toBe(true);
   });
   it.each(["", "abc", "a.b.c", ".", "a.", ".b", "!!!.???"])("the text %j is malformed", (t) =>
-    expect(verify(t, secret, now)).toEqual({ ok: false, reason: "malformed" }),
+    expect(verify(t, secret, now, "draft")).toEqual({ ok: false, reason: "malformed" }),
   );
   it("rejects a correctly signed token that is not an object payload", () => {
-    expect(verify(signRaw('"text"', secret), secret, now).ok).toBe(false);
-    expect(verify(signRaw("null", secret), secret, now)).toEqual({
+    expect(verify(signRaw('"text"', secret), secret, now, "draft").ok).toBe(false);
+    expect(verify(signRaw("null", secret), secret, now, "draft")).toEqual({
       ok: false,
       reason: "malformed",
     });
-    expect(verify(signRaw("[1]", secret), secret, now)).toEqual({ ok: false, reason: "malformed" });
-    expect(verify(signRaw("not json", secret), secret, now)).toEqual({
+    expect(verify(signRaw("[1]", secret), secret, now, "draft")).toEqual({
+      ok: false,
+      reason: "malformed",
+    });
+    expect(verify(signRaw("not json", secret), secret, now, "draft")).toEqual({
       ok: false,
       reason: "malformed",
     });
   });
   it("rejects a correctly signed payload with no numeric exp", () => {
-    expect(verify(signRaw('{"draft_id":"d1"}', secret), secret, now)).toEqual({
+    expect(verify(signRaw('{"draft_id":"d1"}', secret), secret, now, "draft")).toEqual({
       ok: false,
       reason: "malformed",
     });
-    expect(verify(signRaw('{"exp":"soon"}', secret), secret, now)).toEqual({
+    expect(verify(signRaw('{"exp":"soon"}', secret), secret, now, "draft")).toEqual({
       ok: false,
       reason: "malformed",
     });
   });
   it("fails closed when the clock is an invalid date", () => {
-    const token = sign({ exp }, secret);
-    expect(verify(token, secret, new Date(NaN))).toEqual({ ok: false, reason: "expired" });
+    const token = sign({ exp, kind: "draft" }, secret);
+    expect(verify(token, secret, new Date(NaN), "draft")).toEqual({ ok: false, reason: "expired" });
+  });
+  it("rejects a token of the other kind", () => {
+    const resume = sign({ exp, kind: "resume" }, secret);
+    expect(verify(resume, secret, now, "draft")).toEqual({ ok: false, reason: "malformed" });
+    expect(verify(token, secret, now, "resume")).toEqual({ ok: false, reason: "malformed" });
+  });
+  it("rejects a token signed with no kind", () => {
+    expect(verify(sign({ exp }, secret), secret, now, "draft")).toEqual({
+      ok: false,
+      reason: "malformed",
+    });
+  });
+  it("rejects every token when the secret is too short, even one forged with that secret", () => {
+    const short = "s".repeat(31);
+    const forged = signRaw(JSON.stringify({ exp, kind: "draft" }), "");
+    const forgedShort = signRaw(JSON.stringify({ exp, kind: "draft" }), short);
+    expect(verify(token, "", now, "draft")).toEqual({ ok: false, reason: "bad_signature" });
+    expect(verify(forged, "", now, "draft")).toEqual({ ok: false, reason: "bad_signature" });
+    expect(verify(token, short, now, "draft")).toEqual({ ok: false, reason: "bad_signature" });
+    expect(verify(forgedShort, short, now, "draft")).toEqual({
+      ok: false,
+      reason: "bad_signature",
+    });
   });
   it("refuses to sign with a short secret", () => {
     expect(() => sign({ exp }, "short")).toThrow();

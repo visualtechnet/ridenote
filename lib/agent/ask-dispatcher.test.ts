@@ -6,7 +6,10 @@ import {
   checkResumeChoice,
   type AskOption,
 } from "./ask-dispatcher";
+import { AGENT } from "../config";
 import { TOOL_ERRORS } from "./errors";
+import { sign } from "./sign";
+import { proposeTrip } from "./propose-trip";
 import { testContext } from "./test-context";
 
 const ctx = testContext();
@@ -39,6 +42,28 @@ describe("askDispatcher", () => {
     expect(
       askDispatcher({ question: "Who?", options: [{ label: "Someone", rider_id: "r9" }] }, ctx),
     ).toEqual({ content: TOOL_ERRORS.unknownRider("r9"), is_error: true });
+  });
+
+  it("writes the label of a rider option from the rider file, not from the model", () => {
+    const asked = askDispatcher(
+      { question: "Who?", options: [{ label: "María López", rider_id: "r2" }] },
+      ctx,
+    );
+    if (asked.end?.status !== "needs_info") throw new Error("expected a needs_info end");
+    expect(asked.end.options).toEqual([{ label: "Maria Santos, 48 Birch Ave", rider_id: "r2" }]);
+    const checked = checkResumeChoice(asked.end.resume, 0, ctx.secret, ctx.clock.now);
+    expect(checked).toMatchObject({
+      ok: true,
+      option: { label: "Maria Santos, 48 Birch Ave", rider_id: "r2" },
+    });
+  });
+
+  it("keeps the model's label for an option with no rider", () => {
+    const asked = askDispatcher(
+      { question: "When?", options: [{ label: "9:00 AM", rider_id: null }] },
+      ctx,
+    );
+    expect(asked.end).toMatchObject({ options: [{ label: "9:00 AM", rider_id: null }] });
   });
 
   it("accepts an option with no rider", () => {
@@ -77,11 +102,42 @@ describe("checkResumeChoice", () => {
     expect(checkResumeChoice(resumeToken() + "x", 0, ctx.secret, ctx.clock.now).ok).toBe(false);
   });
 
+  it("rejects a draft token without throwing", () => {
+    const proposed = proposeTrip(
+      { rider_id: "r1", pickup_date: "2026-11-03", pickup_time: "09:00", reasons: [] },
+      testContext({
+        parsed: { ...ctx.parsed, dropoff_location: "County Hospital", mobility: ["wheelchair"] },
+      }),
+    );
+    if (proposed.end?.status !== "proposed") throw new Error("expected a proposed end");
+    expect(checkResumeChoice(proposed.end.draft, 0, ctx.secret, ctx.clock.now)).toEqual({
+      ok: false,
+      reason: "malformed",
+    });
+  });
+
+  it("rejects a resume token whose options are not a list", () => {
+    const token = sign(
+      { kind: "resume", options: "r1", exp: ctx.clock.now.getTime() + 1000 },
+      ctx.secret,
+    );
+    expect(checkResumeChoice(token, 0, ctx.secret, ctx.clock.now)).toEqual({
+      ok: false,
+      reason: "malformed",
+    });
+  });
+
   it("rejects a malformed token", () => {
     expect(checkResumeChoice("junk", 0, ctx.secret, ctx.clock.now)).toEqual({
       ok: false,
       reason: "malformed",
     });
+  });
+});
+
+describe("askDispatcherDef", () => {
+  it("states the option count from config", () => {
+    expect(askDispatcherDef.description).toContain(`1 to ${AGENT.maxOptions} options`);
   });
 });
 

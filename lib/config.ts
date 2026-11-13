@@ -35,6 +35,7 @@ export const AGENT = {
   maxReasons: 5, // reasons in propose_trip
   reasonMax: 120,
   tokenTtlMs: 15 * 60_000, // drafts and resume tokens
+  issueMax: 200, // characters of a validation message sent back to the model
   secretMinLength: 32,
   serviceDownDayOfMonth: 13, // the fake vehicle service fails on this day
 } as const;

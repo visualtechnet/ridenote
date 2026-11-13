@@ -14,6 +14,9 @@ export function canonicalJson(value: unknown): string {
   });
 }
 
+/** What a signed token is for. A token of one kind is never accepted as the other. */
+export type TokenKind = "draft" | "resume";
+
 const hmac = (body: string, secret: string) =>
   createHmac("sha256", secret).update(body).digest("base64url");
 
@@ -38,7 +41,9 @@ export function verify<T extends { exp: number }>(
   token: string,
   secret: string,
   now: Date,
+  kind: TokenKind,
 ): Verified<T> {
+  if (secret.length < AGENT.secretMinLength) return { ok: false, reason: "bad_signature" };
   const parts = token.split(".");
   if (parts.length !== 2 || !parts.every((p) => PART.test(p))) {
     return { ok: false, reason: "malformed" };
@@ -63,6 +68,7 @@ export function verify<T extends { exp: number }>(
   ) {
     return { ok: false, reason: "malformed" };
   }
+  if ((payload as { kind?: unknown }).kind !== kind) return { ok: false, reason: "malformed" };
   const typed = payload as T;
   if (!(typed.exp > now.getTime())) return { ok: false, reason: "expired" };
   return { ok: true, payload: typed };

@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { z } from "zod";
+import { AGENT } from "../config";
 import { makeTrip } from "../../tests/test-utils";
 import { askDispatcherDef, AskDispatcherInput } from "./ask-dispatcher";
 import { checkVehicleDef, CheckVehicleInput } from "./check-vehicle";
@@ -108,6 +109,29 @@ describe("runTool", () => {
     expect(runTool("find_rider", "maria", ctx).content).toMatch(
       /^Invalid input for find_rider: input: /,
     );
+  });
+
+  it("cuts the issue text so a huge key is not echoed", () => {
+    const r = runTool("find_rider", { ["k".repeat(5000)]: 1, name: "maria" }, ctx);
+    expect(r.is_error).toBe(true);
+    expect(r.content.length).toBeLessThan(300);
+  });
+
+  it.each([null, undefined, 42, {}])(
+    "a tool name of %j is an error result, not a throw",
+    (name) => {
+      const r = runTool(name as unknown as string, {}, ctx);
+      expect(r.is_error).toBe(true);
+      expect(r.content).toMatch(/^Unknown tool /);
+    },
+  );
+
+  it("states the numbers in the descriptions from config", () => {
+    expect(findRiderDef.description).toContain(`up to ${AGENT.maxMatches} matches`);
+    const reasons = (
+      proposeTripDef.input_schema.properties as Record<string, { description: string }>
+    ).reasons;
+    expect(reasons.description).toContain(`Up to ${AGENT.maxReasons}`);
   });
 
   it("names the field that failed", () => {

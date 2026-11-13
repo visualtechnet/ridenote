@@ -19,6 +19,7 @@ describe("AGENT limits", () => {
     expect(AGENT.maxMatches).toBe(3);
     expect(AGENT.riderNotesMax).toBe(200);
     expect(AGENT.maxOptions).toBe(4);
+    expect(AGENT.issueMax).toBe(200);
     expect(AGENT.tokenTtlMs).toBe(900_000);
   });
 });

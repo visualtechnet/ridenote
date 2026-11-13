@@ -10,6 +10,7 @@ export type { AskOption } from "./types";
 
 export type ResumePayload = {
   v: 1;
+  kind: "resume";
   run_id: string;
   parsed: Trip;
   question: string;
@@ -65,23 +66,30 @@ export function askDispatcher(
   input: z.infer<typeof AskDispatcherInput>,
   ctx: ToolContext,
 ): ToolResult {
+  const options: AskOption[] = [];
   for (const option of input.options) {
-    if (option.rider_id !== null && !riderById(ctx.riders, option.rider_id)) {
-      return { content: TOOL_ERRORS.unknownRider(option.rider_id), is_error: true };
+    if (option.rider_id === null) {
+      options.push(option);
+      continue;
     }
+    const rider = riderById(ctx.riders, option.rider_id);
+    if (!rider) return { content: TOOL_ERRORS.unknownRider(option.rider_id), is_error: true };
+    // The dispatcher reads the label and the code resumes with the id, so the file writes the label.
+    options.push({ label: `${rider.name}, ${rider.home}`, rider_id: rider.id });
   }
   const payload: ResumePayload = {
     v: 1,
+    kind: "resume",
     run_id: ctx.runId,
     parsed: ctx.parsed,
     question: input.question,
-    options: input.options,
+    options,
     exp: ctx.clock.now.getTime() + AGENT.tokenTtlMs,
   };
   const resume = sign(payload, ctx.secret);
   return {
     content: JSON.stringify({ asked: true }),
-    end: { status: "needs_info", question: input.question, options: input.options, resume },
+    end: { status: "needs_info", question: input.question, options, resume },
   };
 }
 
@@ -93,8 +101,9 @@ export function checkResumeChoice(
 ):
   | { ok: true; payload: ResumePayload; option: AskOption }
   | { ok: false; reason: "malformed" | "bad_signature" | "expired" | "not_offered" } {
-  const verified = verify<ResumePayload>(token, secret, now);
+  const verified = verify<ResumePayload>(token, secret, now, "resume");
   if (!verified.ok) return verified;
+  if (!Array.isArray(verified.payload.options)) return { ok: false, reason: "malformed" };
   const option = Number.isInteger(choice) ? verified.payload.options[choice] : undefined;
   if (option === undefined) return { ok: false, reason: "not_offered" };
   return { ok: true, payload: verified.payload, option };

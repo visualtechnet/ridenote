@@ -11,6 +11,7 @@ import { checkWhen } from "./when";
 
 export type DraftPayload = {
   v: 1;
+  kind: "draft";
   draft_id: string;
   run_id: string;
   trip: Trip;
@@ -74,6 +75,7 @@ export function proposeTrip(input: z.infer<typeof ProposeTripInput>, ctx: ToolCo
   const draftId = ctx.newId();
   const payload: DraftPayload = {
     v: 1,
+    kind: "draft",
     draft_id: draftId,
     run_id: ctx.runId,
     trip: merged.trip,
