@@ -38,6 +38,11 @@ export const AGENT = {
   issueMax: 200, // characters of a validation message sent back to the model
   secretMinLength: 32,
   serviceDownDayOfMonth: 13, // the fake vehicle service fails on this day
+  maxSteps: 6, // model calls in one agent run
+  maxRunTokens: 20_000, // input plus output tokens across one run
+  maxStepTokens: 400, // output tokens allowed in one model call
+  deadlineMs: 60_000, // wall-clock limit for one run
+  maxToolErrors: 3, // tool errors in one run before it stops
 } as const;
 
 export const RATE_LIMIT = {

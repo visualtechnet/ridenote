@@ -22,4 +22,12 @@ describe("AGENT limits", () => {
     expect(AGENT.issueMax).toBe(200);
     expect(AGENT.tokenTtlMs).toBe(900_000);
   });
+
+  it("agent loop limits match the design", () => {
+    expect(AGENT.maxSteps).toBe(6);
+    expect(AGENT.maxRunTokens).toBe(20_000);
+    expect(AGENT.maxStepTokens).toBe(400);
+    expect(AGENT.deadlineMs).toBe(60_000);
+    expect(AGENT.maxToolErrors).toBe(3);
+  });
 });

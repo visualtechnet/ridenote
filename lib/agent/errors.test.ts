@@ -12,6 +12,8 @@ describe("TOOL_ERRORS", () => {
       TOOL_ERRORS.serviceDown,
       TOOL_ERRORS.dateRejected("That date is in the past."),
       TOOL_ERRORS.dropoffMissing,
+      TOOL_ERRORS.notLookedUp("r1"),
+      TOOL_ERRORS.endedAlready,
     ];
     for (const m of messages) expect(m).toMatch(/call|fix|use/i);
   });
@@ -47,5 +49,10 @@ describe("TOOL_ERRORS", () => {
     expect(TOOL_ERRORS.noRider("x".repeat(500)).length).toBeLessThan(200);
     expect(TOOL_ERRORS.unknownRider("y".repeat(500)).length).toBeLessThan(200);
     expect(TOOL_ERRORS.unknownTool("z".repeat(500)).length).toBeLessThan(250);
+    expect(TOOL_ERRORS.notLookedUp("x".repeat(500)).length).toBeLessThan(200);
+  });
+
+  it("tells the model to call find_rider when an id was not looked up", () => {
+    expect(TOOL_ERRORS.notLookedUp("r1")).toContain("find_rider");
   });
 });

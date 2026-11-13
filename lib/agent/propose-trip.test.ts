@@ -1,4 +1,6 @@
 /** @jest-environment node */
+import { AGENT } from "../config";
+import { TripSchema } from "../trip";
 import { makeTrip } from "../../tests/test-utils";
 import { TOOL_ERRORS } from "./errors";
 import { proposeTrip, proposeTripDef, ProposeTripInput, type DraftPayload } from "./propose-trip";
@@ -104,6 +106,22 @@ describe("proposeTrip", () => {
     expect(r.is_error).toBe(true);
     expect(r.content).toMatch(/^Invalid input for propose_trip: /);
     expect(r.end).toBeUndefined();
+  });
+
+  it("cuts a long trip validation message to the issue limit", () => {
+    const spy = jest.spyOn(TripSchema, "safeParse").mockReturnValue({
+      success: false,
+      error: { issues: [{ message: "m".repeat(500) }] },
+    } as unknown as ReturnType<typeof TripSchema.safeParse>);
+    try {
+      const r = propose();
+      expect(r.is_error).toBe(true);
+      expect(r.content.length).toBeLessThanOrEqual(
+        TOOL_ERRORS.invalidInput("propose_trip", "").length + AGENT.issueMax,
+      );
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("has no store to write to", () => {
