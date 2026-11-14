@@ -161,6 +161,40 @@ Not for an implementer. It spends API credit (estimated well under $0.50: about 
 - [ ] **Step 3: Read the table, not just the verdicts.** Note for each failing case which tool it called wrongly, any `no vehicle check` flag, the steps and tokens against the limits (6 steps, 20,000 tokens, 400 per step), and whether `cut_off` or `no_tool_call` ever appeared.
 - [ ] **Step 4: Commit** the results file with `git commit -m "docs: first live agent eval results"` and put the findings in the PR description. Changing any limit, the prompt or the guard is a separate decision for Mark.
 
+### Task 6: Beginner documentation for the tools, the loop and the evals
+
+Added after the plan was approved, on Mark's request: everything built so far (week 4 tools, week 5 loop core, these evals) needs documentation for readers who are new to AI. Do this task after Task 4, so the docs describe code that exists. It is a docs task; it changes no behaviour.
+
+**Files:**
+
+- Create: `docs/AGENT.md`, `app/docs/agent/page.tsx`, `app/docs/agent/page.test.tsx`
+- Modify: `lib/routes.ts` (a `docsAgent: "/docs/agent"` route), `components/SideNav.tsx` (a Docs entry), `README.md` (a row in the docs table, the `eval:agent` commands, `AGENT_MODEL` and `EVAL_MAX_USD` in the variables list), and any test that lists docs pages or routes.
+
+**Interfaces:**
+
+- Consumes: `readDoc("AGENT")` from `lib/docs-source.ts`; `Markdown` from `components/Markdown`. Follow `app/docs/eval/page.tsx` and its test for the page pattern, and the existing nav entry for `/docs/agents` for the nav pattern.
+
+**Audience and tone.** The readers are new to AI. They have never built an agent, and they do not know what a token, a tool call or an eval is. Write in plain language, short sentences and everyday examples, without talking down. Explain each idea the first time it appears, and say why it exists, not only what it does. Technical terms get one plain sentence at first use and an entry in the glossary. No claim about the code may be written from memory: read the file and copy the real numbers and names. Say plainly what is built and what is not.
+
+**`docs/AGENT.md` must cover, in this order** (use headings, a few small tables, and one worked example, not a wall of text):
+
+1. **What this is.** RideNote turns a dispatcher's note into a trip. Parse is a fixed recipe (one model call, then checks). An agent is different: the model can look things up and choose what to do next. Why RideNote has both, and why the agent never saves anything by itself (a person approves).
+2. **A run, step by step.** Walk the "Maria to County Hospital tomorrow at 9am" example (two Marias): what the model asks for, what the code does, what comes back, how it ends in a question. A table with one row per step.
+3. **The four tools.** What each is for and when it ends the run. Plain-language versions of: strict schemas, Zod checking, "the model chooses actions, code decides facts" (why `propose_trip` takes only a `rider_id`), and why a tool never throws (it returns an error message the model can read and act on).
+4. **The loop.** The cycle in plain words (ask the model, run the tool it chose, give the answer back, repeat), and why a loop needs brakes. A table of every limit with its real value and the reason it exists (steps, tokens per run, tokens per step, time, repeated errors), and a table of every way a run can end with a plain-language meaning (`proposed`, `needs_info`, and each `failed` reason). What happens when the model returns plain text instead of calling a tool.
+5. **Staying safe.** Prompt injection explained with the planted note in a rider's file and the instruction hidden in a dispatcher's note; the guard that only accepts rider ids returned by a lookup in the same run; first ending call wins; nothing writes; the human approves; what the step records contain and what they never contain.
+6. **Replay.** Why every step is recorded and what replaying a run is for.
+7. **Evals: testing an agent.** What an eval is and why an agent is tested differently from a normal function (the answer can be right while the path is dangerous; the model is not perfectly repeatable). The difference between the free scripted tests and the live evals that cost a little. The nine cases in a table in plain words, what the star (critical) means, why critical cases run three times, what the results table columns mean, the spend guard, how to run it (`npm run eval:agent:key`), and how to read a failure. Say that cost figures are estimates from a price table with a date.
+8. **Words you will meet.** A glossary: model, prompt, system prompt, token, tool, tool call, schema, Zod, loop, step, stop reason, guard, prompt injection, fixture, eval, flaky, critical case, replay.
+9. **Check yourself.** Plain-language answers to the six "Check yourself" questions in `docs/superpowers/specs/2026-10-29-dispatch-agent-design.md` (the section named "Check yourself" answers).
+10. **What is built and what is not yet.** A status table (tools, loop, evals, route and page, Approve, performance docs) and a map of where each piece lives in the code (`lib/agent/…`, `evals/…`).
+
+- [ ] **Step 1: Write the failing tests.** `app/docs/agent/page.test.tsx` renders the page and asserts the heading, one sentence from each of the ten sections' headings, and that it links nothing broken; follow the existing docs page tests. Add or extend whichever existing test lists the docs routes or the nav so it includes `/docs/agent`. Add a test (beside the doc tests that already exist) that `docs/AGENT.md` mentions every `AGENT` limit value from `lib/config.ts` by number and every nine eval case name from `evals/agent-cases.ts`, so the doc cannot drift from the code.
+- [ ] **Step 2: Run** `npx jest app/docs tests`. Expected: the new tests FAIL.
+- [ ] **Step 3: Write** `docs/AGENT.md` and the page, route, nav entry and README changes described above.
+- [ ] **Step 4: Run** `npm run check` and `npm run test:e2e`. Expected: both exit 0 and the browser test count is unchanged or higher with no failures. Run `npm run build` once: the build fails on a missing or empty doc.
+- [ ] **Step 5: Commit.** `git commit -m "docs: a beginner's guide to the agent, its loop and its evals"`
+
 ---
 
 ## Requirement coverage
