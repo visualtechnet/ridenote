@@ -139,7 +139,16 @@ describe("key scripts and their documentation", () => {
 
   it("package.json defines every key command", () => {
     expect(keyScripts.sort()).toEqual(
-      ["dev:key", "eval:key", "key", "key:remove", "key:set", "key:status", "start:key"].sort(),
+      [
+        "dev:key",
+        "eval:agent:key",
+        "eval:key",
+        "key",
+        "key:remove",
+        "key:set",
+        "key:status",
+        "start:key",
+      ].sort(),
     );
   });
 

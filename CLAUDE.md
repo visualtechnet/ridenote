@@ -14,6 +14,7 @@ npx jest lib/extract   # single test file (path pattern); add -t "name" for one 
 npm run test:coverage  # jest has a coverage floor (98/95/98/98): the run fails if it erodes
 npm run test:e2e       # Playwright (first run: npx playwright install chromium)
 npm run eval           # live accuracy eval against the real model (spends API credit; `eval:key` uses the Keychain key)
+npm run eval:agent     # live agent eval only (spends API credit, capped by EVAL_MAX_USD, default 1; `eval:agent:key` uses the Keychain key)
 npm run format         # prettier --write
 ```
 

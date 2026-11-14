@@ -145,15 +145,16 @@ written to a file or shown on screen. The Keychain entry is called `ridenote-dem
 
 These commands all use the saved key, so you never type a key or an entry name:
 
-| Command              | What it does                                                        |
-| -------------------- | ------------------------------------------------------------------- |
-| `npm run dev:key`    | Start the development server (asks for the key the first time)      |
-| `npm run start:key`  | Start the production server (after `npm run build`)                 |
-| `npm run eval:key`   | Run the live accuracy eval                                          |
-| `npm run key:status` | Say whether a key is saved (never shows it)                         |
-| `npm run key:set`    | Save a new key, replacing the old one (for example when it expires) |
-| `npm run key:remove` | Delete the saved key                                                |
-| `npm run key`        | List these commands                                                 |
+| Command                  | What it does                                                        |
+| ------------------------ | ------------------------------------------------------------------- |
+| `npm run dev:key`        | Start the development server (asks for the key the first time)      |
+| `npm run start:key`      | Start the production server (after `npm run build`)                 |
+| `npm run eval:key`       | Run the live accuracy eval                                          |
+| `npm run eval:agent:key` | Run the live agent eval only                                        |
+| `npm run key:status`     | Say whether a key is saved (never shows it)                         |
+| `npm run key:set`        | Save a new key, replacing the old one (for example when it expires) |
+| `npm run key:remove`     | Delete the saved key                                                |
+| `npm run key`            | List these commands                                                 |
 
 Good to know:
 
