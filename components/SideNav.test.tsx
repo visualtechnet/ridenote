@@ -105,7 +105,7 @@ describe("SideNav", () => {
       }
     });
 
-    it("lists Setup, Eval, FAQ, Agents and Agent guide under Docs on every documentation page", () => {
+    it("lists Setup, Eval, FAQ, Agents and How the agent works under Docs on every documentation page", () => {
       for (const page of [
         "docs",
         "docsEval",
@@ -141,7 +141,7 @@ describe("SideNav", () => {
       }
     });
 
-    it("marks only the Agent guide current on its own page, not Agents", () => {
+    it("marks only the How the agent works current on its own page, not Agents", () => {
       pathname = Routes.page("docsAgent");
       render(<SideNav />);
       expect(screen.getByRole("link", { name: COPY.navDocsAgent })).toHaveAttribute(

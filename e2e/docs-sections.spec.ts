@@ -9,7 +9,7 @@ const submenu = (page: import("@playwright/test").Page) =>
   page.getByRole("list", { name: "Documentation sections" });
 
 test.describe("documentation sections", () => {
-  test("the submenu is absent elsewhere and appears under Docs, with Setup, Eval, FAQ, Agents and Agent guide", async ({
+  test("the submenu is absent elsewhere and appears under Docs, with Setup, Eval, FAQ, Agents and How the agent works", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -23,7 +23,7 @@ test.describe("documentation sections", () => {
       "Eval",
       "FAQ",
       "Agents",
-      "Agent guide",
+      "How the agent works",
     ]);
   });
 
@@ -123,17 +123,17 @@ test.describe("documentation sections", () => {
       "Eval",
       "FAQ",
       "Agents",
-      "Agent guide",
+      "How the agent works",
     ]);
     await submenu(page).getByRole("link", { name: "FAQ" }).click();
     await expect(page).toHaveURL(Routes.page("docsFaq"));
     await expect(mainNav(page)).toBeHidden();
   });
 
-  test("the Agent guide opens from the submenu", async ({ page }) => {
+  test("the How the agent works opens from the submenu", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(Routes.page("docs"));
-    await submenu(page).getByRole("link", { name: "Agent guide" }).click();
+    await submenu(page).getByRole("link", { name: "How the agent works" }).click();
     await expect(page).toHaveURL(Routes.page("docsAgent"));
     await expect(
       page.getByRole("heading", { level: 1, name: "The agent, its loop and its evals" }),

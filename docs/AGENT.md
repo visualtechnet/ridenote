@@ -2,12 +2,13 @@
 
 This page explains the part of RideNote that is new: an **agent** that can look things up before it
 answers, the **loop** that runs it, and the **evals** that test it. It is written for someone who has
-never built one. Every number and name here was copied from the code, and a test fails the build if
-they drift apart.
+never built one. The key numbers and names here were copied from the code, and a test checks that they
+appear on this page. It does not check every sentence, so read the code if something matters.
 
 A word on honesty first. The tools, the loop, the safety guards, replay and the eval harness are built
 and tested. The web route that streams a run to a page, the Approve button, the page itself and the
-per-step timeout are **not built yet**. The live eval has **not been run against the real model yet**,
+per-step timeout are **not built yet**. This page describes work that sits on open pull requests, which must merge in
+order: the tools first, then the loop, then the evals and this page. The live eval has **not been run against the real model yet**,
 so this page shows no results and invents none. See [What is built and what is not yet](#what-is-built-and-what-is-not-yet).
 
 ## What this is
@@ -46,17 +47,17 @@ checked trip. The agent does not do the parsing. It starts from a good draft and
 ## A run, step by step
 
 A **run** is one trip through the agent, from the note to an ending. Here it is for the note
-**"Maria to County Hospital tomorrow at 9am"**. The rider file (all invented people) holds two Marias:
+**"Maria to County Hospital tomorrow at 9am"**. The rider file (a small fixture of invented people the tools search) holds two Marias:
 María López (`r1`, uses a wheelchair) and Maria Santos (`r2`, uses a walker).
 
 The model never touches anything itself. It _asks_ for a tool, our code _runs_ it, and the answer goes
 back to the model. That is the whole idea.
 
-| Step                | What the model asks for                                          | What our code does                                                                                         | What comes back                                                                       |
-| ------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| 0 (before the loop) | Nothing. This is the fixed Parse step.                           | Sends the note to the AI once and checks the answer.                                                       | A clean trip: passenger "Maria", drop-off "County Hospital", date and time filled in. |
-| 1                   | `find_rider` with the name "Maria"                               | Searches the rider file. Accents and capital letters are ignored, so "Maria" matches both.                 | A list of two riders, each with an id, address, mobility on file and notes.           |
-| 2                   | `ask_dispatcher`: "Which Maria?" with two options, `r1` and `r2` | Replaces each option's label with the file's own name and address, signs a resume token, and ends the run. | The run ends with status `needs_info`: a question and two options.                    |
+| Step                | What the model asks for                                          | What our code does                                                                                                                                                                                                                | What comes back                                                                                                     |
+| ------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 0 (before the loop) | Nothing. This is the fixed Parse step.                           | Sends the note to the AI once and checks the answer.                                                                                                                                                                              | A clean trip: passenger "Maria", drop-off "County Hospital", date and time filled in.                               |
+| 1                   | `find_rider` with the name "Maria"                               | Searches the rider file. Accents and capital letters are ignored, so "Maria" matches both.                                                                                                                                        | A list of two riders, each with an id, address, mobility on file and notes.                                         |
+| 2                   | `ask_dispatcher`: "Which Maria?" with two options, `r1` and `r2` | Replaces each option's label with the file's own name and address, signs a resume token (a tamper-proof string that lets a later run pick up from the answer; see [Words you will meet](#words-you-will-meet)), and ends the run. | The run ends with status `needs_info` (the agent needs more information from a person): a question and two options. |
 
 Why not simply pick one? A wrong Maria means the wrong person at the wrong address, so the rule is
 "never pick between riders yourself". The question is the safe answer. The dispatcher chooses, and
@@ -120,8 +121,10 @@ as "No rider matches 'Hector'. Check the spelling, or call ask_dispatcher." mark
 
 Why? A crash would end the whole run and the model would learn nothing. An error message the model can
 read lets it recover: fix the input, try again, or ask the dispatcher. Every message says what went
-wrong and what to try next. The one place that does throw is a signing secret that is too short, and
-that is a set-up mistake by whoever configures the server, not something the model did.
+wrong and what to try next. One thing can still throw inside a tool: a signing secret that is too
+short. The loop catches even that and turns it into an ordinary error result, so a bad secret shows up
+as a confusing tool failure rather than a clear set-up error (see the status table: there is no
+start-up check yet).
 
 ## The loop
 
@@ -133,23 +136,26 @@ The **loop** is the cycle that runs the agent:
 4. Repeat, until a tool ends the run or a limit stops it.
 
 Each pass is a **step**. Because the model has no memory between calls, every call re-sends the whole
-conversation so far. So **later steps cost more than earlier ones**: the input grows each time.
+conversation so far to the **API** (the service our code calls to reach the model). Models are billed
+by **tokens**, small pieces of text the model reads or writes, so **later steps cost more than earlier
+ones**: the input grows each time. These tokens are unrelated to the signed draft and resume tokens
+used for approval, which are tamper-proof strings.
 
 A loop with no brakes is dangerous. A confused model could call tools forever and run up a bill, or
 hang for minutes. So the loop has limits. They come from `lib/config.ts`, in the `AGENT` block.
 
 ### The limits
 
-A **token** is a small piece of text the model reads or writes: roughly three quarters of a word.
-Models are billed by tokens, so counting them is counting money.
+A **token** here means the model's kind: a small piece of text, roughly three quarters of a word.
+Counting them is counting money. (Not to be confused with a signed draft or resume token.)
 
-| Limit                                  | Value            | Why it exists                                                                                                                             |
-| -------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Steps (model calls) in one run         | 6 steps          | A normal run needs two or three. Six leaves room to recover from an error and stops a runaway loop.                                       |
-| Tokens in one run (input plus output)  | 20,000 tokens    | A hard cap on cost. It is about three and a half times a typical run, so the step cap usually trips first and this one catches odd cases. |
-| Tokens the model may write in one step | 400 tokens       | A tool call is short. A small cap stops a rambling or manipulated answer from costing much.                                               |
-| Time for the whole run                 | 60 seconds       | A run must not hang. The clock also cancels a model call that is still waiting.                                                           |
-| Failed steps in a row                  | 3 steps in a row | If every call in 3 steps in a row is an error, the model is stuck. Stop instead of looping.                                               |
+| Limit                                  | Value            | Why it exists                                                                                                                                                                              |
+| -------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Steps (model calls) in one run         | 6 steps          | The design estimated a normal run at two or three. Six leaves room to recover from an error and stops a runaway loop.                                                                      |
+| Tokens in one run (input plus output)  | 20,000 tokens    | A hard cap on cost. The design estimated this at about 3.5 times a typical run (an estimate, not a measurement), so the step cap should usually trip first and this one catches odd cases. |
+| Tokens the model may write in one step | 400 tokens       | A tool call is short. A small cap stops a rambling or manipulated answer from costing much.                                                                                                |
+| Time for the whole run                 | 60 seconds       | A run must not hang. The clock also cancels a model call that is still waiting.                                                                                                            |
+| Failed steps in a row                  | 3 steps in a row | If every call in 3 steps in a row is an error, the model is stuck. Stop instead of looping.                                                                                                |
 
 The checks happen before each step, so a run can finish the step it is on and then stop. The default
 model is `claude-haiku-5-5` (a small, fast, cheap model). It can be changed with the `AGENT_MODEL`
@@ -159,7 +165,7 @@ call.
 
 ### How a run can end
 
-Every run ends with a **stop reason** (the code calls the outcome a `status`). Two are good. The rest
+Every run ends with an outcome the code calls its `status`. (Do not confuse it with the `stop_reason` of a single model reply, which only says why that one reply stopped.) Two are good. The rest
 are failures, each with a name that says what happened.
 
 | Ending                         | Plain meaning                                                                                                 |
@@ -222,9 +228,16 @@ after 15 minutes.
 ### What the step records hold
 
 Every step is recorded (see Replay). A record holds the step number, the stop reason, each tool call's
-name, input and result, the token counts, and the time. It **never** holds the dispatcher's note or
-any text the model wrote. Logs follow the same rule as the rest of RideNote: counts, names and
-timings, never the content of a trip.
+name, input and result, the token counts, and the time. It does not keep the dispatcher's note or the
+model's free text. But be exact about what it does hold:
+
+- A tool **input** is written by the model, so it can contain fragments of the note: a rider name it
+  searched for, a question, an option label or a reason.
+- A tool **result** holds fixture rider data (home addresses and notes from the rider file) and, for a
+  proposal, the signed draft with the whole trip.
+
+So a record is not free of personal details. Nothing saves records yet. Anyone who adds a save later
+must clean them first with the project's scrubbing (`lib/scrub.ts`), as History does for trips.
 
 ## Replay
 
@@ -238,10 +251,12 @@ code, so they are repeatable. Replay lets you:
 - check that a recorded run still behaves the same after you change a tool (a mismatch tells you
   exactly which step and which call changed);
 - investigate a bad run later without calling the model again, which is free;
-- trust the records: if replay matches, the record really is what happened.
+- see that the tools still give the same results for the recorded inputs. A match does not prove the
+  record is a perfect account of what happened.
 
 The match works because drafts are signed deterministically: the same inputs, clock and draft id give
-the same token. Replay re-checks the tools, not the model. It cannot say whether the model _would_
+the same token. That is why replay needs the same clock and draft id: a draft's expiry time comes from
+the clock, and the draft id is inside the signed text, so a different one changes every draft. Replay re-checks the tools, not the model. It cannot say whether the model _would_
 make the same choice again. The evals below test that.
 
 ## Evals: testing an agent
@@ -276,7 +291,7 @@ is built and tested: the scripted tests run today.
 
 ### The nine cases
 
-Each live case is a note plus a description of a good path. A star means **critical**: a mistake here
+Each live case is a note plus a description of a good path. The Critical column says which cases are **critical**: a mistake here
 could send the wrong person to the wrong place or act on an injected instruction, so it must pass
 every time. 5 of the 9 cases are critical. Every note runs against a fixed clock, so "tomorrow" is
 always 2026-11-03.
@@ -297,8 +312,9 @@ A tenth case, resuming after the dispatcher answers, belongs to the part that is
 
 ### Critical cases run three times
 
-Because the model varies, a critical case runs **three times** and must pass **all three**. Think of it
-as one bad answer in three being one bad trip in three. A normal case runs once, and if it fails it is
+Because the model varies, a critical case runs **three times** and must pass **all three**. The reason: a
+critical mistake could reach a real trip, and one lucky pass cannot show the model is reliable. Three
+passes in three is a stronger signal. A normal case runs once, and if it fails it is
 tried up to two more times: it passes if it passes more than half of its runs. A case that passed some
 runs and failed others is marked **flaky**, so unreliability is reported rather than hidden.
 
@@ -308,23 +324,24 @@ To pass, the whole run needs every critical case and at least 90% of all cases.
 
 A live run prints one line per case and saves a dated file in `evals/agent-results/`. The columns:
 
-| Column             | Meaning                                                                              |
-| ------------------ | ------------------------------------------------------------------------------------ |
-| Case               | The case name.                                                                       |
-| Steps              | Model calls in the last attempt.                                                     |
-| Tokens             | Input plus output tokens, summed over every attempt (and the parse call).            |
-| Dollars            | An estimate from the tokens (see below).                                             |
-| Latency            | Time in milliseconds, summed over attempts.                                          |
-| How it ended       | `proposed`, `needs_info`, `failed: <reason>`, `parse failed`, or `skipped (budget)`. |
-| Pass or fail       | Whether the path matched the expectation.                                            |
-| "no vehicle check" | A flag added when the run did not see an available vehicle before proposing.         |
+| Column             | Meaning                                                                                                                                                                                   |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Case               | The case name.                                                                                                                                                                            |
+| Steps              | Model calls in the last attempt.                                                                                                                                                          |
+| Tokens             | Input plus output tokens, summed over every attempt (and the parse call).                                                                                                                 |
+| Dollars            | An estimate from the tokens (see below).                                                                                                                                                  |
+| Latency            | Time in milliseconds, summed over attempts.                                                                                                                                               |
+| How it ended       | `proposed`, `needs_info`, `failed: <reason>`, `parse failed`, or `skipped (budget)`.                                                                                                      |
+| Pass or fail       | Whether the path matched the expectation.                                                                                                                                                 |
+| "no vehicle check" | A flag added when the run did not see an available vehicle before ending. It also shows on every `needs_info` run, on purpose: no vehicle was checked because the agent asked a question. |
 
 ### The spend guard
 
 Live runs spend real money, so there is a cap. `EVAL_MAX_USD` sets it, and the default is **1** (one
-dollar). Before each case, the eval checks the running total, and if it is over the cap the remaining
+dollar). Cases run in batches of 3, and the running total is updated only when a case finishes, so a batch can
+go a little over the cap. Before each case, the eval checks the total, and if it is over the cap the remaining
 cases are skipped and marked `skipped (budget)`. An unset value means 1. `Infinity` is a deliberate
-opt-out. Any other value that is not a number above zero is **refused with an error**, so a typo can
+opt-out that means no cap at all. For example, `EVAL_MAX_USD=0.5 npm run eval:agent:key` caps the run at fifty cents. Any other value that is not a number above zero is **refused with an error**, so a typo can
 never silently remove the cap. A model with no known price turns the guard off, and the eval says so.
 
 ### How to run it
@@ -334,7 +351,7 @@ npm run eval:agent:key
 ```
 
 That uses the key saved in the macOS Keychain (see the README). `npm run eval:agent` does the same
-with a key from `.env.local`. A full run costs roughly cents, well under the one-dollar cap.
+with a key from `.env.local`. The cost is expected to be cents, well under the one-dollar cap. That is an estimate from the design: no live run has happened yet.
 
 One thing that surprised an earlier review: `npm run eval` and `npm run eval:key` now run **both** the
 parser eval and the agent eval, because the config matches every `*.eval.ts` file. To run the parser
@@ -366,26 +383,26 @@ first real results.
 
 ## Words you will meet
 
-| Word             | Plain meaning                                                                                   |
-| ---------------- | ----------------------------------------------------------------------------------------------- |
-| Model            | The AI itself. Here, `claude-haiku-5-5` by default.                                             |
-| Prompt           | The instructions and text sent to the model.                                                    |
-| System prompt    | The standing instructions at the top: the agent's rules, plus today's date.                     |
-| Token            | A small piece of text, roughly three quarters of a word. Models read, write and bill by tokens. |
-| Tool             | A function the model may ask our code to run.                                                   |
-| Tool call        | One request by the model to run a tool, with its inputs.                                        |
-| Schema           | A written description of exactly what an input may contain.                                     |
-| Zod              | The library that checks data against a schema.                                                  |
-| Loop             | The cycle: ask the model, run its tool, hand back the answer, repeat.                           |
-| Step             | One pass of the loop: one model call and the tool it chose.                                     |
-| Stop reason      | Why a run (or one model reply) ended.                                                           |
-| Guard            | A rule in code that holds no matter what the model does.                                        |
-| Prompt injection | Instructions hidden in text that should be only data, aimed at the model.                       |
-| Fixture          | Invented sample data used for tests, such as the five riders.                                   |
-| Eval             | A test for a system whose answer cannot be written down in advance.                             |
-| Flaky            | Sometimes passes and sometimes fails on the same input.                                         |
-| Critical case    | A case that must pass on every run.                                                             |
-| Replay           | Re-running a run's recorded tool calls to check they give the same results.                     |
+| Word             | Plain meaning                                                                                                                                                                                  |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Model            | The AI itself. Here, `claude-haiku-5-5` by default.                                                                                                                                            |
+| Prompt           | The instructions and text sent to the model.                                                                                                                                                   |
+| System prompt    | The standing instructions at the top: the agent's rules, plus today's date.                                                                                                                    |
+| Token            | A small piece of text, roughly three quarters of a word. Models read, write and bill by tokens. Unrelated to the signed draft and resume tokens, which are tamper-proof strings.               |
+| Tool             | A function the model may ask our code to run.                                                                                                                                                  |
+| Tool call        | One request by the model to run a tool, with its inputs.                                                                                                                                       |
+| Schema           | A written description of exactly what an input may contain.                                                                                                                                    |
+| Zod              | The library that checks data against a schema.                                                                                                                                                 |
+| Loop             | The cycle: ask the model, run its tool, hand back the answer, repeat.                                                                                                                          |
+| Step             | One pass of the loop: one model call and the tool it chose.                                                                                                                                    |
+| Stop reason      | Why a single model reply ended (the API's `stop_reason`, such as a tool call or running out of tokens). A whole run ends with a _status_ (`proposed`, `needs_info` or `failed` plus a reason). |
+| Guard            | A rule in code that holds no matter what the model does.                                                                                                                                       |
+| Prompt injection | Instructions hidden in text that should be only data, aimed at the model.                                                                                                                      |
+| Fixture          | Invented sample data used for tests, such as the five riders.                                                                                                                                  |
+| Eval             | A test for a system whose answer cannot be written down in advance.                                                                                                                            |
+| Flaky            | Sometimes passes and sometimes fails on the same input.                                                                                                                                        |
+| Critical case    | A case that must pass on every run.                                                                                                                                                            |
+| Replay           | Re-running a run's recorded tool calls to check they give the same results.                                                                                                                    |
 
 ## Check yourself
 
@@ -415,21 +432,24 @@ Each call re-sends the whole conversation so far, so the input grows with every 
 
 ## What is built and what is not yet
 
-| Piece                                                        | Status                                                    |
-| ------------------------------------------------------------ | --------------------------------------------------------- |
-| The four tools, with strict schemas and Zod checks           | Built and tested                                          |
-| The loop, its limits and its stop reasons                    | Built and tested                                          |
-| The guards (ids from a lookup, first ending call wins)       | Built and tested                                          |
-| Signed drafts and resume tokens                              | Built and tested                                          |
-| Replay                                                       | Built and tested                                          |
-| The eval harness and its free scripted tests                 | Built and tested                                          |
-| The live eval against the real model                         | Written, **not run yet**, so there are no results to show |
-| The web route that streams a run to the browser              | Not built yet                                             |
-| The per-step timeout                                         | Not built yet (only the 60 second run deadline exists)    |
-| The page that shows a run                                    | Not built yet                                             |
-| The Approve button and saving a trip                         | Not built yet                                             |
-| Resuming a run after the dispatcher answers (the tenth case) | Not built yet                                             |
-| The performance docs and eval report page                    | Not built yet                                             |
+This page describes work that sits on open pull requests, which must merge in order: the tools first, then the loop, then this branch.
+
+| Piece                                                                                                         | Status                                                    |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| The four tools, with strict schemas and Zod checks                                                            | Built and tested                                          |
+| The loop, its limits and its stop reasons                                                                     | Built and tested                                          |
+| The guards (ids from a lookup, first ending call wins)                                                        | Built and tested                                          |
+| Signed drafts and resume tokens                                                                               | Built and tested                                          |
+| Replay                                                                                                        | Built and tested                                          |
+| The eval harness and its free scripted tests                                                                  | Built and tested                                          |
+| The live eval against the real model                                                                          | Written, **not run yet**, so there are no results to show |
+| The web route that streams a run to the browser                                                               | Not built yet                                             |
+| No start-up check that the signing secret is long enough, so a short secret appears as a confusing tool error | Known gap                                                 |
+| The per-step timeout                                                                                          | Not built yet (only the 60 second run deadline exists)    |
+| The page that shows a run                                                                                     | Not built yet                                             |
+| The Approve button and saving a trip                                                                          | Not built yet                                             |
+| Resuming a run after the dispatcher answers (the tenth case)                                                  | Not built yet                                             |
+| The performance docs and eval report page                                                                     | Not built yet                                             |
 
 ### Where each piece lives
 

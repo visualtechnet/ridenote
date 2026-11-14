@@ -53,4 +53,28 @@ describe("docs/AGENT.md", () => {
     expect(doc).toContain("npm run eval:agent:key");
     expect(doc).toContain("npx jest --config jest.eval.config.mjs evals/parser.eval");
   });
+
+  it("does not claim records never hold model text, or that every word is checked", () => {
+    expect(doc).not.toMatch(/never\*\* holds the dispatcher's note or\s+any text the model wrote/);
+    expect(doc).not.toMatch(/never the content of a trip/);
+    expect(doc).not.toMatch(/the record really is what happened/);
+    expect(doc).not.toMatch(/a test fails the build if\s+they drift apart/);
+    expect(doc).toContain("lib/scrub.ts");
+  });
+
+  it("is honest that a short signing secret surfaces as a confusing tool error", () => {
+    expect(doc).not.toMatch(/The one place that does throw/);
+    expect(doc).toMatch(/no start-up check that the signing secret is long enough/i);
+  });
+
+  it("labels design figures as estimates, not measurements", () => {
+    expect(doc).not.toMatch(/about three and a half times a typical run/);
+    expect(doc).toMatch(/design estimated/i);
+  });
+
+  it("explains the two kinds of token and the sidebar name", () => {
+    expect(doc).toMatch(/unrelated to the signed draft and resume\s+tokens/i);
+    expect(doc).toContain("EVAL_MAX_USD=0.5 npm run eval:agent:key");
+    expect(doc).toMatch(/open pull requests/i);
+  });
 });
