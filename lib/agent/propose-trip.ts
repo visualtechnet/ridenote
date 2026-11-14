@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { AGENT } from "../config";
-import { TripSchema, type Trip } from "../trip";
+import { clampText, TripSchema, type Trip } from "../trip";
 import { TOOL_ERRORS } from "./errors";
 import { mergedMobility, mergeTrip } from "./merge";
 import { riderById } from "./riders";
@@ -68,7 +68,10 @@ export function proposeTrip(input: z.infer<typeof ProposeTripInput>, ctx: ToolCo
   const valid = TripSchema.safeParse(merged.trip);
   if (!valid.success) {
     return {
-      content: TOOL_ERRORS.invalidInput("propose_trip", valid.error.issues[0].message),
+      content: TOOL_ERRORS.invalidInput(
+        "propose_trip",
+        clampText(valid.error.issues[0].message, AGENT.issueMax),
+      ),
       is_error: true,
     };
   }

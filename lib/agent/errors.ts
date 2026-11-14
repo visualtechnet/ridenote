@@ -13,6 +13,9 @@ export const TOOL_ERRORS = {
     `No rider matches "${cut(name)}". Check the spelling, or call ask_dispatcher.`,
   unknownRider: (id: string) =>
     `No rider has id "${cut(id)}". Call find_rider first and use an id it returned.`,
+  notLookedUp: (id: string) =>
+    `The id "${cut(id)}" was not returned by find_rider in this run. Call find_rider first.`,
+  endedAlready: "A tool in this reply already ended the run. Do not call more tools.",
   mobilityUnknown:
     'The trip\'s mobility is not stated, or is "other". Call ask_dispatcher to ask what the rider needs.',
   serviceDown:

@@ -1,3 +1,4 @@
+import type Anthropic from "@anthropic-ai/sdk";
 import type { Clock } from "../clock";
 import type { Trip } from "../trip";
 
@@ -39,9 +40,67 @@ export type RunEnd =
 
 export type ToolResult = { content: string; is_error?: true; end?: RunEnd };
 
+/** One tool call after it ran (or was refused), ready for the step record and the tool_result. */
+export type ExecutedCall = {
+  id: string;
+  name: string;
+  input: unknown;
+  content: string;
+  is_error: boolean;
+  end?: RunEnd;
+};
+
 export type ToolDef = {
   name: string;
   description: string;
   strict: true;
-  input_schema: Record<string, unknown>;
+  input_schema: Anthropic.Tool["input_schema"];
 };
+
+export type ModelReply = {
+  content: Anthropic.ContentBlock[];
+  stop_reason: string | null;
+  usage: { input_tokens: number; output_tokens: number; cache_read_input_tokens?: number | null };
+};
+
+/** One model step: the conversation so far in, one forced tool call out. */
+export type AgentModel = (req: {
+  messages: Anthropic.MessageParam[];
+  signal: AbortSignal;
+}) => Promise<ModelReply>;
+
+export type FailReason =
+  | "step_cap"
+  | "token_budget"
+  | "deadline"
+  | "upstream"
+  | "refused"
+  | "cut_off"
+  | "invalid_tool_input"
+  | "no_tool_call"
+  | "aborted";
+
+export type AgentUsage = {
+  steps: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheRead: number;
+  latencyMs: number;
+};
+
+/** What one model call did. Tool names, inputs, results, tokens and times only: never the note or model text. */
+export type StepRecord = {
+  step: number;
+  stopReason: string | null;
+  calls: { name: string; input: unknown; content: string; is_error: boolean }[];
+  inputTokens: number;
+  outputTokens: number;
+  cacheRead: number;
+  ms: number;
+};
+
+export type RunResult = { usage: AgentUsage; steps: StepRecord[] } & (
+  | { status: "proposed"; end: Extract<RunEnd, { status: "proposed" }> }
+  | { status: "needs_info"; end: Extract<RunEnd, { status: "needs_info" }> }
+  | { status: "failed"; reason: FailReason }
+);
