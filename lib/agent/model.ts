@@ -12,7 +12,8 @@ export function forcedChoiceSupported(model: string): boolean {
 
 /** The agent's model: AGENT_MODEL, else MODEL, else the default. Fails fast on one that cannot force a tool. */
 export function agentModelName(env: Record<string, string | undefined>): string {
-  const model = env.AGENT_MODEL ?? env[UPSTREAM.modelEnvVar] ?? UPSTREAM.defaultModel;
+  const model =
+    env.AGENT_MODEL?.trim() || env[UPSTREAM.modelEnvVar]?.trim() || UPSTREAM.defaultModel;
   if (!forcedChoiceSupported(model)) {
     throw new Error(
       `Model ${model} cannot be used for the agent: forced tool choice is not supported.`,
@@ -33,7 +34,7 @@ export function createAnthropicModel(
         max_tokens: AGENT.maxStepTokens,
         thinking: thinkingFor(options.model),
         system: options.system,
-        tools: TOOL_DEFS as unknown as Anthropic.Tool[],
+        tools: [...TOOL_DEFS],
         tool_choice: { type: "any", disable_parallel_tool_use: true },
         messages,
       },

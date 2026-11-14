@@ -50,12 +50,26 @@ export async function runAgent(options: Options): Promise<RunResult> {
 
     usage.steps += 1;
     const stepStart = now();
+    const remaining = AGENT.deadlineMs - (now() - start);
+    const controller = new AbortController();
+    const onCallerAbort = () => controller.abort();
+    signal.addEventListener("abort", onCallerAbort, { once: true });
+    let deadlineHit = false;
+    // Not AbortSignal.timeout/any: they ignore Jest fake timers.
+    const timer = setTimeout(() => {
+      deadlineHit = true;
+      controller.abort();
+    }, remaining);
     let reply;
     try {
-      reply = await model({ messages: [...messages], signal });
+      reply = await model({ messages: [...messages], signal: controller.signal });
     } catch (e) {
-      const aborted = signal.aborted || (e instanceof Error && e.name === "AbortError");
-      return fail(aborted ? "aborted" : "upstream");
+      if (signal.aborted) return fail("aborted");
+      if (deadlineHit) return fail("deadline");
+      return fail(e instanceof Error && e.name === "AbortError" ? "aborted" : "upstream");
+    } finally {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", onCallerAbort);
     }
     const inputTokens = reply.usage.input_tokens;
     const outputTokens = reply.usage.output_tokens;
@@ -87,7 +101,11 @@ export async function runAgent(options: Options): Promise<RunResult> {
       ms: now() - stepStart,
     };
     steps.push(record);
-    onStep?.(record);
+    try {
+      onStep?.(record);
+    } catch {
+      // A failing observer must not change the run.
+    }
 
     if (reply.stop_reason === "max_tokens") return fail("cut_off");
     if (reply.stop_reason === "refusal") return fail("refused");
@@ -98,7 +116,11 @@ export async function runAgent(options: Options): Promise<RunResult> {
       }
       if (reprompted) return fail("no_tool_call");
       reprompted = true;
-      messages.push({ role: "assistant", content: reply.content });
+      const kept = reply.content.filter((b) => b.type !== "tool_use");
+      messages.push({
+        role: "assistant",
+        content: kept.length > 0 ? kept : [{ type: "text", text: "(no tool call)" }],
+      });
       messages.push({ role: "user", content: REPROMPT });
       continue;
     }

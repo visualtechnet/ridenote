@@ -50,7 +50,7 @@ describe("executeToolCalls", () => {
     expect(seen.size).toBe(0);
   });
 
-  it("find_rider ignores a result that is not valid rider JSON", () => {
+  it("find_rider with an empty name is an input error and records no rider id", () => {
     const seen = new Set<string>();
     const [r] = executeToolCalls([block("t1", "find_rider", { name: "" })], testContext(), seen);
     expect(r.is_error).toBe(true);

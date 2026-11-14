@@ -7,7 +7,8 @@ export type ReplayMismatch = { step: number; call: number; recorded: string; rep
 /**
  * Re-runs every recorded tool call in order against the same context and one shared set of seen
  * rider ids, and lists each call whose result differs. Draft tokens are deterministic for the same
- * clock and newId, so a faithful run matches. Never throws on odd records.
+ * clock and newId, so a faithful run matches. `ctx.newId` must return the recorded draft id (for
+ * example a fixed id, as `testContext` does); otherwise every `propose_trip` result differs. Never throws on odd records.
  */
 export function replayRun(
   records: StepRecord[],

@@ -54,7 +54,7 @@ export type ToolDef = {
   name: string;
   description: string;
   strict: true;
-  input_schema: Record<string, unknown>;
+  input_schema: Anthropic.Tool["input_schema"];
 };
 
 export type ModelReply = {

@@ -284,4 +284,116 @@ describe("runAgent", () => {
     expect(r.steps.map((s) => s.ms)).toEqual([25, 25]);
     expect(r.usage.latencyMs).toBe(50);
   });
+
+  describe("a hung model call", () => {
+    afterEach(() => jest.useRealTimers());
+
+    /** Never settles on its own; rejects with an AbortError when the received signal aborts. */
+    const hung = (): AgentModel & { calls: number } => {
+      let calls = 0;
+      const model: AgentModel = ({ signal }) => {
+        calls += 1;
+        return new Promise((_, reject) => {
+          signal.addEventListener("abort", () =>
+            reject(Object.assign(new Error("aborted"), { name: "AbortError" })),
+          );
+        });
+      };
+      return Object.defineProperty(model, "calls", { get: () => calls }) as AgentModel & {
+        calls: number;
+      };
+    };
+
+    it("is cut off by the deadline and fails with deadline", async () => {
+      jest.useFakeTimers();
+      const model = hung();
+      const run = runAgent({ model, ctx: testContext() });
+      await jest.advanceTimersByTimeAsync(AGENT.deadlineMs);
+      expect(await run).toMatchObject({ status: "failed", reason: "deadline" });
+      expect(model.calls).toBe(1);
+    });
+
+    it("still gives aborted when the caller aborts during the hung call", async () => {
+      jest.useFakeTimers();
+      const ac = new AbortController();
+      const run = runAgent({ model: hung(), ctx: testContext(), signal: ac.signal });
+      await jest.advanceTimersByTimeAsync(1000);
+      ac.abort();
+      expect(await run).toMatchObject({ status: "failed", reason: "aborted" });
+    });
+
+    it("leaves no pending timer when the call resolves before the deadline", async () => {
+      jest.useFakeTimers();
+      const model = scriptedModel([toolReply([find("Nguyen")]), toolReply([propose])]);
+      const r = await runAgent({ model, ctx: testContext() });
+      expect(r.status).toBe("proposed");
+      expect(jest.getTimerCount()).toBe(0);
+    });
+  });
+
+  it("drops tool_use blocks from an end_turn reply before the re-prompt and recovers", async () => {
+    const bad: ModelReply = { ...toolReply([find("Nguyen", "tX")]), stop_reason: "end_turn" };
+    const { wrapped, seen } = spy(
+      scriptedModel([bad, toolReply([find("Nguyen")]), toolReply([propose])]),
+    );
+    const r = await runAgent({ model: wrapped, ctx: testContext() });
+    expect(r.status).toBe("proposed");
+    const assistant = seen[1][1];
+    expect(assistant).toEqual({
+      role: "assistant",
+      content: [{ type: "text", text: "(no tool call)" }],
+    });
+    expect(JSON.stringify(seen[1])).not.toContain("tool_use");
+  });
+
+  it("keeps the text blocks of an end_turn reply that also had a tool_use block", async () => {
+    const text = textReply("hello").content[0];
+    const mixed: ModelReply = {
+      ...toolReply([find("Nguyen", "tX")]),
+      stop_reason: "end_turn",
+    };
+    mixed.content = [text, ...mixed.content];
+    const { wrapped, seen } = spy(
+      scriptedModel([mixed, toolReply([find("Nguyen")]), toolReply([propose])]),
+    );
+    await runAgent({ model: wrapped, ctx: testContext() });
+    expect(seen[1][1]).toEqual({ role: "assistant", content: [text] });
+  });
+
+  it("pushes a one-text-block placeholder for an end_turn reply with empty content", async () => {
+    const empty: ModelReply = { ...textReply("x"), content: [] };
+    const { wrapped, seen } = spy(
+      scriptedModel([empty, toolReply([find("Nguyen")]), toolReply([propose])]),
+    );
+    const r = await runAgent({ model: wrapped, ctx: testContext() });
+    expect(r.status).toBe("proposed");
+    expect(seen[1][1]).toEqual({
+      role: "assistant",
+      content: [{ type: "text", text: "(no tool call)" }],
+    });
+    expect(seen[1][2].content).toMatch(/tool/i);
+  });
+
+  it("ignores an onStep that throws", async () => {
+    const make = () => scriptedModel([toolReply([find("Nguyen")]), toolReply([propose])]);
+    const plain = await runAgent({ model: make(), ctx: testContext() });
+    const onStep = jest.fn(() => {
+      throw new Error("sink down");
+    });
+    const r = await runAgent({ model: make(), ctx: testContext(), onStep });
+    expect(onStep).toHaveBeenCalledTimes(2);
+    expect(r.status).toBe(plain.status);
+    expect(r.steps).toHaveLength(plain.steps.length);
+  });
+
+  it("marks an errored call is_error with its tool_use_id and leaves a success unmarked", async () => {
+    const { wrapped, seen } = spy(
+      scriptedModel([toolReply([find("", "tBad"), find("Nguyen", "tOk")]), toolReply([propose])]),
+    );
+    await runAgent({ model: wrapped, ctx: testContext() });
+    const blocks = seen[1][2].content as Anthropic.ToolResultBlockParam[];
+    expect(blocks[0]).toMatchObject({ type: "tool_result", tool_use_id: "tBad", is_error: true });
+    expect(blocks[1].tool_use_id).toBe("tOk");
+    expect(blocks[1]).not.toHaveProperty("is_error");
+  });
 });

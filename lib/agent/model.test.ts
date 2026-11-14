@@ -22,6 +22,12 @@ describe("agentModelName", () => {
   it("defaults to the upstream default model", () => {
     expect(agentModelName({})).toBe(UPSTREAM.defaultModel);
   });
+  it("treats a blank AGENT_MODEL as unset", () => {
+    expect(agentModelName({ AGENT_MODEL: "  " })).toBe(UPSTREAM.defaultModel);
+  });
+  it("falls through an empty AGENT_MODEL to MODEL", () => {
+    expect(agentModelName({ AGENT_MODEL: "", MODEL: "claude-haiku-5-6" })).toBe("claude-haiku-5-6");
+  });
   it("lets MODEL override the default", () => {
     expect(agentModelName({ MODEL: "claude-haiku-5-6" })).toBe("claude-haiku-5-6");
   });

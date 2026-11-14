@@ -42,7 +42,7 @@ export const AGENT = {
   maxRunTokens: 20_000, // input plus output tokens across one run
   maxStepTokens: 400, // output tokens allowed in one model call
   deadlineMs: 60_000, // wall-clock limit for one run
-  maxToolErrors: 3, // tool errors in one run before it stops
+  maxToolErrors: 3, // consecutive steps in which every call errored, before the run stops
 } as const;
 
 export const RATE_LIMIT = {
