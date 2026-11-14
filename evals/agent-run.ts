@@ -1,3 +1,4 @@
+import { UPSTREAM } from "../lib/config";
 import { RIDERS } from "../lib/agent/riders";
 import { runAgent } from "../lib/agent/loop";
 import type { AgentModel, RunResult, ToolContext } from "../lib/agent/types";
@@ -45,6 +46,11 @@ const emptyRow: Attempted["row"] = {
   cacheRead: 0,
   latencyMs: 0,
 };
+
+/** The model the parse call uses: MODEL, or the default when it is unset or blank. */
+export function parseModelName(env: Record<string, string | undefined>): string {
+  return env[UPSTREAM.modelEnvVar]?.trim() || UPSTREAM.defaultModel;
+}
 
 /** True once spending is past the limit; a run that lands exactly on it may still go on. */
 export function overBudget(spent: number, max: number): boolean {

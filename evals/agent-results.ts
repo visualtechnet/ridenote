@@ -22,6 +22,8 @@ export type AgentRow = {
 
 export type AgentRunSummary = {
   model: string;
+  /** The model the parse call used (MODEL), which can differ from the agent's. */
+  parseModel?: string;
   promptVersion: string;
   date: string;
   cases: number;
@@ -41,6 +43,7 @@ export function summariseAgentRun(
   model: string,
   promptVersion: string,
   date: string,
+  parseModel?: string,
 ): AgentRunSummary {
   const cases = rows.length;
   const passed = rows.filter((r) => r.pass).length;
@@ -49,6 +52,7 @@ export function summariseAgentRun(
   const outputTokens = sum((r) => r.outputTokens);
   return {
     model,
+    ...(parseModel === undefined ? {} : { parseModel }),
     promptVersion,
     date,
     cases,
@@ -57,7 +61,7 @@ export function summariseAgentRun(
     calls: sum((r) => r.attempts),
     inputTokens,
     outputTokens,
-    costUsd: model in PRICES ? costUsd(model, inputTokens, outputTokens) : null,
+    costUsd: Object.hasOwn(PRICES, model) ? costUsd(model, inputTokens, outputTokens) : null,
     meanStepsPerRun: cases ? sum((r) => r.steps) / cases : 0,
     meanLatencyMs: cases ? sum((r) => r.latencyMs) / cases : 0,
   };
@@ -77,7 +81,7 @@ export function writeAgentResults(
 
 /** One line per case; dollars come from the row's own tokens, or "unpriced" for a model with no price. */
 export function formatTable(rows: AgentRow[], model: string): string {
-  const priced = model in PRICES;
+  const priced = Object.hasOwn(PRICES, model);
   return rows
     .map((r) => {
       const dollars = priced

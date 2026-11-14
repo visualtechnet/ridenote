@@ -77,4 +77,16 @@ describe("docs/AGENT.md", () => {
     expect(doc).toContain("EVAL_MAX_USD=0.5 npm run eval:agent:key");
     expect(doc).toMatch(/open pull requests/i);
   });
+
+  it("does not bring back three corrected claims", () => {
+    expect(doc).not.toMatch(/always says a vehicle is free, except on the 13th/);
+    expect(doc).not.toMatch(/The loop catches even that/);
+    expect(doc).not.toMatch(/hands the agent a clean,\s+checked trip/);
+    expect(doc).not.toMatch(/\|\s*A few cents\s*\|/);
+    expect(doc).toContain("runTool");
+    expect(doc).toContain("ctx.parsed");
+    expect(doc).toMatch(/Expected to be cents; an estimate, no live run yet/);
+    expect(doc).toContain("James O'Neil to County Hospital at 9am");
+    expect(doc).not.toContain("Sam Whitfield to County Hospital");
+  });
 });

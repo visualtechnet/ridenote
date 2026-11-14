@@ -5,7 +5,7 @@ import { scriptedModel, toolReply } from "../lib/agent/test-model";
 import type { AgentModel } from "../lib/agent/types";
 import { makeTrip } from "../tests/test-utils";
 import { AGENT_CASES } from "./agent-cases";
-import { overBudget, parseMaxUsd, runAgentCase, type CaseDeps } from "./agent-run";
+import { overBudget, parseMaxUsd, parseModelName, runAgentCase, type CaseDeps } from "./agent-run";
 
 const byName = (name: string) => {
   const c = AGENT_CASES.find((x) => x.name === name);
@@ -168,5 +168,21 @@ describe("parseMaxUsd", () => {
   it.each([["$2"], ["1,5"], ["abc"], ["-1"], ["0"], ["NaN"]])("refuses %s", (raw) => {
     expect(() => parseMaxUsd(raw)).toThrow(`EVAL_MAX_USD`);
     expect(() => parseMaxUsd(raw)).toThrow(raw);
+  });
+});
+
+describe("parseModelName", () => {
+  it("falls back to the default model when MODEL is unset", () => {
+    expect(parseModelName({})).toBe("claude-haiku-5-5");
+  });
+
+  it("falls back to the default model when MODEL is blank", () => {
+    expect(parseModelName({ MODEL: "   " })).toBe("claude-haiku-5-5");
+  });
+
+  it("uses MODEL, trimmed, and ignores AGENT_MODEL", () => {
+    expect(parseModelName({ MODEL: " some-model ", AGENT_MODEL: "agent-model" })).toBe(
+      "some-model",
+    );
   });
 });

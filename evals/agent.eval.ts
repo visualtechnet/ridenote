@@ -18,7 +18,14 @@ import {
   writeAgentResults,
   type AgentRow,
 } from "./agent-results";
-import { overBudget, parseMaxUsd, runAgentCase, type Attempted, type CaseDeps } from "./agent-run";
+import {
+  overBudget,
+  parseMaxUsd,
+  parseModelName,
+  runAgentCase,
+  type Attempted,
+  type CaseDeps,
+} from "./agent-run";
 import { CLOCK, PASS_RATE_FLOOR } from "./cases";
 import { PRICES, costUsd } from "./prices";
 import { CRITICAL_RUNS, RETRIES, attempt, judge } from "./score";
@@ -41,9 +48,15 @@ const rows: AgentRow[] = [];
   beforeAll(async () => {
     const client = new Anthropic();
     const model = agentModelName(process.env);
-    const priced = model in PRICES;
+    const priced = Object.hasOwn(PRICES, model);
+    const parseModel = parseModelName(process.env);
     const maxUsd = parseMaxUsd(process.env.EVAL_MAX_USD);
     let spent = 0;
+    if (parseModel !== model) {
+      console.log(
+        `parse model ${parseModel} differs from agent model ${model}: dollar figures use the agent model's price for both.`,
+      );
+    }
     if (!priced) console.log(`model ${model} is unpriced, so the spend guard is off`);
 
     const deps: CaseDeps = {
@@ -130,7 +143,7 @@ const rows: AgentRow[] = [];
     const { passRate, failed } = summarise(results);
     const flaky = results.filter((r) => r.flaky && r.problems.length === 0);
     const today = new Date().toISOString().slice(0, 10);
-    const summary = summariseAgentRun(rows, model, AGENT_PROMPT_VERSION, today);
+    const summary = summariseAgentRun(rows, model, AGENT_PROMPT_VERSION, today, parseModel);
     const path = agentResultsPath(today, model, process.env.EVAL_LABEL);
     // A run where no request answered is not evidence about the model: write nothing.
     const written = rows.some((r) => r.inputTokens > 0 || r.outputTokens > 0);
@@ -140,7 +153,7 @@ const rows: AgentRow[] = [];
     }
     const cost = summary.costUsd === null ? "unpriced" : `$${summary.costUsd.toFixed(4)}`;
     console.log(
-      `${formatTable(rows, model)}\n${flaky.map((f) => `FLAKY ${f.case.name}: passed, but not every run`).join("\n")}\n${failed.map((f) => `FAIL ${f.case.name}: ${f.problems.join("; ")}`).join("\n")}\nmodel ${model} (prompt ${AGENT_PROMPT_VERSION}): ${results.length - failed.length}/${results.length} passed (${Math.round(passRate * 100)}%), ${cost} for ${summary.calls} runs\n${written ? `results written to ${path}` : "no request answered, so no results file was written"}`,
+      `${formatTable(rows, model)}\n${flaky.map((f) => `FLAKY ${f.case.name}: passed, but not every run`).join("\n")}\n${failed.map((f) => `FAIL ${f.case.name}: ${f.problems.join("; ")}`).join("\n")}\nmodel ${model}, parse model ${parseModel} (prompt ${AGENT_PROMPT_VERSION}): ${results.length - failed.length}/${results.length} passed (${Math.round(passRate * 100)}%), ${cost} for ${summary.calls} runs\n${written ? `results written to ${path}` : "no request answered, so no results file was written"}`,
     );
   }, 900_000);
 

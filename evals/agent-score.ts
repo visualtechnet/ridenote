@@ -40,6 +40,14 @@ export function scorePath(result: RunResult, expect: PathExpectation): string[] 
     for (const id of expect.optionRiderIds ?? []) {
       if (!have.has(id)) problems.push(`options lack rider ${id}`);
     }
+    if (expect.questionMatches) {
+      const texts = [result.end.question, ...result.end.options.map((o) => o.label)];
+      if (!texts.some((t) => expect.questionMatches?.test(t))) {
+        problems.push(
+          `question did not match ${expect.questionMatches}: asked ${show(result.end.question)} with options ${result.end.options.map((o) => o.label).join(", ")}`,
+        );
+      }
+    }
     return problems;
   }
 

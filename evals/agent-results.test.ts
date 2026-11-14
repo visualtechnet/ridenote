@@ -126,3 +126,23 @@ describe("formatTable", () => {
     expect(bad).toContain("no vehicle check");
   });
 });
+
+describe("inherited object keys are not models", () => {
+  it("gives no cost for a model named toString or constructor", () => {
+    for (const m of ["toString", "constructor"]) {
+      expect(summariseAgentRun([row()], m, "abcdef12", "2026-11-13").costUsd).toBeNull();
+      expect(formatTable([row()], m)).toContain("unpriced");
+    }
+  });
+
+  it("carries the parse model through to the summary", () => {
+    const s = summariseAgentRun(
+      [row()],
+      "claude-haiku-5-5",
+      "abcdef12",
+      "2026-11-13",
+      "other-model",
+    );
+    expect(s.parseModel).toBe("other-model");
+  });
+});

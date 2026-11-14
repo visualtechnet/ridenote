@@ -195,13 +195,53 @@ describe("scorePath", () => {
 
   it("reads draftRiderId from the propose_trip call that was not an error", () => {
     const s = steps(
-      [{ name: "propose_trip", input: { rider_id: "r3" }, is_error: true }],
+      [
+        {
+          name: "propose_trip",
+          input: { rider_id: "r1" },
+          content: TOOL_ERRORS.endedAlready,
+          is_error: true,
+        },
+      ],
       [{ name: "propose_trip", input: { rider_id: "r3" } }],
     );
-    expect(scorePath(proposed(s), { ends: "proposed", draftRiderId: "r3" })).toEqual([]);
+    expect(scorePath(proposed(s), { ends: "proposed", draftRiderId: "r3" })).toEqual([
+      'proposed for another rider: "r1", expected only "r3"',
+    ]);
     expect(scorePath(proposed([]), { ends: "proposed", draftRiderId: "r3" })).toEqual([
       'draftRiderId: expected "r3", got null',
     ]);
+  });
+
+  it("passes a needs_info run whose question mentions the date", () => {
+    const r = needsInfo(goodSteps());
+    if (r.status !== "needs_info") throw new Error("unreachable");
+    r.end.question = "What date is the trip?";
+    expect(scorePath(r, { ends: "needs_info", questionMatches: /\b(date|day|when)\b/i })).toEqual(
+      [],
+    );
+  });
+
+  it("passes a needs_info run when only an option label mentions the date", () => {
+    const r = needsInfo(goodSteps());
+    if (r.status !== "needs_info") throw new Error("unreachable");
+    r.end.question = "Please confirm";
+    r.end.options = [{ label: "Tomorrow? Give me the date", rider_id: null }];
+    expect(scorePath(r, { ends: "needs_info", questionMatches: /\bdate\b/i })).toEqual([]);
+  });
+
+  it("fails a needs_info run that asks only about mobility when a date question is expected", () => {
+    const problems = scorePath(needsInfo(goodSteps()), {
+      ends: "needs_info",
+      questionMatches: /\b(date|day|when)\b/i,
+    });
+    expect(problems).toEqual([
+      'question did not match /\\b(date|day|when)\\b/i: asked "Which Maria?" with options r1, r2',
+    ]);
+  });
+
+  it("does not check the question when questionMatches is not set", () => {
+    expect(scorePath(needsInfo(goodSteps()), { ends: "needs_info" })).toEqual([]);
   });
 
   it("compares mobility without regard to order", () => {
@@ -271,6 +311,7 @@ describe("AGENT_CASES", () => {
     expect(ids("James O'Neil")).toEqual(["r3"]);
     expect(ids("Dorothy Nguyen")).toEqual(["r4"]);
     expect(ids("Sam Whitfield")).toEqual(["r5"]);
+    expect(RIDERS.find((r) => r.id === "r3")?.mobility_on_file).not.toEqual([]);
     expect(ids("Hector Alvarez")).toEqual([]);
     expect(RIDERS.find((r) => r.id === "r5")?.mobility_on_file).toEqual([]);
     const draft4 = AGENT_CASES.find(
@@ -280,6 +321,13 @@ describe("AGENT_CASES", () => {
       RIDERS.find((r) => r.id === "r4")?.mobility_on_file,
     );
     expect(draft4?.expect.draftPickup).toBe(RIDERS.find((r) => r.id === "r4")?.home);
+  });
+
+  it("asks the no-date case about the date, using a rider with mobility on file", () => {
+    const c = AGENT_CASES.find((x) => x.name === "no date");
+    expect(c?.note).toBe("James O'Neil to County Hospital at 9am");
+    expect(c?.expect.questionMatches?.test("What date?")).toBe(true);
+    expect(c?.expect.questionMatches?.test("Which wheelchair?")).toBe(false);
   });
 
   it("resolves the Nov 13 case to the day the fake service fails", () => {
