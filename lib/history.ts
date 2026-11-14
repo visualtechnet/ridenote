@@ -33,7 +33,14 @@ export interface HistoryStore {
    * `sinceDays` old is returned; the purge deletes only strictly older rows.
    */
   list(limit: number, sinceDays: number): Promise<HistoryRow[]>;
+  /**
+   * Saves an agent draft once. A second save of the same draft id does nothing, and the daily cap
+   * applies as for `insert`. One statement, so a replayed Approve cannot save twice.
+   */
+  insertDraft(record: HistoryRecord, draftId: string, dailyCap: number): Promise<DraftOutcome>;
 }
+
+export type DraftOutcome = "saved" | "already_saved" | "capped";
 
 /** History is on only in production with a database configured; nowhere else is a connection opened. */
 export function historyEnabled(env: Record<string, string | undefined> = process.env): boolean {
@@ -77,6 +84,21 @@ export async function saveEntry(trip: Trip, usage?: Usage, store?: HistoryStore)
     // The error type only: its message could carry entry contents.
     console.error("history save failed:", err instanceof Error ? err.name : "unknown");
   }
+}
+
+/**
+ * Saves a trip approved from an agent draft, tagged with its draft id. `off` when History is not
+ * enabled here (preview, development), `nothing` when the trip has nothing worth saving.
+ */
+export async function saveDraft(
+  trip: Trip,
+  draftId: string,
+  store?: HistoryStore,
+): Promise<DraftOutcome | "off" | "nothing"> {
+  if (!historyEnabled()) return "off";
+  const record = toRecord(trip);
+  if (!record) return "nothing";
+  return (store ?? getStore()).insertDraft(record, draftId, HISTORY.dailySaveCap);
 }
 
 export type HistoryResult =

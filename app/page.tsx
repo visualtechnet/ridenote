@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AgentPanel } from "@/components/AgentPanel";
 import { NoteForm } from "@/components/NoteForm";
 import { ResultPanel } from "@/components/ResultPanel";
 import { COPY } from "@/lib/messages";
@@ -97,6 +98,9 @@ export default function Home() {
             // Once the note moves on, "up to date" is no longer true; the stale state takes over.
             notice={stale ? null : notice}
           />
+        </div>
+        <div id="agent">
+          <AgentPanel note={current.ok ? current.note : ""} />
         </div>
       </main>
     </div>

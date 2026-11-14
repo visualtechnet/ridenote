@@ -30,6 +30,8 @@ export default defineConfig({
       HISTORY_DATABASE_URL: "memory://test",
       HISTORY_STORE: "memory",
       CRON_SECRET: "e2e-secret",
+      // Browser tests only: signs drafts for the agent. Production sites set their own secret.
+      DRAFT_SIGNING_SECRET: "e2e-only-draft-signing-secret-0000000000",
       ...(production ? {} : { E2E_STUB_PARSE: "1" }),
     },
   },

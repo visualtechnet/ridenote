@@ -1,4 +1,4 @@
-import type { HistoryRecord, HistoryRow, HistoryStore } from "./history";
+import type { DraftOutcome, HistoryRecord, HistoryRow, HistoryStore } from "./history";
 
 /** One parameterised statement. Tests pass a fake; production uses the Neon driver (see neonQuery). */
 export type QueryFn = (text: string, params: unknown[]) => Promise<{ rows: unknown[] }>;
@@ -21,6 +21,19 @@ const INSERT_SQL = `INSERT INTO history (passenger_name, pickup_location, dropof
 SELECT $1::text, $2::text, $3::text, $4::date, $5::text, $6::text[], $7::int, $8::int, $9::int
 WHERE (SELECT count(*) FROM history WHERE created_at > now() - interval '1 day') < $10::bigint
 RETURNING id`;
+
+// Approve: ONE statement, as above. The draft id is unique, so a replay inserts nothing (DO NOTHING).
+// `existing` is read before the insert, so "already saved" is reported even when the cap is full.
+const INSERT_DRAFT_SQL = `WITH recent AS (SELECT count(*) AS n FROM history WHERE created_at > now() - interval '1 day'),
+existing AS (SELECT 1 FROM history WHERE draft_id = $10::text),
+ins AS (
+  INSERT INTO history (passenger_name, pickup_location, dropoff_location, pickup_date, pickup_time, mobility, input_tokens, output_tokens, latency_ms, source, draft_id)
+  SELECT $1::text, $2::text, $3::text, $4::date, $5::text, $6::text[], $7::int, $8::int, $9::int, 'agent', $10::text
+  FROM recent
+  WHERE recent.n < $11::bigint AND NOT EXISTS (SELECT 1 FROM existing)
+  ON CONFLICT (draft_id) DO NOTHING
+  RETURNING id)
+SELECT (SELECT count(*) FROM ins) AS inserted, EXISTS (SELECT 1 FROM existing) AS already`;
 
 // Inclusive cut-off (>=): the purge deletes only strictly older rows.
 // pickup_date comes back as text, so no driver turns a plain calendar day into a midnight in some zone.
@@ -65,6 +78,28 @@ export function createPostgresStore(
         dailyCap,
       ]);
       return rows.length > 0;
+    },
+    async insertDraft(
+      record: HistoryRecord,
+      draftId: string,
+      dailyCap: number,
+    ): Promise<DraftOutcome> {
+      const { rows } = await query(INSERT_DRAFT_SQL, [
+        record.passenger_name,
+        record.pickup_location,
+        record.dropoff_location,
+        record.pickup_date,
+        record.pickup_time,
+        record.mobility,
+        record.input_tokens ?? null,
+        record.output_tokens ?? null,
+        record.latency_ms ?? null,
+        draftId,
+        dailyCap,
+      ]);
+      const row = rows[0] as { inserted: number | string; already: boolean } | undefined;
+      if (Number(row?.inserted ?? 0) > 0) return "saved";
+      return row?.already ? "already_saved" : "capped";
     },
     async list(limit: number, sinceDays: number) {
       const { rows } = await query(LIST_SQL, [limit, sinceDays]);

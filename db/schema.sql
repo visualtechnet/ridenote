@@ -23,8 +23,14 @@ CREATE TABLE IF NOT EXISTS history (
   -- Per-call usage; null on rows saved before these columns existed.
   input_tokens     integer,
   output_tokens    integer,
-  latency_ms       integer
+  latency_ms       integer,
+  -- Where the row came from: a parse, or an agent draft approved by a person.
+  source           text NOT NULL DEFAULT 'parse' CHECK (source IN ('parse', 'agent')),
+  -- The signed draft's id; unique, so a replayed Approve saves nothing new.
+  draft_id         text
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS history_draft_id_idx ON history (draft_id);
 
 CREATE INDEX IF NOT EXISTS history_created_at_idx ON history (created_at);
 

@@ -3,6 +3,7 @@ import { after } from "next/server";
 import type { Clock } from "@/lib/clock";
 import { BUDGET, HTTP, LIMITS, RATE_LIMIT } from "@/lib/config";
 import { createCoalescer } from "@/lib/coalesce";
+import { clientKey, UNKNOWN_CLIENT } from "@/lib/client-key";
 import { createGate } from "@/lib/concurrency";
 import { createStubClient, stubActive } from "@/lib/e2e-stub-client";
 import { extractTrip } from "@/lib/extract";
@@ -48,17 +49,6 @@ type Outcome = { status: number; body: unknown; retryAfterSec?: number; failure?
 
 function json(body: unknown, status: number = HTTP.ok, headers?: Record<string, string>) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store", ...headers } });
-}
-
-// Known limit: with no proxy headers at all (local dev, bare `next start`) everyone shares the
-// "unknown" bucket. Hosts like Vercel always set x-real-ip, so deploy behind one.
-// Never key on the first x-forwarded-for entry: the client writes it. x-real-ip is set by the
-// hosting platform (e.g. Vercel); otherwise take the last hop, which our own proxy appended.
-const UNKNOWN_CLIENT = "unknown";
-function clientKey(req: Request) {
-  const real = req.headers.get("x-real-ip")?.trim();
-  if (real) return real;
-  return req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() || UNKNOWN_CLIENT;
 }
 
 function checkRate(key: string) {
