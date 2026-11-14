@@ -1,4 +1,6 @@
-import { agentSystemPrompt } from "./prompt";
+import { createHash } from "node:crypto";
+import { PROMPT_VERSION } from "../prompt";
+import { AGENT_PROMPT_VERSION, AGENT_RULES, agentSystemPrompt } from "./prompt";
 import { testContext } from "./test-context";
 
 const prompt = agentSystemPrompt(testContext().clock);
@@ -40,5 +42,30 @@ describe("agentSystemPrompt", () => {
   it("does not contain the dispatcher's note and stays under 3,000 characters", () => {
     expect(prompt).not.toContain(testContext().note);
     expect(prompt.length).toBeLessThan(3000);
+  });
+});
+
+describe("AGENT_PROMPT_VERSION", () => {
+  it("is 8 lowercase hex characters", () => {
+    expect(AGENT_PROMPT_VERSION).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it("is the first 8 hex characters of a sha256 of the static prompt body", () => {
+    expect(AGENT_PROMPT_VERSION).toBe(
+      createHash("sha256").update(AGENT_RULES).digest("hex").slice(0, 8),
+    );
+  });
+
+  it("stays the same when the date changes, though the prompt text changes", () => {
+    const base = testContext().clock;
+    const other = { ...base, now: new Date(base.now.getTime() + 3 * 24 * 60 * 60 * 1000) };
+    const before = AGENT_PROMPT_VERSION;
+    expect(agentSystemPrompt(other)).not.toBe(agentSystemPrompt(base));
+    expect(AGENT_PROMPT_VERSION).toBe(before);
+    expect(AGENT_RULES).not.toContain("Today is");
+  });
+
+  it("differs from the Parse prompt version", () => {
+    expect(AGENT_PROMPT_VERSION).not.toBe(PROMPT_VERSION);
   });
 });

@@ -88,7 +88,11 @@ export type AgentUsage = {
   latencyMs: number;
 };
 
-/** What one model call did. Tool names, inputs, results, tokens and times only: never the note or model text. */
+/**
+ * What one model call did: tool names, inputs, results, tokens and times. The model's free text is not
+ * kept, but a tool input is written by the model and can echo part of the note (a name, a reason), and
+ * results hold fixture rider data and the signed draft. Scrub (lib/scrub.ts) before any save.
+ */
 export type StepRecord = {
   step: number;
   stopReason: string | null;

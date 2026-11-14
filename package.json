@@ -24,6 +24,8 @@
     "test:db": "jest --config jest.db.config.mjs",
     "eval": "jest --config jest.eval.config.mjs",
     "eval:key": "bash scripts/with-keychain.sh jest --config jest.eval.config.mjs",
+    "eval:agent": "jest --config jest.eval.config.mjs evals/agent.eval",
+    "eval:agent:key": "bash scripts/with-keychain.sh npx jest --config jest.eval.config.mjs evals/agent.eval",
     "key": "bash scripts/keychain.sh help",
     "key:status": "bash scripts/keychain.sh status",
     "key:set": "bash scripts/keychain.sh set",
