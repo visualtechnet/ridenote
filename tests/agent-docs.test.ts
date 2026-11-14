@@ -24,6 +24,11 @@ describe("docs/AGENT.md", () => {
     expect(doc).toContain("a search that finds no rider is not one");
   });
 
+  it("explains that the rider's own name before 'usual place' means home but someone else's does not", () => {
+    expect(doc).toContain("Dorothy Nguyen's usual place");
+    expect(doc).toContain("her sister's house");
+  });
+
   it("names every eval case, and marks the critical ones", () => {
     for (const c of AGENT_CASES) expect(doc).toContain(c.name);
     const critical = AGENT_CASES.filter((c) => c.critical).length;

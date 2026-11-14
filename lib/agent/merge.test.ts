@@ -118,4 +118,46 @@ describe("usesHomePickup", () => {
     expect(usesHomePickup(null)).toBe(true);
     expect(usesHomePickup("County Hospital")).toBe(false);
   });
+
+  it.each([
+    "María's usual place",
+    "Maria Lopez's home",
+    "López's house",
+    "maría lópez’s usual pickup",
+    "Lopez's usual spot",
+  ])("treats %j as the rider's own home when it names the rider", (pickup) => {
+    expect(usesHomePickup(pickup, "María López")).toBe(true);
+  });
+
+  it.each([
+    "her sister's house",
+    "Maria's brother's home",
+    "Dorothy's usual place",
+    "Maria's office",
+    "Maria's home depot",
+  ])("does not treat %j as the rider's home", (pickup) => {
+    expect(usesHomePickup(pickup, "María López")).toBe(false);
+  });
+
+  it("does not match a possessive when no rider name is given", () => {
+    expect(usesHomePickup("Maria's home")).toBe(false);
+    expect(usesHomePickup("her home")).toBe(true);
+  });
+
+  it("matches a name with an apostrophe", () => {
+    expect(usesHomePickup("James O'Neil's home", "James O'Neil")).toBe(true);
+    expect(usesHomePickup("O'Neil's usual place", "James O'Neil")).toBe(true);
+  });
+
+  it("uses the rider's address when the note says the rider's name and usual place", () => {
+    const m = mergeTrip(makeTrip({ pickup_location: "María López's usual place" }), r1, when);
+    expect(m.trip.pickup_location).toBe("12 Elm St");
+    expect(m.sources.pickup).toBe("rider_file");
+  });
+
+  it("keeps someone else's home as the note wrote it", () => {
+    const m = mergeTrip(makeTrip({ pickup_location: "her sister's house" }), r1, when);
+    expect(m.trip.pickup_location).toBe("her sister's house");
+    expect(m.sources.pickup).toBe("note");
+  });
 });

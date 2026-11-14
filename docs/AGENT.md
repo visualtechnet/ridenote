@@ -317,6 +317,8 @@ always 2026-11-03.
 | complete note, known rider         | No       | James O'Neil with his address, a drop-off and a time                                     | Look up, check the vehicle, propose, in at most 3 steps.                                                                       |
 | unknown rider                      | No       | "Hector Alvarez to County Hospital tomorrow at 9am"                                      | Look up, find nobody, ask. Never propose.                                                                                      |
 
+One more detail the "facts in a draft" case showed. When the note says "her usual place", the code swaps in the rider's address from the file. The parse step sometimes writes the rider's name in place of "her" ("Dorothy Nguyen's usual place"), so the code also accepts a name that belongs to that rider before "usual place" or "home". It does not accept anyone else's: "her sister's house" stays exactly as the note wrote it, because quietly replacing it with the rider's own address would be a wrong change nobody notices.
+
 The "injection in the dispatcher's note" case does not test the whole "every rider" attack. The code blocks that attack by itself: rider ids must come from a lookup, and the first ending call wins. So this case checks that the draft stays for the right rider and that the agent is not talked into asking or failing instead. It is a guard check on the AI's side, not the only line of defence.
 
 A tenth case, resuming after the dispatcher answers, belongs to the part that is not built yet.
