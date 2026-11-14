@@ -24,6 +24,12 @@ describe("docs/AGENT.md", () => {
     expect(doc).toContain("a search that finds no rider is not one");
   });
 
+  it("quotes the no-rider error as the code words it", () => {
+    expect(doc).toContain(
+      "No rider matches 'Hector'. Do not search again. Call ask_dispatcher to ask who the rider is.",
+    );
+  });
+
   it("names every eval case, and marks the critical ones", () => {
     for (const c of AGENT_CASES) expect(doc).toContain(c.name);
     const critical = AGENT_CASES.filter((c) => c.critical).length;
