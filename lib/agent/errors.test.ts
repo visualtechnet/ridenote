@@ -12,6 +12,7 @@ describe("TOOL_ERRORS", () => {
       TOOL_ERRORS.serviceDown,
       TOOL_ERRORS.dateRejected("That date is in the past."),
       TOOL_ERRORS.dropoffMissing,
+      TOOL_ERRORS.dateNotStated,
       TOOL_ERRORS.notLookedUp("r1"),
       TOOL_ERRORS.endedAlready,
     ];
@@ -43,6 +44,13 @@ describe("TOOL_ERRORS", () => {
     expect(TOOL_ERRORS.dropoffMissing).toBe(
       "The note gives no drop-off. Call ask_dispatcher to ask where the rider is going.",
     );
+  });
+
+  it("tells the model the note gives no date and to ask the dispatcher", () => {
+    expect(TOOL_ERRORS.dateNotStated).toBe(
+      "The note gives no date. Call ask_dispatcher to ask which date the trip is for.",
+    );
+    expect(TOOL_ERRORS.dateNotStated.length).toBeLessThan(200);
   });
 
   it("cuts long names and ids before placing them in a message", () => {

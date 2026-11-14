@@ -9,7 +9,9 @@ import { verify } from "./sign";
 import { testContext } from "./test-context";
 
 const defaultCtx = () =>
-  testContext({ parsed: makeTrip({ pickup_location: "usual place", mobility: [] }) });
+  testContext({
+    parsed: makeTrip({ pickup_date: "2026-11-03", pickup_location: "usual place", mobility: [] }),
+  });
 
 const propose = (over = {}, ctx = defaultCtx()) =>
   proposeTrip(
@@ -67,7 +69,10 @@ describe("proposeTrip", () => {
   });
 
   it("keeps a mobility conflict and marks it", () => {
-    const end = propose({}, testContext({ parsed: makeTrip({ mobility: ["walker"] }) })).end;
+    const end = propose(
+      {},
+      testContext({ parsed: makeTrip({ pickup_date: "2026-11-03", mobility: ["walker"] }) }),
+    ).end;
     if (end?.status !== "proposed") throw new Error("expected a proposed end");
     expect(end.merged.conflicts).toEqual(["mobility"]);
   });
@@ -78,12 +83,29 @@ describe("proposeTrip", () => {
     expect(r.end).toBeUndefined();
   });
 
+  it("returns an error and makes no draft when the note gave no date", () => {
+    const newId = jest.fn(() => "draft-1");
+    const ctx = testContext({
+      parsed: makeTrip({ pickup_location: "usual place", mobility: [], pickup_date: null }),
+      newId,
+    });
+    const result = propose({}, ctx);
+    expect(result).toEqual({ content: TOOL_ERRORS.dateNotStated, is_error: true });
+    expect(result.end).toBeUndefined();
+    expect(newId).not.toHaveBeenCalled();
+  });
+
   it("returns an error result for a date in the past", () => {
     expect(propose({ pickup_date: "2026-11-01" }).is_error).toBe(true);
   });
 
   it("returns an error result when the note gives no drop-off", () => {
-    expect(propose({}, testContext({ parsed: makeTrip({ dropoff_location: null }) }))).toEqual({
+    expect(
+      propose(
+        {},
+        testContext({ parsed: makeTrip({ pickup_date: "2026-11-03", dropoff_location: null }) }),
+      ),
+    ).toEqual({
       content: TOOL_ERRORS.dropoffMissing,
       is_error: true,
     });
@@ -91,18 +113,29 @@ describe("proposeTrip", () => {
 
   it("returns an error result when mobility is unknown", () => {
     expect(
-      propose({ rider_id: "r5" }, testContext({ parsed: makeTrip({ mobility: [] }) })),
+      propose(
+        { rider_id: "r5" },
+        testContext({ parsed: makeTrip({ pickup_date: "2026-11-03", mobility: [] }) }),
+      ),
     ).toEqual({ content: TOOL_ERRORS.mobilityUnknown, is_error: true });
   });
 
   it("returns an error result when mobility is only other", () => {
-    const r = propose({}, testContext({ parsed: makeTrip({ mobility: ["other"] }) }));
+    const r = propose(
+      {},
+      testContext({ parsed: makeTrip({ pickup_date: "2026-11-03", mobility: ["other"] }) }),
+    );
     expect(r).toEqual({ content: TOOL_ERRORS.mobilityUnknown, is_error: true });
     expect(r.end).toBeUndefined();
   });
 
   it("returns an error result for a trip that fails TripSchema", () => {
-    const r = propose({}, testContext({ parsed: makeTrip({ pickup_location: "x".repeat(301) }) }));
+    const r = propose(
+      {},
+      testContext({
+        parsed: makeTrip({ pickup_date: "2026-11-03", pickup_location: "x".repeat(301) }),
+      }),
+    );
     expect(r.is_error).toBe(true);
     expect(r.content).toMatch(/^Invalid input for propose_trip: /);
     expect(r.end).toBeUndefined();

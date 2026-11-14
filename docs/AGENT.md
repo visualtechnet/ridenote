@@ -84,6 +84,8 @@ and a list of inputs. Our code does the work. A **tool call** is one such reques
 | `propose_trip`               | Propose one trip for a person to approve. Nothing is booked or saved.                                                                                                  | Yes: `proposed`   |
 | `ask_dispatcher`             | Ask the dispatcher one short question with 1 to 4 options.                                                                                                             | Yes: `needs_info` |
 
+Both `check_vehicle_availability` and `propose_trip` refuse to run when the Parse step found no date, so the agent has to ask.
+
 The two lookups keep the run going. The two others end it, and a run can only end by calling one of
 them (or by hitting a limit, covered next).
 
@@ -215,7 +217,7 @@ Several layers protect against this, so no single one has to be perfect.
 | No dangerous tools   | Even a fully tricked model has only four tools, and none can cancel, delete or write. The model's power is exactly the tools' power.        |
 | Facts come from code | `propose_trip` takes only an id, so injected text cannot put an invented address in a draft.                                                |
 
-Two guards live in the code itself and do not depend on the model behaving:
+Three guards live in the code itself and do not depend on the model behaving:
 
 - **Only ids from a lookup.** A rider id must have been returned by `find_rider` earlier in the _same
   run_. If the model invents `r9`, or reuses an id from nowhere, the call is refused with a message
@@ -223,6 +225,10 @@ Two guards live in the code itself and do not depend on the model behaving:
 - **First ending call wins.** If one model reply contains two tool calls, nothing runs after the first
   call that ends the run. A later `propose_trip` in the same reply gets an error, not a draft. (The loop
   also asks the model for only one call per step.)
+- **No date in the note, no check and no proposal.** If the Parse step found no date, the code refuses
+  to check a vehicle or propose a trip, whatever date the model passes, and tells it to call
+  `ask_dispatcher`. A line in the prompt can be ignored, as the first live run showed when the model
+  assumed today's date, but a rule in code cannot.
 
 And the final guard: **nothing writes, and a person approves.** The agent can only propose. The drafts
 and the resume tokens are signed with a secret key, so a changed token is detected, and they expire

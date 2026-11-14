@@ -18,7 +18,7 @@ describe("checkVehicle", () => {
 
   it("uses the rider's file only when the note is silent on mobility", () => {
     // makeTrip() names a wheelchair, and the note wins, so the file only decides when the note is silent
-    const silent = testContext({ parsed: makeTrip({ mobility: [] }) });
+    const silent = testContext({ parsed: makeTrip({ pickup_date: "2026-11-03", mobility: [] }) });
     expect(JSON.parse(check({ rider_id: "r4" }, silent).content).vehicle_class).toBe(
       "stretcher_van",
     );
@@ -27,8 +27,12 @@ describe("checkVehicle", () => {
 
   it("lets the note's mobility win over the file", () => {
     expect(
-      JSON.parse(check({}, testContext({ parsed: makeTrip({ mobility: ["cane"] }) })).content)
-        .vehicle_class,
+      JSON.parse(
+        check(
+          {},
+          testContext({ parsed: makeTrip({ pickup_date: "2026-11-03", mobility: ["cane"] }) }),
+        ).content,
+      ).vehicle_class,
     ).toBe("sedan");
   });
 
@@ -40,7 +44,12 @@ describe("checkVehicle", () => {
   });
 
   it("returns an error when mobility is not known", () => {
-    expect(check({ rider_id: "r5" }, testContext({ parsed: makeTrip({ mobility: [] }) }))).toEqual({
+    expect(
+      check(
+        { rider_id: "r5" },
+        testContext({ parsed: makeTrip({ pickup_date: "2026-11-03", mobility: [] }) }),
+      ),
+    ).toEqual({
       content: TOOL_ERRORS.mobilityUnknown,
       is_error: true,
     });
@@ -51,6 +60,11 @@ describe("checkVehicle", () => {
       content: TOOL_ERRORS.serviceDown,
       is_error: true,
     });
+  });
+
+  it("returns an error when the note gave no date", () => {
+    const ctx = testContext({ parsed: makeTrip({ pickup_date: null }) });
+    expect(check({}, ctx)).toEqual({ content: TOOL_ERRORS.dateNotStated, is_error: true });
   });
 
   it("returns an error for a date in the past", () => {

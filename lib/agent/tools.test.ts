@@ -12,7 +12,11 @@ import { ENDING_TOOLS, runTool, TOOL_DEFS } from "./tools";
 import type { ToolDef } from "./types";
 
 const ctx = testContext({
-  parsed: makeTrip({ dropoff_location: "County Hospital", mobility: ["wheelchair"] }),
+  parsed: makeTrip({
+    pickup_date: "2026-11-03",
+    dropoff_location: "County Hospital",
+    mobility: ["wheelchair"],
+  }),
 });
 
 const validProposal = {
