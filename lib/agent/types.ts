@@ -68,3 +68,39 @@ export type AgentModel = (req: {
   messages: Anthropic.MessageParam[];
   signal: AbortSignal;
 }) => Promise<ModelReply>;
+
+export type FailReason =
+  | "step_cap"
+  | "token_budget"
+  | "deadline"
+  | "upstream"
+  | "refused"
+  | "cut_off"
+  | "invalid_tool_input"
+  | "no_tool_call"
+  | "aborted";
+
+export type AgentUsage = {
+  steps: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheRead: number;
+  latencyMs: number;
+};
+
+/** What one model call did. Tool names, inputs, results, tokens and times only: never the note or model text. */
+export type StepRecord = {
+  step: number;
+  stopReason: string | null;
+  calls: { name: string; input: unknown; content: string; is_error: boolean }[];
+  inputTokens: number;
+  outputTokens: number;
+  cacheRead: number;
+  ms: number;
+};
+
+export type RunResult = { usage: AgentUsage; steps: StepRecord[] } & (
+  | { status: "proposed"; end: Extract<RunEnd, { status: "proposed" }> }
+  | { status: "needs_info"; end: Extract<RunEnd, { status: "needs_info" }> }
+  | { status: "failed"; reason: FailReason }
+);
