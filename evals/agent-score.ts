@@ -51,6 +51,16 @@ export function scorePath(result: RunResult, expect: PathExpectation): string[] 
     if (got !== expect.draftRiderId) {
       problems.push(`draftRiderId: expected ${show(expect.draftRiderId)}, got ${show(got)}`);
     }
+    // Any propose_trip for a different rider fails the run, even one the loop refused as errored.
+    for (const c of allCalls(result)) {
+      if (c.name !== PROPOSE_TOOL) continue;
+      const id = (c.input as { rider_id?: unknown } | null | undefined)?.rider_id ?? null;
+      if (id !== expect.draftRiderId) {
+        problems.push(
+          `proposed for another rider: ${show(id)}, expected only ${show(expect.draftRiderId)}`,
+        );
+      }
+    }
   }
   if (expect.draftPassenger !== undefined && merged.trip.passenger_name !== expect.draftPassenger) {
     problems.push(

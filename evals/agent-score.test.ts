@@ -1,3 +1,4 @@
+import { TOOL_ERRORS } from "../lib/agent/errors";
 import { RIDERS, searchRiders } from "../lib/agent/riders";
 import type { MergedTrip, RunResult, StepRecord } from "../lib/agent/types";
 import { vehicleServiceDown } from "../lib/agent/vehicles";
@@ -156,6 +157,7 @@ describe("scorePath", () => {
     });
     expect(scorePath(bad, expectAll)).toEqual([
       'draftRiderId: expected "r4", got "r2"',
+      'proposed for another rider: "r2", expected only "r4"',
       'draftPassenger: expected "Dorothy Nguyen", got "Mrs. Lee"',
       'draftPickup: expected "301 Cedar Ct", got "12 Oak St"',
       "draftMobility: expected [stretcher], got [walker]",
@@ -164,9 +166,36 @@ describe("scorePath", () => {
     ]);
   });
 
+  it("fails a run that also proposed for another rider, even when that call errored", () => {
+    const s = steps([
+      { name: "propose_trip", input: { rider_id: "r3" } },
+      {
+        name: "propose_trip",
+        input: { rider_id: "r1" },
+        content: TOOL_ERRORS.endedAlready,
+        is_error: true,
+      },
+    ]);
+    expect(scorePath(proposed(s), { ends: "proposed", draftRiderId: "r3" })).toEqual([
+      'proposed for another rider: "r1", expected only "r3"',
+    ]);
+  });
+
+  it("fails a propose_trip call with a missing or unparseable rider_id without throwing", () => {
+    const s = steps([
+      { name: "propose_trip", input: { rider_id: "r3" } },
+      { name: "propose_trip", input: null, is_error: true },
+      { name: "propose_trip", input: "garbage", is_error: true },
+      { name: "propose_trip", input: { rider_id: 7 }, is_error: true },
+    ]);
+    const problems = scorePath(proposed(s), { ends: "proposed", draftRiderId: "r3" });
+    expect(problems).toHaveLength(3);
+    for (const p of problems) expect(p).toContain("proposed for another rider");
+  });
+
   it("reads draftRiderId from the propose_trip call that was not an error", () => {
     const s = steps(
-      [{ name: "propose_trip", input: { rider_id: "r1" }, is_error: true }],
+      [{ name: "propose_trip", input: { rider_id: "r3" }, is_error: true }],
       [{ name: "propose_trip", input: { rider_id: "r3" } }],
     );
     expect(scorePath(proposed(s), { ends: "proposed", draftRiderId: "r3" })).toEqual([]);
