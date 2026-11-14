@@ -19,6 +19,11 @@ describe("docs/AGENT.md", () => {
     expect(doc).toContain(`${AGENT.maxToolErrors} steps in a row`);
   });
 
+  it("says a search that finds no rider does not count toward the repeated-mistakes rule", () => {
+    expect(doc).toContain("A search that finds no rider is not a mistake, so it does not count.");
+    expect(doc).toContain("a search that finds no rider is not one");
+  });
+
   it("names every eval case, and marks the critical ones", () => {
     for (const c of AGENT_CASES) expect(doc).toContain(c.name);
     const critical = AGENT_CASES.filter((c) => c.critical).length;

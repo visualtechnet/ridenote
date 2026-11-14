@@ -160,7 +160,7 @@ Counting them is counting money. (Not to be confused with a signed draft or resu
 | Tokens in one run (input plus output)  | 20,000 tokens    | A hard cap on cost. The design estimated this at about 3.5 times a typical run (an estimate, not a measurement), so the step cap should usually trip first and this one catches odd cases. |
 | Tokens the model may write in one step | 400 tokens       | A tool call is short. A small cap stops a rambling or manipulated answer from costing much.                                                                                                |
 | Time for the whole run                 | 60 seconds       | A run must not hang. The clock also cancels a model call that is still waiting.                                                                                                            |
-| Failed steps in a row                  | 3 steps in a row | If every call in 3 steps in a row is an error, the model is stuck. Stop instead of looping.                                                                                                |
+| Failed steps in a row                  | 3 steps in a row | If every call in 3 steps in a row is a mistake, the model is stuck. Stop instead of looping. A search that finds no rider is not a mistake, so it does not count.                          |
 
 The checks happen before each step, so a run can finish the step it is on and then stop. The default
 model is `claude-haiku-5-5` (a small, fast, cheap model). It can be changed with the `AGENT_MODEL`
@@ -173,19 +173,19 @@ call.
 Every run ends with an outcome the code calls its `status`. (Do not confuse it with the `stop_reason` of a single model reply, which only says why that one reply stopped.) Two are good. The rest
 are failures, each with a name that says what happened.
 
-| Ending                         | Plain meaning                                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `proposed`                     | Success. The agent produced a draft trip for a person to approve.                                             |
-| `needs_info`                   | Also a good ending. The agent asked the dispatcher a question because it could not safely guess.              |
-| `failed`: `step_cap`           | It used all 6 steps without ending.                                                                           |
-| `failed`: `token_budget`       | It used up the 20,000 tokens for the run.                                                                     |
-| `failed`: `deadline`           | It ran past 60 seconds.                                                                                       |
-| `failed`: `upstream`           | The model service errored, or answered with something the loop does not understand.                           |
-| `failed`: `refused`            | The model declined to answer (a safety refusal). No tool is run from a refusal.                               |
-| `failed`: `cut_off`            | The model ran out of its 400 tokens mid-answer, so the tool call may be half written. No tool is run from it. |
-| `failed`: `invalid_tool_input` | Three steps in a row where every call failed. The model is stuck.                                             |
-| `failed`: `no_tool_call`       | The model answered in plain text twice instead of calling a tool.                                             |
-| `failed`: `aborted`            | The caller cancelled the run, for example because the browser went away.                                      |
+| Ending                         | Plain meaning                                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `proposed`                     | Success. The agent produced a draft trip for a person to approve.                                                  |
+| `needs_info`                   | Also a good ending. The agent asked the dispatcher a question because it could not safely guess.                   |
+| `failed`: `step_cap`           | It used all 6 steps without ending.                                                                                |
+| `failed`: `token_budget`       | It used up the 20,000 tokens for the run.                                                                          |
+| `failed`: `deadline`           | It ran past 60 seconds.                                                                                            |
+| `failed`: `upstream`           | The model service errored, or answered with something the loop does not understand.                                |
+| `failed`: `refused`            | The model declined to answer (a safety refusal). No tool is run from a refusal.                                    |
+| `failed`: `cut_off`            | The model ran out of its 400 tokens mid-answer, so the tool call may be half written. No tool is run from it.      |
+| `failed`: `invalid_tool_input` | Three steps in a row where every call was a mistake (a search that finds no rider is not one). The model is stuck. |
+| `failed`: `no_tool_call`       | The model answered in plain text twice instead of calling a tool.                                                  |
+| `failed`: `aborted`            | The caller cancelled the run, for example because the browser went away.                                           |
 
 ### When the model answers in plain text
 

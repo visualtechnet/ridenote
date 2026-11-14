@@ -27,7 +27,9 @@ export const findRiderDef: ToolDef = {
 
 export function findRider(input: z.infer<typeof FindRiderInput>, ctx: ToolContext): ToolResult {
   const matches = searchRiders(ctx.riders, input.name);
-  if (matches.length === 0) return { content: TOOL_ERRORS.noRider(input.name), is_error: true };
+  if (matches.length === 0) {
+    return { content: TOOL_ERRORS.noRider(input.name), is_error: true, expected: true };
+  }
   const riders = matches.slice(0, AGENT.maxMatches).map((r) => ({
     id: r.id,
     name: r.name,

@@ -38,7 +38,11 @@ export type RunEnd =
   | { status: "proposed"; draftId: string; draft: string; merged: MergedTrip }
   | { status: "needs_info"; question: string; options: AskOption[]; resume: string };
 
-export type ToolResult = { content: string; is_error?: true; end?: RunEnd };
+/**
+ * `expected` marks an error that is an ordinary outcome, not a mistake by the model (a search that
+ * finds nobody). The loop does not count it toward the repeated-mistakes stop rule.
+ */
+export type ToolResult = { content: string; is_error?: true; expected?: true; end?: RunEnd };
 
 /** One tool call after it ran (or was refused), ready for the step record and the tool_result. */
 export type ExecutedCall = {
@@ -47,6 +51,8 @@ export type ExecutedCall = {
   input: unknown;
   content: string;
   is_error: boolean;
+  /** See `ToolResult.expected`. */
+  expected?: true;
   end?: RunEnd;
 };
 

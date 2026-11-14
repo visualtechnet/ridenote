@@ -72,6 +72,7 @@ export function executeToolCalls(
       input,
       content: result.content,
       is_error: result.is_error === true,
+      ...(result.expected === true ? { expected: true as const } : {}),
       ...(result.end !== undefined ? { end: result.end } : {}),
     });
   }
