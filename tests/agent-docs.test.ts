@@ -29,6 +29,12 @@ describe("docs/AGENT.md", () => {
     expect(doc).toContain("her sister's house");
   });
 
+  it("reports the first live runs honestly, with the caveat that the cases were tuned on", () => {
+    expect(doc).toContain("**9 of 9**");
+    expect(doc).toContain("Read this before trusting the 9 of 9.");
+    expect(doc).toContain("new cases the code has not been tuned to");
+  });
+
   it("names every eval case, and marks the critical ones", () => {
     for (const c of AGENT_CASES) expect(doc).toContain(c.name);
     const critical = AGENT_CASES.filter((c) => c.critical).length;

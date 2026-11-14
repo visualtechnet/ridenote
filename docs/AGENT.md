@@ -398,6 +398,29 @@ first real results.
 2. **The model is not perfectly repeatable.** Even three runs of a critical case is a small sample. A
    pass is good evidence, not proof, and a flaky result is a warning worth reading.
 
+### What the first live runs showed
+
+These are the real results, all on `claude-haiku-5-5` (both the agent and the parse step), with the
+prompt version `9b834a77` for the agent. Each run cost a couple of cents, far under the $1 cap.
+
+| Run | What changed before this run                                     | Agent eval                                                             | Cost (estimate) |
+| --- | ---------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------- |
+| 1   | Nothing: the first live run                                      | 7 of 9. Failed: "no date" (critical) and the mobility conflict         | about 2.3 cents |
+| 2   | The date guard (no date means no check and no proposal)          | 8 of 9. Failed: the mobility conflict                                  | about 2.3 cents |
+| 3   | A question about the mobility aid counts as a pass for that case | 8 of 9. Failed: "unknown rider", stopped by the repeated-mistakes rule | about 2.3 cents |
+| 4   | A search that finds no rider no longer counts as a mistake       | 8 of 9. Failed: "facts in a draft", one attempt in three               | about 2.1 cents |
+| 5   | The rider's own name before "usual place" counts as home         | **9 of 9**                                                             | about 2.1 cents |
+
+The parse step was checked on its own too: 74 of 76 checks passed (97%) on the same model, for about
+4 cents. The two misses were a note with two passengers and a note where "Sun Valley Clinic" was read
+as a Sunday. Neither is one of the five critical cases.
+
+**Read this before trusting the 9 of 9.** The fixes were made after looking at failures on these same
+nine cases, so the last run shows that the cases now pass, not that the agent handles new notes well. A
+fair test needs new cases the code has not been tuned to, which have not been written yet. Each
+critical case also ran only three times, so a case that fails one time in three can pass a clean run
+by luck (that is how "facts in a draft" slipped through run 4).
+
 ## Words you will meet
 
 | Word             | Plain meaning                                                                                                                                                                                  |
