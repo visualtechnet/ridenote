@@ -21,6 +21,7 @@ export const TOOL_ERRORS = {
   serviceDown:
     "Vehicle service unavailable. Call the tool once more; if it fails again, call ask_dispatcher.",
   dateRejected: (reason: string) => `${reason} Call ask_dispatcher to confirm the date.`,
+  dateNotStated: "The note gives no date. Call ask_dispatcher to ask which date the trip is for.",
   dropoffMissing:
     "The note gives no drop-off. Call ask_dispatcher to ask where the rider is going.",
 } as const;

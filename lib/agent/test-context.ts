@@ -8,7 +8,7 @@ export function testContext(overrides: Partial<ToolContext> = {}): ToolContext {
   return {
     clock: { now: new Date("2026-11-02T15:00:00Z"), timeZone: "America/New_York" },
     note: "Maria to County Hospital tomorrow at 9am",
-    parsed: makeTrip(),
+    parsed: makeTrip({ pickup_date: "2026-11-03" }),
     riders: RIDERS,
     secret: "test-secret-".repeat(4),
     runId: "run-1",

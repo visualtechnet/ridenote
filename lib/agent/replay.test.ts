@@ -45,7 +45,9 @@ describe("replayRun", () => {
 
   it("reports a mismatch where a different parsed trip changes the result", async () => {
     const steps = await recorded();
-    const ctx = testContext({ parsed: makeTrip({ mobility: ["walker"] }) });
+    const ctx = testContext({
+      parsed: makeTrip({ pickup_date: "2026-11-03", mobility: ["walker"] }),
+    });
     const r = replayRun(steps, ctx);
     expect(r.ok).toBe(false);
     expect(r.mismatches.map((m) => [m.step, m.call])).toEqual([[2, 0]]);

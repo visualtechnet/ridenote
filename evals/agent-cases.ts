@@ -80,8 +80,9 @@ export const AGENT_CASES: readonly AgentCase[] = [
     },
   },
   {
-    // James has mobility on file, so the vehicle tools work for him: only a model that notices the
-    // missing date has a reason to ask, and the question must say so.
+    // James has mobility on file, so the vehicle tools work for him. The code now backs this case up:
+    // checkWhen refuses any date when the parse step found none. The eval checks that the agent asks
+    // and that its question mentions the date.
     name: "no date",
     note: "James O'Neil to County Hospital at 9am",
     critical: true,

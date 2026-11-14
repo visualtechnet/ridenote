@@ -89,4 +89,10 @@ describe("docs/AGENT.md", () => {
     expect(doc).toContain("James O'Neil to County Hospital at 9am");
     expect(doc).not.toContain("Sam Whitfield to County Hospital");
   });
+
+  it("explains the guard that refuses to check or propose a trip with no date", () => {
+    expect(doc).toContain("No date in the note, no check and no proposal");
+    expect(doc).toContain("a rule in code cannot");
+    expect(doc).toContain("Three guards live in the code itself");
+  });
 });
