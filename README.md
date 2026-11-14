@@ -149,7 +149,7 @@ These commands all use the saved key, so you never type a key or an entry name:
 | ------------------------ | ------------------------------------------------------------------- |
 | `npm run dev:key`        | Start the development server (asks for the key the first time)      |
 | `npm run start:key`      | Start the production server (after `npm run build`)                 |
-| `npm run eval:key`       | Run the live accuracy eval                                          |
+| `npm run eval:key`       | Run the live evals (parser and agent; see the note below)           |
 | `npm run eval:agent:key` | Run the live agent eval only                                        |
 | `npm run key:status`     | Say whether a key is saved (never shows it)                         |
 | `npm run key:set`        | Save a new key, replacing the old one (for example when it expires) |
@@ -158,6 +158,7 @@ These commands all use the saved key, so you never type a key or an entry name:
 
 Good to know:
 
+- `npm run eval` and `npm run eval:key` run BOTH the parser eval and the agent eval, because the config matches every `*.eval.ts`. The parser eval alone is `npx jest --config jest.eval.config.mjs evals/parser.eval`.
 - Paste the key when asked (Cmd + V). Nothing appears as you paste. That is normal.
 - It only accepts something that starts with `sk-ant-`. Anything else is refused and nothing is saved.
 - macOS may ask once whether Terminal can use the item. Choose Allow.
@@ -239,6 +240,8 @@ the committed template.
 | Variable                     | Required        | What it does                                                                                                                                   |
 | ---------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ANTHROPIC_API_KEY`          | yes             | Your key. Read only on the server, never sent to the browser.                                                                                  |
+| `AGENT_MODEL`                | no              | Model for the agent. Falls back to `MODEL`, then the default. Models that cannot be forced to call a tool are refused.                         |
+| `EVAL_MAX_USD`               | no              | Spend cap for the live agent eval, default 1. A value that is not a number above 0 (or `Infinity`) is refused.                                 |
 | `MODEL`                      | no              | Claude model to use. Defaults to `UPSTREAM.defaultModel`. If another model rejects the request, see the `thinking` setting in `lib/config.ts`. |
 | `HISTORY_DATABASE_URL`       | production only | Connection string for the `history_app` role (insert and read). Turns History on. Leave it unset everywhere else. See [History](#history).     |
 | `HISTORY_PURGE_DATABASE_URL` | production only | Connection string for the `history_purge` role (read and delete), used only by the daily clean-up.                                             |
@@ -251,15 +254,16 @@ piece of user-facing text in **`lib/messages.ts`**. Change them there, not in th
 
 The site has five sections, reachable from the navigation on the left (a **Menu** button on phones):
 
-| Page             | Path            | What it is                                                                           |
-| ---------------- | --------------- | ------------------------------------------------------------------------------------ |
-| **Parser**       | `/`             | The tool itself.                                                                     |
-| **Requirements** | `/requirements` | The PRD, required input, expected JSON output and what valid JSON is.                |
-| **Docs**         | `/docs`         | Setup, accepted and rejected inputs, JSON pitfalls, every error explained.           |
-| Docs: **Eval**   | `/docs/eval`    | How the live accuracy eval works, with every case listed.                            |
-| Docs: **FAQ**    | `/docs/faq`     | Common questions, and the bugs found along the way with their lessons.               |
-| **Contact**      | `/contact`      | How to reach the owner on GitHub with questions or feedback (keys are not provided). |
-| **Tests**        | `/tests`        | Every automated test name, read from the real test files at build time.              |
+| Page                  | Path            | What it is                                                                           |
+| --------------------- | --------------- | ------------------------------------------------------------------------------------ |
+| **Parser**            | `/`             | The tool itself.                                                                     |
+| **Requirements**      | `/requirements` | The PRD, required input, expected JSON output and what valid JSON is.                |
+| **Docs**              | `/docs`         | Setup, accepted and rejected inputs, JSON pitfalls, every error explained.           |
+| Docs: **Eval**        | `/docs/eval`    | How the live accuracy eval works, with every case listed.                            |
+| Docs: **Agent guide** | `/docs/agent`   | A beginner's guide to the agent's tools, loop and evals.                             |
+| Docs: **FAQ**         | `/docs/faq`     | Common questions, and the bugs found along the way with their lessons.               |
+| **Contact**           | `/contact`      | How to reach the owner on GitHub with questions or feedback (keys are not provided). |
+| **Tests**             | `/tests`        | Every automated test name, read from the real test files at build time.              |
 
 What to type, in short: who, where from, where to, when, and mobility: name every aid the passenger
 uses (a wheelchair, a cane, a walker, and so on) and all of them are returned as a list. The card shows
@@ -500,7 +504,8 @@ Found a problem? See [SECURITY.md](SECURITY.md) for how to report it and for the
 npm test                # unit and component tests (Jest)
 npm run test:coverage   # same, with a coverage report and an enforced floor
 npm run test:e2e        # real-browser tests (first run: npx playwright install chromium)
-npm run eval            # live accuracy check against the real model (needs a key, costs cents)
+npm run eval            # live accuracy check against the real model (needs a key, costs cents); also runs the agent eval, see below
+npm run eval:agent:key  # live agent eval only (costs cents, capped by EVAL_MAX_USD, default 1)
 npm run check           # types + lint + formatting + unit tests with the coverage floor
 npm run test:all        # everything
 ```
@@ -598,6 +603,7 @@ harness works.
 | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | [docs/GUIDE.md](docs/GUIDE.md)                                            | Understand the whole project from scratch                                                                                  |
 | [docs/EVAL.md](docs/EVAL.md)                                              | Learn how the live accuracy eval works and how it ties into prompt and schema                                              |
+| [docs/AGENT.md](docs/AGENT.md)                                            | Learn, from scratch, how the agent's tools, loop, limits and evals work (also on the site under Docs, Agent guide)         |
 | [docs/FAQ.md](docs/FAQ.md)                                                | See common questions and **the bugs we hit and what they taught us**                                                       |
 | [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md)                          | Learn the habits this code is built on                                                                                     |
 | [docs/SUBAGENTS.md](docs/SUBAGENTS.md)                                    | Learn, step by step, how a feature was planned and built with a team of AI subagents (also on the site under Docs, Agents) |
