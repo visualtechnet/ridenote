@@ -134,7 +134,8 @@ export async function runAgent(options: Options): Promise<RunResult> {
         : { ...base, status: "needs_info", end: ended.end };
     }
 
-    errorSteps = executed.every((c) => c.is_error) ? errorSteps + 1 : 0;
+    // A search that finds nobody is information, not a mistake: it neither counts nor builds up.
+    errorSteps = executed.every((c) => c.is_error && !c.expected) ? errorSteps + 1 : 0;
     if (errorSteps >= AGENT.maxToolErrors) return fail("invalid_tool_input");
 
     messages.push({ role: "assistant", content: reply.content });

@@ -50,6 +50,27 @@ describe("executeToolCalls", () => {
     expect(seen.size).toBe(0);
   });
 
+  it("marks a find_rider search with no match as an expected error", () => {
+    const [call] = executeToolCalls(
+      [block("c1", "find_rider", { name: "zelda" })],
+      testContext(),
+      new Set(),
+    );
+    expect(call).toMatchObject({ is_error: true, expected: true });
+  });
+
+  it("does not mark an input error or an unknown tool as expected", () => {
+    const calls = executeToolCalls(
+      [block("c1", "find_rider", { name: "" }), block("c2", "nope", {})],
+      testContext(),
+      new Set(),
+    );
+    for (const call of calls) {
+      expect(call.is_error).toBe(true);
+      expect(call.expected).toBeUndefined();
+    }
+  });
+
   it("find_rider with an empty name is an input error and records no rider id", () => {
     const seen = new Set<string>();
     const [r] = executeToolCalls([block("t1", "find_rider", { name: "" })], testContext(), seen);

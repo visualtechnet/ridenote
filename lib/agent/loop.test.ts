@@ -239,6 +239,38 @@ describe("runAgent", () => {
     expect(r.steps).toHaveLength(AGENT.maxToolErrors);
   });
 
+  it("does not count searches that find no rider as mistakes", async () => {
+    const ask = toolReply([
+      {
+        name: "ask_dispatcher",
+        input: {
+          question: "Zelda is not on file. Who is the rider?",
+          options: [{ label: "Not on file", rider_id: null }],
+        },
+      },
+    ]);
+    const model = scriptedModel([
+      toolReply([find("Zelda")]),
+      toolReply([find("Zeld")]),
+      toolReply([find("Zelda Smith")]),
+      toolReply([find("Smith")]),
+      ask,
+    ]);
+    const r = await runAgent({ model, ctx: testContext() });
+    expect(r.status).toBe("needs_info");
+    expect(r.steps).toHaveLength(5);
+  });
+
+  it("still stops when real mistakes are mixed with searches that find no rider", async () => {
+    const bad = () => toolReply([{ name: "nope", input: {} }]);
+    const miss = () => toolReply([find("Zelda")]);
+    // Two mistakes, a miss (which is not a mistake and resets the count), then three mistakes in a row.
+    const model = scriptedModel([bad(), bad(), miss(), bad(), bad(), bad()]);
+    const r = await runAgent({ model, ctx: testContext() });
+    expect(r).toMatchObject({ status: "failed", reason: "invalid_tool_input" });
+    expect(model.calls).toBe(6);
+  });
+
   it("resets the error count after a step with a success", async () => {
     const bad = () => toolReply([{ name: "nope", input: {} }]);
     const model = scriptedModel([

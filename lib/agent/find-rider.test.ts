@@ -27,7 +27,12 @@ describe("findRider", () => {
   });
 
   it("returns an error result, not a throw, when nothing matches", () => {
-    expect(run("zelda")).toEqual({ content: TOOL_ERRORS.noRider("zelda"), is_error: true });
+    // A search that finds nobody is an expected outcome, not a mistake, so it is marked as such.
+    expect(run("zelda")).toEqual({
+      content: TOOL_ERRORS.noRider("zelda"),
+      is_error: true,
+      expected: true,
+    });
     expect(run("?").is_error).toBe(true);
   });
 
