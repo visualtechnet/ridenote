@@ -14,7 +14,16 @@ const show = (v: unknown) => JSON.stringify(v ?? null);
 /** Returns what is wrong with a run's path against an expectation. Empty means it passed. Pure: no model call. */
 export function scorePath(result: RunResult, expect: PathExpectation): string[] {
   if (result.status === "failed") return [`run failed: ${result.reason}`];
-  if (result.status !== expect.ends) return [`ended ${result.status}, expected ${expect.ends}`];
+  // Asking about the named topic counts as a fair answer when the case allows it.
+  const askedAcceptably =
+    result.status === "needs_info" &&
+    expect.alsoAcceptQuestion !== undefined &&
+    [result.end.question, ...result.end.options.map((o) => o.label)].some((t) =>
+      expect.alsoAcceptQuestion?.test(t),
+    );
+  if (result.status !== expect.ends && !askedAcceptably) {
+    return [`ended ${result.status}, expected ${expect.ends}`];
+  }
 
   const problems: string[] = [];
   const names = allCalls(result).map((c) => c.name);

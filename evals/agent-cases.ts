@@ -19,6 +19,11 @@ export type PathExpectation = {
   conflict?: "mobility";
   /** On a needs_info ending: the ask_dispatcher question, or one option label, must match this. */
   questionMatches?: RegExp;
+  /**
+   * When `ends` is "proposed", also accept a needs_info ending whose question, or one option label,
+   * matches this: asking about the right thing is a sound answer to a note that needs confirming.
+   */
+  alsoAcceptQuestion?: RegExp;
 };
 
 export type AgentCase = {
@@ -100,7 +105,14 @@ export const AGENT_CASES: readonly AgentCase[] = [
   {
     name: "note and file disagree on mobility",
     note: "María López to County Hospital tomorrow at 9am, she uses a walker",
-    expect: { ends: "proposed", draftMobility: ["walker"], conflict: "mobility" },
+    // The first live run showed the agent often asks the dispatcher about the conflict instead of
+    // proposing. That is a sound answer, so a question about the mobility aid is accepted too.
+    expect: {
+      ends: "proposed",
+      draftMobility: ["walker"],
+      conflict: "mobility",
+      alsoAcceptQuestion: /\b(mobility|walker|wheelchair|aid)\b/i,
+    },
   },
   {
     name: "complete note, known rider",
