@@ -244,6 +244,75 @@ describe("scorePath", () => {
     expect(scorePath(needsInfo(goodSteps()), { ends: "needs_info" })).toEqual([]);
   });
 
+  describe("alsoAcceptQuestion", () => {
+    const expectProposed: PathExpectation = {
+      ends: "proposed",
+      draftMobility: ["walker"],
+      alsoAcceptQuestion: /\b(mobility|walker|wheelchair)\b/i,
+    };
+
+    function asking(question: string, calls: Call[][] = [[{ name: "find_rider" }]]): RunResult {
+      const r = needsInfo(steps(...calls));
+      if (r.status !== "needs_info") throw new Error("unreachable");
+      r.end.question = question;
+      return r;
+    }
+
+    it("passes a needs_info ending whose question is about the named topic", () => {
+      expect(
+        scorePath(asking("Her file says wheelchair but the note says walker?"), expectProposed),
+      ).toEqual([]);
+    });
+
+    it("passes when only an option label is about the topic", () => {
+      const r = asking("Please confirm");
+      if (r.status !== "needs_info") throw new Error("unreachable");
+      r.end.options = [{ label: "Use the walker from the note", rider_id: null }];
+      expect(scorePath(r, expectProposed)).toEqual([]);
+    });
+
+    it("still fails a needs_info ending that asks about something else", () => {
+      expect(scorePath(asking("What date is the trip?"), expectProposed)).toEqual([
+        "ended needs_info, expected proposed",
+      ]);
+    });
+
+    it("still fails a needs_info ending when alsoAcceptQuestion is not set", () => {
+      expect(
+        scorePath(asking("Her file says wheelchair but the note says walker?"), {
+          ends: "proposed",
+          draftMobility: ["walker"],
+        }),
+      ).toEqual(["ended needs_info, expected proposed"]);
+    });
+
+    it("still applies neverCall to an accepted question", () => {
+      const r = asking("Walker or wheelchair?", [[{ name: "propose_trip", is_error: true }]]);
+      expect(scorePath(r, { ...expectProposed, neverCall: ["propose_trip"] })).toEqual([
+        "called propose_trip, which it must never call",
+      ]);
+    });
+
+    it("still fails a run that failed, whatever it asked", () => {
+      const failed: RunResult = { usage, steps: [], status: "failed", reason: "step_cap" };
+      expect(scorePath(failed, expectProposed)).toEqual(["run failed: step_cap"]);
+    });
+
+    it("still checks the draft when the run proposed", () => {
+      const r = proposed([], undefined, { mobility: ["cane"] });
+      expect(scorePath(r, expectProposed)).toEqual([expect.stringContaining("draftMobility")]);
+    });
+  });
+
+  it("accepts a question about mobility for the mobility-conflict case", () => {
+    const c = AGENT_CASES.find((x) => x.name === "note and file disagree on mobility");
+    expect(c?.expect.ends).toBe("proposed");
+    expect(c?.expect.alsoAcceptQuestion?.test("Her file says wheelchair; note says walker?")).toBe(
+      true,
+    );
+    expect(c?.expect.alsoAcceptQuestion?.test("What date is the trip?")).toBe(false);
+  });
+
   it("compares mobility without regard to order", () => {
     const r = proposed([], undefined, { mobility: ["walker", "cane"] });
     expect(scorePath(r, { ends: "proposed", draftMobility: ["cane", "walker"] })).toEqual([]);
