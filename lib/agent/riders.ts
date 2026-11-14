@@ -41,7 +41,7 @@ export const RIDERS: readonly Rider[] = [
 ];
 
 /** Lower case, no accents, only letters, digits and spaces (tabs and line breaks count as spaces), split into words. */
-function words(text: string): string[] {
+export function words(text: string): string[] {
   return text
     .toLowerCase()
     .normalize("NFD")

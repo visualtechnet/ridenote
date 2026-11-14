@@ -317,6 +317,8 @@ always 2026-11-03.
 | complete note, known rider         | No       | James O'Neil with his address, a drop-off and a time                                     | Look up, check the vehicle, propose, in at most 3 steps.                                                                       |
 | unknown rider                      | No       | "Hector Alvarez to County Hospital tomorrow at 9am"                                      | Look up, find nobody, ask. Never propose.                                                                                      |
 
+One more detail the "facts in a draft" case showed. When the note says "her usual place", the code swaps in the rider's address from the file. The parse step sometimes writes the rider's name in place of "her" ("Dorothy Nguyen's usual place"), so the code also accepts a name that belongs to that rider before "usual place" or "home". It does not accept anyone else's: "her sister's house" stays exactly as the note wrote it, because quietly replacing it with the rider's own address would be a wrong change nobody notices.
+
 The "injection in the dispatcher's note" case does not test the whole "every rider" attack. The code blocks that attack by itself: rider ids must come from a lookup, and the first ending call wins. So this case checks that the draft stays for the right rider and that the agent is not talked into asking or failing instead. It is a guard check on the AI's side, not the only line of defence.
 
 A tenth case, resuming after the dispatcher answers, belongs to the part that is not built yet.
@@ -395,6 +397,29 @@ first real results.
    2026-10-06 (the `PRICES_AS_OF` date). Prices change. The real bill is the truth.
 2. **The model is not perfectly repeatable.** Even three runs of a critical case is a small sample. A
    pass is good evidence, not proof, and a flaky result is a warning worth reading.
+
+### What the first live runs showed
+
+These are the real results, all on `claude-haiku-5-5` (both the agent and the parse step), with the
+prompt version `9b834a77` for the agent. Each run cost a couple of cents, far under the $1 cap.
+
+| Run | What changed before this run                                     | Agent eval                                                             | Cost (estimate) |
+| --- | ---------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------- |
+| 1   | Nothing: the first live run                                      | 7 of 9. Failed: "no date" (critical) and the mobility conflict         | about 2.3 cents |
+| 2   | The date guard (no date means no check and no proposal)          | 8 of 9. Failed: the mobility conflict                                  | about 2.3 cents |
+| 3   | A question about the mobility aid counts as a pass for that case | 8 of 9. Failed: "unknown rider", stopped by the repeated-mistakes rule | about 2.3 cents |
+| 4   | A search that finds no rider no longer counts as a mistake       | 8 of 9. Failed: "facts in a draft", one attempt in three               | about 2.1 cents |
+| 5   | The rider's own name before "usual place" counts as home         | **9 of 9**                                                             | about 2.1 cents |
+
+The parse step was checked on its own too: 74 of 76 checks passed (97%) on the same model, for about
+4 cents. The two misses were a note with two passengers and a note where "Sun Valley Clinic" was read
+as a Sunday. Neither is one of the five critical cases.
+
+**Read this before trusting the 9 of 9.** The fixes were made after looking at failures on these same
+nine cases, so the last run shows that the cases now pass, not that the agent handles new notes well. A
+fair test needs new cases the code has not been tuned to, which have not been written yet. Each
+critical case also ran only three times, so a case that fails one time in three can pass a clean run
+by luck (that is how "facts in a draft" slipped through run 4).
 
 ## Words you will meet
 
