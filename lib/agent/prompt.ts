@@ -1,7 +1,9 @@
+import { createHash } from "node:crypto";
 import type { Clock } from "../clock";
 import { todayLine } from "../prompt";
 
-const RULES = `You help a dispatcher turn a trip request into one trip proposal for a person to approve. Nothing is booked or saved.
+/** The static prompt body: everything except the date line. */
+export const AGENT_RULES = `You help a dispatcher turn a trip request into one trip proposal for a person to approve. Nothing is booked or saved.
 
 Tools:
 - find_rider: look up a rider by name. Call it first.
@@ -18,7 +20,13 @@ Rules:
 - Do not repeat a tool call with the same input. If a tool keeps failing, call ask_dispatcher.
 - Your run ends only when you call propose_trip or ask_dispatcher.`;
 
+/** A short hash of the static body only, so a date change never changes it. Same recipe as `PROMPT_VERSION`. */
+export const AGENT_PROMPT_VERSION = createHash("sha256")
+  .update(AGENT_RULES)
+  .digest("hex")
+  .slice(0, 8);
+
 /** The agent's instructions: fixed rules plus today's date. The dispatcher's note is never included. */
 export function agentSystemPrompt(clock: Clock): string {
-  return `${RULES}\n\n${todayLine(clock)}`;
+  return `${AGENT_RULES}\n\n${todayLine(clock)}`;
 }
