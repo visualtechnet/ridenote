@@ -40,6 +40,16 @@ export type RunEnd =
 
 export type ToolResult = { content: string; is_error?: true; end?: RunEnd };
 
+/** One tool call after it ran (or was refused), ready for the step record and the tool_result. */
+export type ExecutedCall = {
+  id: string;
+  name: string;
+  input: unknown;
+  content: string;
+  is_error: boolean;
+  end?: RunEnd;
+};
+
 export type ToolDef = {
   name: string;
   description: string;
