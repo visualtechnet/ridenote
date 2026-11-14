@@ -5,7 +5,7 @@ import { scriptedModel, toolReply } from "../lib/agent/test-model";
 import type { AgentModel } from "../lib/agent/types";
 import { makeTrip } from "../tests/test-utils";
 import { AGENT_CASES } from "./agent-cases";
-import { overBudget, runAgentCase, type CaseDeps } from "./agent-run";
+import { overBudget, parseMaxUsd, runAgentCase, type CaseDeps } from "./agent-run";
 
 const byName = (name: string) => {
   const c = AGENT_CASES.find((x) => x.name === name);
@@ -151,5 +151,22 @@ describe("overBudget", () => {
     expect(overBudget(0.99, 1)).toBe(false);
     expect(overBudget(1, 1)).toBe(false);
     expect(overBudget(1.01, 1)).toBe(true);
+  });
+});
+
+describe("parseMaxUsd", () => {
+  it("defaults to 1 when unset or empty", () => {
+    expect(parseMaxUsd(undefined)).toBe(1);
+    expect(parseMaxUsd("")).toBe(1);
+  });
+
+  it("accepts a positive number and the literal Infinity", () => {
+    expect(parseMaxUsd("0.5")).toBe(0.5);
+    expect(parseMaxUsd("Infinity")).toBe(Infinity);
+  });
+
+  it.each([["$2"], ["1,5"], ["abc"], ["-1"], ["0"], ["NaN"]])("refuses %s", (raw) => {
+    expect(() => parseMaxUsd(raw)).toThrow(`EVAL_MAX_USD`);
+    expect(() => parseMaxUsd(raw)).toThrow(raw);
   });
 });

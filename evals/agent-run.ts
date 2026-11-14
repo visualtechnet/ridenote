@@ -51,6 +51,20 @@ export function overBudget(spent: number, max: number): boolean {
   return spent > max;
 }
 
+/**
+ * The spend cap from EVAL_MAX_USD: unset or empty is 1 dollar, "Infinity" is a deliberate opt-out, and
+ * anything else that is not a number above zero throws, so a typo can never silently remove the cap.
+ */
+export function parseMaxUsd(raw: string | undefined): number {
+  if (raw === undefined || raw === "") return 1;
+  if (raw === "Infinity") return Infinity;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new Error(`EVAL_MAX_USD must be a number above 0 or "Infinity", got "${raw}"`);
+  }
+  return n;
+}
+
 const firstLine = (err: unknown) =>
   err instanceof Error ? err.message.split("\n")[0] : "unknown error";
 

@@ -18,7 +18,7 @@ import {
   writeAgentResults,
   type AgentRow,
 } from "./agent-results";
-import { overBudget, runAgentCase, type Attempted, type CaseDeps } from "./agent-run";
+import { overBudget, parseMaxUsd, runAgentCase, type Attempted, type CaseDeps } from "./agent-run";
 import { CLOCK, PASS_RATE_FLOOR } from "./cases";
 import { PRICES, costUsd } from "./prices";
 import { CRITICAL_RUNS, RETRIES, attempt, judge } from "./score";
@@ -42,7 +42,7 @@ const rows: AgentRow[] = [];
     const client = new Anthropic();
     const model = agentModelName(process.env);
     const priced = model in PRICES;
-    const maxUsd = Number(process.env.EVAL_MAX_USD ?? "1");
+    const maxUsd = parseMaxUsd(process.env.EVAL_MAX_USD);
     let spent = 0;
     if (!priced) console.log(`model ${model} is unpriced, so the spend guard is off`);
 
