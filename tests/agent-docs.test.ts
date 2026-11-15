@@ -156,4 +156,23 @@ describe("README agent set-up steps", () => {
       expect(text).toContain("already uses it");
     }
   });
+
+  it("the FAQ mistakes log numbers 1 to 44 with no gap and has the four agent entries", () => {
+    const faq = readFileSync(join(process.cwd(), "docs/FAQ.md"), "utf8");
+    const part2 = faq.slice(faq.indexOf("# Part 2:"));
+    const headings = [...part2.matchAll(/^### (\d+)\. (.+)$/gm)];
+    expect(headings.map((h) => Number(h[1]))).toEqual(Array.from({ length: 44 }, (_, i) => i + 1));
+    const titles = headings.map((h) => h[2]);
+    expect(titles).toContain("The agent assumed today's date when the note had none");
+    expect(titles).toContain(
+      "A search that found no rider counted as a mistake, and the error invited more searching",
+    );
+    expect(titles).toContain("The agent button was on the page while the agent was switched off");
+    expect(titles).toContain("One run of a small model is a sample, not a verdict");
+    const entries = part2.slice(
+      part2.indexOf("### 41."),
+      part2.indexOf("# What these have in common"),
+    );
+    expect(entries).not.toMatch(/PR #\d+|pull request #?\d+/i);
+  });
 });

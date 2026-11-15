@@ -755,6 +755,72 @@ Vercel. It also says to reset the owner password in Neon (Roles, Reset password)
 **Lesson.** _A secret that has been pasted somewhere is spent._ Rotating it takes a minute; arguing about who
 might have seen it does not.
 
+## Mistakes found while building the agent
+
+The agent is the feature that plans a trip step by step, using tools, and asks the dispatcher when it is
+unsure. The "live eval" below is a test that runs the agent against the real AI model, as opposed to the
+free scripted tests that use a stand-in model.
+
+### 41. The agent assumed today's date when the note had none
+
+**What happened.** On the first live eval run, on claude-haiku-5-5, the case "no date" failed on all 3
+runs. The parse step (the part that reads the note) correctly returned no date. The agent then assumed
+today's date, which it read from its own prompt, and proposed a trip.
+
+**Caught by.** The live eval. The free scripted tests could not show it, because the stand-in model never
+made that assumption.
+
+**Fix.** A rule in code: the date check refuses any date when the parse step found none, and tells the
+model to ask the dispatcher.
+
+**Lesson.** _A line in a prompt can be ignored, a rule in code cannot._ Put what must never happen in code.
+
+### 42. A search that found no rider counted as a mistake, and the error invited more searching
+
+**What happened.** In the case "unknown rider" (a rider not on file), the error said "Check the spelling,
+or call ask_dispatcher". The model kept trying other spellings, and every call was an error. After three
+steps in a row the run stopped as failed, instead of asking the dispatcher.
+
+**Caught by.** The live eval. The case passed once by luck and then failed on every run.
+
+**Fix.** Two parts. A search that finds nobody is now marked as an expected result, so it no longer counts
+toward the three-mistakes stop. And the error text now says "Do not search again. Call ask_dispatcher to
+ask who the rider is."
+
+**Lesson.** _An error message is an instruction to the model, so write it as one._ And a normal "nothing
+found" is information, not a mistake.
+
+### 43. The agent button was on the page while the agent was switched off
+
+**What happened.** On the live site, pressing the "Plan trip (agent)" button showed the error "Agent
+unavailable". The cause was the signing key, `DRAFT_SIGNING_SECRET`. It was a shared Vercel variable that
+was not linked to the project, and the site had not been redeployed after the variable was added. The
+server refuses to run the agent without a valid key (at least 32 characters).
+
+**Caught by.** Sending one real request to the live site after deploying.
+
+**Fix.** On `main`: link or add the variable to the project and redeploy, because a variable only reaches
+deployments built after it was added. A clear message on the page is the planned fix, and it has not
+shipped.
+
+**Lesson.** _A feature that depends on a secret should say so up front instead of failing when pressed._
+And after changing an environment variable, redeploy.
+
+### 44. One run of a small model is a sample, not a verdict
+
+**What happened.** Across the committed live runs of 2026-11-14, three runs each scored 8 of 9, and a
+different single case failed each time: "note and file disagree on mobility", then "unknown rider", then
+"facts in a draft". The last run scored 9 of 9. Re-running two of the failing cases showed "facts in a
+draft" pass once and fail twice, with no change to the code that decides it. The parse step reads
+"Dorothy Nguyen's usual place" as the pickup some of the time.
+
+**Caught by.** Re-running the same cases.
+
+**Fix.** Critical cases run three times and must pass all three. The eval report says plainly that a
+single run is a sample (see Docs, Eval).
+
+**Lesson.** _Do not trust one run._ Repeat before you believe a pass or a failure.
+
 ---
 
 # What these have in common
@@ -778,4 +844,6 @@ might have seen it does not.
   see a rate, before trusting it.
 - **Reserve loud signals for rare cases, and do not ask the AI for what the server can compute** (#38).
 - **Hosted services differ from the textbook, and a spent secret should be rotated** (#39, #40).
+- **The live eval found what the free scripted tests could not** (#41, #42), and **one run of it is only a
+  sample** (#44). Run the real model, and run it more than once.
 - **Say so when you are wrong.** Writing the mistake down is the fastest way to stop repeating it.
