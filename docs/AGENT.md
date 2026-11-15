@@ -6,9 +6,10 @@ never built one. The key numbers and names here were copied from the code, and a
 appear on this page. It does not check every sentence, so read the code if something matters.
 
 A word on honesty first. The tools, the loop, the safety guards, replay, the per-step timeout, the web
-route that streams a run, Approve and the page that shows a run are built and tested. Two pieces are
+route that streams a run, Approve and the page that shows a run are built and tested, and the code for
+them is in this repository. The performance docs and the eval report are written too. Two pieces are
 **not built yet**: the tenth eval case (resuming after the dispatcher answers, as a live eval) and the
-performance docs. The work sits on open pull requests (Plan C), which must merge in order. The live
+trace line for every tool call (requirement TC-10). The live
 eval has **not been run against the real model with the new route**, so this page shows no new results
 and invents none. See [What is built and what is not yet](#what-is-built-and-what-is-not-yet).
 
@@ -148,7 +149,7 @@ ones**: the input grows each time. These tokens are unrelated to the signed draf
 used for approval, which are tamper-proof strings.
 
 A loop with no brakes is dangerous. A confused model could call tools forever and run up a bill, or
-hang for minutes. So the loop has limits. They come from `lib/config.ts`, in the `AGENT` block.
+hang for minutes. So the loop has limits. They come from `lib/config.ts`, in the `AGENT` block. For what a run costs and how long it takes, see the [Performance page](/docs/performance).
 
 ### The limits
 
@@ -273,7 +274,7 @@ make the same choice again. The evals below test that.
 
 An **eval** (short for evaluation) is a test for something whose answer cannot be written down in
 advance. You keep a set of realistic inputs, run the real system on them, and score the results. The
-parser already has one. See the [Eval page](/docs/eval).
+parser already has one. See the [Eval page](/docs/eval). The results of the agent evals are in the [agent eval report](/docs/eval), under "The agent eval report".
 
 An agent needs a different kind, for two reasons.
 
@@ -473,25 +474,26 @@ Each call re-sends the whole conversation so far, so the input grows with every 
 
 ## What is built and what is not yet
 
-The route, Approve and the page sit on open pull requests (Plan C), which must merge in order. Approve needs the migration `db/migrations/2026-11-14-agent-approve.sql` before it can save.
+The route, Approve and the page are in the code. Approve needs the migration `db/migrations/2026-11-14-agent-approve.sql` before it can save.
 
-| Piece                                                                                                         | Status                                                          |
-| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| The four tools, with strict schemas and Zod checks                                                            | Built and tested                                                |
-| The loop, its limits and its stop reasons                                                                     | Built and tested                                                |
-| The guards (ids from a lookup, first ending call wins)                                                        | Built and tested                                                |
-| Signed drafts and resume tokens                                                                               | Built and tested                                                |
-| Replay                                                                                                        | Built and tested                                                |
-| The eval harness and its free scripted tests                                                                  | Built and tested                                                |
-| The live eval against the real model                                                                          | Run on Haiku before the route was built (see the results above) |
-| The web route `POST /api/agent` that streams a run to the browser                                             | Built and tested                                                |
-| The per-step timeout (15 seconds, one retry) and the 60 second run deadline                                   | Built and tested                                                |
-| The page panel "Plan trip (agent)" that shows each step                                                       | Built and tested, including browser tests on the stand-in       |
-| `POST /api/agent/approve`, the Approve button and saving a trip                                               | Built and tested; the database migration must run first         |
-| Resuming a run after the dispatcher answers                                                                   | Built and tested (not yet a live eval case)                     |
-| The tenth live eval case (resume with a choice)                                                               | Not built yet                                                   |
-| The performance docs and eval report page                                                                     | Not built yet                                                   |
-| No start-up check that the signing secret is long enough, so a short secret appears as a confusing tool error | Known gap                                                       |
+| Piece                                                                                                                         | Status                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| The four tools, with strict schemas and Zod checks                                                                            | Built and tested                                                                                  |
+| The loop, its limits and its stop reasons                                                                                     | Built and tested                                                                                  |
+| The guards (ids from a lookup, first ending call wins)                                                                        | Built and tested                                                                                  |
+| Signed drafts and resume tokens                                                                                               | Built and tested                                                                                  |
+| Replay                                                                                                                        | Built and tested                                                                                  |
+| The eval harness and its free scripted tests                                                                                  | Built and tested                                                                                  |
+| The live eval against the real model                                                                                          | Run on Haiku before the route was built (see the results above)                                   |
+| The web route `POST /api/agent` that streams a run to the browser                                                             | Built and tested                                                                                  |
+| The per-step timeout (15 seconds, one retry) and the 60 second run deadline                                                   | Built and tested                                                                                  |
+| The page panel "Plan trip (agent)" that shows each step                                                                       | Built and tested, including browser tests on the stand-in                                         |
+| `POST /api/agent/approve`, the Approve button and saving a trip                                                               | Built and tested; the database migration must run first                                           |
+| Resuming a run after the dispatcher answers                                                                                   | Built and tested (not yet a live eval case)                                                       |
+| The tenth live eval case (resume with a choice)                                                                               | Not built yet                                                                                     |
+| The performance docs and eval report page                                                                                     | Built and tested (docs, with tests that pin their numbers to config and to the committed results) |
+| TC-10: every tool call prints one trace line in the script and one log line in the route, with no inputs and no personal data | Not built yet (no per-tool-call trace or log line exists; the route only logs a failed Approve)   |
+| No start-up check that the signing secret is long enough, so a short secret appears as a confusing tool error                 | Known gap                                                                                         |
 
 ### Where each piece lives
 

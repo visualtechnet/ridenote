@@ -97,7 +97,7 @@ describe("docs/AGENT.md", () => {
   it("explains the two kinds of token and the sidebar name", () => {
     expect(doc).toMatch(/unrelated to the signed draft and resume\s+tokens/i);
     expect(doc).toContain("EVAL_MAX_USD=0.5 npm run eval:agent:key");
-    expect(doc).toMatch(/open pull requests/i);
+    expect(doc).not.toMatch(/open pull requests/i);
   });
 
   it("does not bring back three corrected claims", () => {
@@ -174,5 +174,16 @@ describe("README agent set-up steps", () => {
       part2.indexOf("# What these have in common"),
     );
     expect(entries).not.toMatch(/PR #\d+|pull request #?\d+/i);
+  });
+
+  it("the status table says the performance docs and eval report are built and lists TC-10 as not built", () => {
+    const rows = doc.split("\n").filter((l) => l.startsWith("|"));
+    const perf = rows.find((l) => l.includes("The performance docs and eval report page")) ?? "";
+    expect(perf).toContain("Built and tested");
+    expect(perf).not.toContain("Not built yet");
+    const tc10 = rows.find((l) => l.includes("TC-10")) ?? "";
+    expect(tc10).toContain("Not built yet");
+    expect(doc).toContain("(/docs/performance)");
+    expect(doc).toContain("(/docs/eval)");
   });
 });
