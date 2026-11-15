@@ -606,6 +606,7 @@ harness works.
 | [docs/EVAL.md](docs/EVAL.md)                                              | Learn how the live accuracy eval works and how it ties into prompt and schema                                              |
 | [docs/AGENT.md](docs/AGENT.md)                                            | Learn, from scratch, how the agent's tools, loop, limits and evals work (also on the site under Docs, How the agent works) |
 | [docs/FAQ.md](docs/FAQ.md)                                                | See common questions and **the bugs we hit and what they taught us**                                                       |
+| [docs/BUSINESS.md](docs/BUSINESS.md)                                      | Explain RideNote to a non-technical reader: what it does, what it will not do, and what to expect                          |
 | [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md)                          | Learn the habits this code is built on                                                                                     |
 | [docs/SUBAGENTS.md](docs/SUBAGENTS.md)                                    | Learn, step by step, how a feature was planned and built with a team of AI subagents (also on the site under Docs, Agents) |
 | [docs/HISTORY-SETUP.md](docs/HISTORY-SETUP.md)                            | Set up the History database on Neon and Vercel, step by step, with troubleshooting                                         |

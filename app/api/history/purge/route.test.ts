@@ -103,17 +103,17 @@ describe("GET /api/history/purge: with the correct secret", () => {
     expect(mockPurge).not.toHaveBeenCalled();
   });
 
-  it("returns 500 with a generic body when the purger throws, and logs only the error name", async () => {
+  it("returns 503 with a generic JSON body when the purger throws, and logs only the error name", async () => {
     const err = new Error(`boom ${SECRET} passenger Jane Roe`);
     err.name = "NeonDbError";
     mockPurge.mockRejectedValue(err);
     const res = await call(`Bearer ${SECRET}`);
-    expect(res.status).toBe(HTTP.serverError);
+    expect(res.status).toBe(HTTP.unavailable);
     const text = await res.text();
     expect(text).not.toContain(SECRET);
     expect(text).not.toContain("Jane");
     expect(text).not.toContain("boom");
-    expect(JSON.parse(text)).toEqual({ error: expect.any(String) });
+    expect(JSON.parse(text)).toEqual({ error: expect.any(String), code: "unavailable" });
     const logged = JSON.stringify((console.error as jest.Mock).mock.calls);
     expect(logged).toContain("NeonDbError");
     expect(logged).not.toContain(SECRET);

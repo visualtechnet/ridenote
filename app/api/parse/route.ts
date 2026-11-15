@@ -4,6 +4,7 @@ import type { Clock } from "@/lib/clock";
 import { BUDGET, HTTP, LIMITS, RATE_LIMIT } from "@/lib/config";
 import { createCoalescer } from "@/lib/coalesce";
 import { clientKey, UNKNOWN_CLIENT } from "@/lib/client-key";
+import { guardRoute } from "@/lib/api-guard";
 import { createGate } from "@/lib/concurrency";
 import { createStubClient, stubActive } from "@/lib/e2e-stub-client";
 import { extractTrip } from "@/lib/extract";
@@ -11,8 +12,9 @@ import { saveEntry } from "@/lib/history";
 import { MESSAGES } from "@/lib/messages";
 import { PROMPT_VERSION } from "@/lib/prompt";
 import { createRateLimiter, maxRequestsFor } from "@/lib/rate-limit";
-import { isOutOfCredit } from "@/lib/upstream-errors";
-import { readLimitedText } from "@/lib/read-body";
+import { readBodyText } from "@/lib/read-body";
+import { upstreamBudget } from "@/lib/upstream-budget";
+import { classifyUpstreamFailure } from "@/lib/upstream-failure";
 import type { Trip } from "@/lib/trip";
 import { toUsage, type Usage } from "@/lib/usage";
 import { validateRequestBody } from "@/lib/validation";
@@ -29,12 +31,8 @@ const checkRateUnknownClient = createRateLimiter({
   windowMs: RATE_LIMIT.windowMs,
   maxKeys: 1,
 });
-// Layer 2: everyone together, counts only requests that reach the paid upstream call.
-const checkBudget = createRateLimiter({
-  limit: BUDGET.maxCallsPerWindow,
-  windowMs: BUDGET.windowMs,
-  maxKeys: 1,
-});
+// Layer 2: everyone together, counts only requests that reach the paid upstream call. The pool is
+// shared with the agent routes (lib/upstream-budget.ts).
 // Layer 3: how many upstream calls may run at once in this instance.
 const gate = createGate(BUDGET.maxConcurrent);
 // Identical notes submitted at the same moment share one upstream call.
@@ -80,13 +78,12 @@ async function callModel(note: string, clock: Clock, signal: AbortSignal): Promi
   const release = gate.tryAcquire();
   if (!release)
     return { status: HTTP.unavailable, body: { error: MESSAGES.busy }, retryAfterSec: 1 };
-  const budget = checkBudget("all");
-  if (!budget.allowed) {
+  if (!upstreamBudget.reserve(1)) {
     release();
     return {
       status: HTTP.unavailable,
       body: { error: MESSAGES.busy },
-      retryAfterSec: budget.retryAfterSec,
+      retryAfterSec: upstreamBudget.retryAfterSec(),
     };
   }
 
@@ -111,25 +108,43 @@ async function callModel(note: string, clock: Clock, signal: AbortSignal): Promi
     saveAfterResponse(result.trip, usage);
     return { status: HTTP.ok, body: { trip: result.trip, usage } };
   } catch (err) {
-    // The one failure a person can act on. It is logged as its own kind so the owner sees it.
-    if (isOutOfCredit(err)) {
+    // Logged as its kind and the error name only, so the owner can tell the failures apart.
+    const kind = classifyUpstreamFailure(err);
+    const name = err instanceof Error ? err.name : "unknown error";
+    if (kind === "out_of_credit") {
       return {
         status: HTTP.unavailable,
         body: { error: MESSAGES.outOfCredit, code: "out_of_credit" },
         failure: "out of credit",
       };
     }
+    if (kind === "busy") {
+      return {
+        status: HTTP.unavailable,
+        body: { error: MESSAGES.busy, code: "busy" },
+        retryAfterSec: 5,
+        failure: `provider busy (${name})`,
+      };
+    }
+    if (kind === "misconfigured") {
+      // The person did nothing wrong: report it as unavailable, not as a bad answer.
+      return {
+        status: HTTP.unavailable,
+        body: { error: MESSAGES.unexpected, code: "unavailable" },
+        failure: `provider rejected our credentials (${name})`,
+      };
+    }
     return {
       status: HTTP.badGateway,
       body: { error: MESSAGES.parseFailed },
-      failure: err instanceof Error ? err.name : "unknown error",
+      failure: name,
     };
   } finally {
     release();
   }
 }
 
-export async function POST(req: Request) {
+async function handle(req: Request) {
   const rate = checkRate(clientKey(req));
   if (!rate.allowed) {
     return json({ error: MESSAGES.tooManyRequests }, HTTP.tooManyRequests, {
@@ -143,12 +158,16 @@ export async function POST(req: Request) {
 
   const tooLarge = () => json({ error: MESSAGES.bodyTooLarge }, HTTP.payloadTooLarge);
   if (Number(req.headers.get("content-length")) > LIMITS.bodyMaxBytes) return tooLarge();
-  const raw = await readLimitedText(req, LIMITS.bodyMaxBytes);
-  if (raw === null) return tooLarge();
+  const read = await readBodyText(req, LIMITS.bodyMaxBytes);
+  if (!read.ok) {
+    return read.reason === "too_large"
+      ? tooLarge()
+      : json({ error: MESSAGES.unreadable, code: "unreadable" }, HTTP.badRequest);
+  }
 
   let body: unknown;
   try {
-    body = JSON.parse(raw);
+    body = JSON.parse(read.text);
   } catch {
     return json({ error: MESSAGES.invalidJson }, HTTP.badRequest);
   }
@@ -176,3 +195,5 @@ export async function POST(req: Request) {
     outcome.retryAfterSec ? { "Retry-After": String(outcome.retryAfterSec) } : undefined,
   );
 }
+
+export const POST = guardRoute("parse", handle);

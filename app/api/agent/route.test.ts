@@ -257,7 +257,8 @@ describe("POST /api/agent", () => {
       return toolReply([{ name: "find_rider", input: { name: "Nobody Here" } }]);
     });
     let refused: Response | undefined;
-    for (let i = 0; i < 80 && !refused; i += 1) {
+    // Runs that end early give their unused units back, so it takes more of them to spend the pool.
+    for (let i = 0; i < 400 && !refused; i += 1) {
       const res = await POST(request({ note: NOTE, timeZone: "UTC" }));
       if (res.status === 503) refused = res;
       else await res.body?.cancel();

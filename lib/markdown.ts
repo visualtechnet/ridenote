@@ -110,6 +110,10 @@ export function parseMarkdown(source: string, options: { skipTitle?: boolean } =
   const blocks: Block[] = [];
   const seen = new Map<string, number>();
   let lastLevel = 1;
+  // Each heading depth keeps the level it was first given, so every "##" on a page has the same level
+  // even when the first one had to be clamped (a page that opens with "##" would otherwise get an h2
+  // followed by h3s, and the outline would be wrong for screen readers).
+  const levelByDepth = new Map<number, number>();
   let skip = options.skipTitle ?? false;
   let i = 0;
 
@@ -152,10 +156,15 @@ export function parseMarkdown(source: string, options: { skipTitle?: boolean } =
       const base = slugify(plainText(children));
       const count = seen.get(base) ?? 0;
       seen.set(base, count + 1);
-      lastLevel = Math.min(hashes.length + 1, lastLevel + 1);
+      let level = levelByDepth.get(hashes.length);
+      if (level === undefined) {
+        level = Math.min(hashes.length + 1, lastLevel + 1);
+        levelByDepth.set(hashes.length, level);
+      }
+      lastLevel = level;
       blocks.push({
         type: "heading",
-        level: lastLevel,
+        level,
         id: count ? `${base}-${count}` : base,
         children,
       });
