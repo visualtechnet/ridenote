@@ -162,7 +162,7 @@ const loopRequirements: readonly (readonly [string, ReactNode])[] = [
   ],
   [
     "AL-9",
-    "Only a person’s Approve click saves a trip. Approve checks the signature, the expiry and the schema, and a repeat click does nothing.",
+    "Only a person’s Approve click saves a trip. Approve checks the signature, the expiry and the schema, and a replay does nothing.",
   ],
   [
     "AL-10",
@@ -200,9 +200,9 @@ export default function RequirementsPage() {
       <main id="main" className="w-full max-w-3xl px-4 py-10 sm:px-6">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Requirements</h1>
         <p className={p}>
-          What the product must do, what it needs as input, and exactly what it returns. Written
-          from what the app does today, and the examples on this page are checked by automated
-          tests.
+          What the product must do, what it needs as input, and exactly what it returns. The Parse
+          sections describe what the app does today, and their examples are checked by automated
+          tests. The agent section lists requirements and does not say which are built.
         </p>
         <nav aria-label="On this page" className="mt-4">
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-50 underline underline-offset-4">

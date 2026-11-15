@@ -97,6 +97,13 @@ describe("Requirements page", () => {
     expect(screen.getByRole("link", { name: "The agent" })).toHaveAttribute("href", "#agent");
   });
 
+  it("does not say the whole page is written from what the app does today", () => {
+    const { container } = render(<RequirementsPage />);
+    const text = container.textContent ?? "";
+    expect(text).not.toMatch(/Written\s+from what the app does today/);
+    expect(text).toMatch(/The agent section lists requirements and does not say which are built/);
+  });
+
   it("has no accessibility violations", async () => {
     const { container } = render(<RequirementsPage />);
     expect(await axe(container)).toHaveNoViolations();
