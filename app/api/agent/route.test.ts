@@ -12,7 +12,7 @@ import { jsonContent } from "../../../tests/model-reply";
 import { toolReply } from "@/lib/agent/test-model";
 import { DEVELOPMENT_SECRET } from "@/lib/agent/secret";
 import { sign } from "@/lib/agent/sign";
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 const NOTE = "James O'Neil to County Hospital tomorrow at 9am";
 const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
@@ -264,5 +264,52 @@ describe("POST /api/agent", () => {
     }
     expect(refused?.status).toBe(503);
     expect(refused?.headers.get("Retry-After")).toMatch(/^\d+$/);
+  });
+});
+
+describe("GET /api/agent", () => {
+  beforeEach(() => {
+    mockCreate.mockClear();
+    delete process.env.DRAFT_SIGNING_SECRET;
+    delete process.env.VERCEL_ENV;
+    delete process.env.E2E_STUB_PARSE;
+    delete process.env.AGENT_MODEL;
+  });
+
+  it("says the agent is available when the secret and the model are in place", async () => {
+    const res = await GET();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ available: true });
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it("says it is not available in production when the secret is too short", async () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.DRAFT_SIGNING_SECRET = "too-short-secret";
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(JSON.parse(text)).toEqual({ available: false });
+    expect(text).not.toContain("too-short-secret");
+  });
+
+  it("says it is available in production with a long enough secret, without showing it", async () => {
+    process.env.VERCEL_ENV = "production";
+    const secret = "s".repeat(40);
+    process.env.DRAFT_SIGNING_SECRET = secret;
+    const res = await GET();
+    const text = await res.text();
+    expect(JSON.parse(text)).toEqual({ available: true });
+    expect(text).not.toContain(secret);
+  });
+
+  it("says it is not available when the agent's model cannot force a tool", async () => {
+    process.env.AGENT_MODEL = "claude-sonnet-5-5";
+    expect(await (await GET()).json()).toEqual({ available: false });
+  });
+
+  it("is never cached", async () => {
+    const res = await GET();
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 });

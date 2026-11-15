@@ -53,8 +53,13 @@ const jsonReply = (status: number, body: unknown) => ({
   json: async () => body,
 });
 
+/** What GET /api/agent answers on mount. */
+const availableReply = () => jsonReply(200, { available: true });
+
+/** The first call is the availability check on mount; the replies are for the calls after it. */
 function mockFetch(...replies: unknown[]) {
   const fetchMock = jest.fn();
+  fetchMock.mockResolvedValueOnce(availableReply());
   for (const reply of replies) fetchMock.mockResolvedValueOnce(reply);
   global.fetch = fetchMock as unknown as typeof fetch;
   return fetchMock;
@@ -143,8 +148,8 @@ describe("AgentPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Plan trip (agent)" }));
     fireEvent.click(await screen.findByRole("button", { name: "Maria Santos, 48 Birch Ave" }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toMatchObject({
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body)).toMatchObject({
       resume: { token: "token-1", choice: 1 },
     });
     expect(await screen.findByRole("button", { name: "Approve" })).toBeInTheDocument();
@@ -170,6 +175,82 @@ describe("AgentPanel", () => {
     render(<AgentPanel note={NOTE} />);
     fireEvent.click(screen.getByRole("button", { name: "Plan trip (agent)" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Agent unavailable");
+  });
+
+  it("asks the server once on mount, with a plain GET", async () => {
+    const fetchMock = mockFetch();
+    render(<AgentPanel note={NOTE} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/agent");
+    expect(fetchMock.mock.calls[0][1]?.method).toBeUndefined();
+    expect(screen.getByRole("button", { name: "Plan trip (agent)" })).toBeEnabled();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("explains itself and disables the button when the server says the agent is off", async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(jsonReply(200, { available: false })) as unknown as typeof fetch;
+    render(<AgentPanel note={NOTE} />);
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "The agent is not switched on for this site yet. The parser above still works.",
+    );
+    expect(screen.getByRole("button", { name: "Plan trip (agent)" })).toBeDisabled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("leaves the button on when the availability check fails", async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error("offline")) as unknown as typeof fetch;
+    render(<AgentPanel note={NOTE} />);
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    expect(screen.getByRole("button", { name: "Plan trip (agent)" })).toBeEnabled();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("leaves the button on when the availability check is not ok or not readable", async () => {
+    for (const reply of [
+      jsonReply(500, { available: false }),
+      {
+        ok: true,
+        status: 200,
+        body: null,
+        json: async () => {
+          throw new Error("junk");
+        },
+      },
+      jsonReply(200, { available: "no" }),
+      jsonReply(200, null),
+    ]) {
+      const fetchMock = jest.fn().mockResolvedValue(reply);
+      global.fetch = fetchMock as unknown as typeof fetch;
+      const { unmount } = render(<AgentPanel note={NOTE} />);
+      await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(screen.getByRole("button", { name: "Plan trip (agent)" })).toBeEnabled();
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it("stops listening for the availability answer when the panel goes away", async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonReply(200, { available: true }));
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const { unmount } = render(<AgentPanel note={NOTE} />);
+    const signal = fetchMock.mock.calls[0][1].signal as AbortSignal;
+    expect(signal.aborted).toBe(false);
+    unmount();
+    expect(signal.aborted).toBe(true);
+  });
+
+  it("shows the plain notice, not the raw error, when a run answers 503 unavailable", async () => {
+    mockFetch(jsonReply(503, { error: "Agent unavailable", code: "unavailable" }));
+    render(<AgentPanel note={NOTE} />);
+    fireEvent.click(screen.getByRole("button", { name: "Plan trip (agent)" }));
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "The agent is not switched on for this site yet.",
+    );
+    expect(screen.queryByText("Agent unavailable")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("says a line could not be read, and keeps going", async () => {
@@ -201,6 +282,7 @@ describe("AgentPanel", () => {
     mockFetch(run(proposed));
     global.fetch = jest
       .fn()
+      .mockResolvedValueOnce(availableReply())
       .mockResolvedValueOnce(streamOf([{ type: "run_started", runId: "r1" }, proposed]))
       .mockRejectedValueOnce(new Error("offline")) as unknown as typeof fetch;
     render(<AgentPanel note={NOTE} />);
@@ -212,6 +294,7 @@ describe("AgentPanel", () => {
   it("uses a plain message when Approve gets no readable answer", async () => {
     global.fetch = jest
       .fn()
+      .mockResolvedValueOnce(availableReply())
       .mockResolvedValueOnce(streamOf([{ type: "run_started", runId: "r1" }, proposed]))
       .mockResolvedValueOnce({
         ok: false,
