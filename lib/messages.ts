@@ -136,6 +136,7 @@ export const COPY = {
   navDocsSetup: "Setup",
   navDocsEval: "Eval",
   navDocsFaq: "FAQ",
+  navDocsPerformance: "Performance",
   navDocsAgents: "Agents",
   navDocsAgent: "How the agent works",
   historyTitle: "History",

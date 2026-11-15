@@ -330,7 +330,7 @@ explains each status and each validation code.
 
 ## Limits
 
-All in `lib/config.ts`. The reasoning behind each number is in [docs/SCALING.md](docs/SCALING.md).
+All in `lib/config.ts`. The reasoning behind each number is in [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
 
 | Limit                 | Value                                                                                              |
 | --------------------- | -------------------------------------------------------------------------------------------------- |
@@ -612,7 +612,7 @@ harness works.
 | [The History design](docs/superpowers/specs/2026-10-27-history-design.md) | Read the approved design of the History feature, with the options weighed                                                  |
 | [The History plan](docs/superpowers/plans/2026-10-27-history.md)          | Read the task-by-task plan that was executed to build it                                                                   |
 | [SECURITY.md](SECURITY.md)                                                | Report a problem, and see what is protected and the known limits                                                           |
-| [docs/SCALING.md](docs/SCALING.md)                                        | Understand cost, limits and abuse protection, and what to add for production                                               |
+| [docs/PERFORMANCE.md](docs/PERFORMANCE.md)                                | Understand cost, limits and abuse protection, and what to add for production (also on the site under Docs, Performance)    |
 
 This repository uses Next.js 16, which differs from older versions. See `AGENTS.md`: read the guides in
 `node_modules/next/dist/docs/` before changing framework-level code.

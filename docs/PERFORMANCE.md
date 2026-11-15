@@ -1,4 +1,4 @@
-# Scaling, cost and abuse protection
+# Performance, cost and abuse protection
 
 RideNote has no images and almost no JavaScript to download, so the things that
 usually make a site slow are not the problem here. The cost and the risk are the same thing:

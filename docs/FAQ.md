@@ -77,7 +77,7 @@ note and Parse again, or press Clear.
 
 With no proxy headers (local `npm run dev`), every client looks identical and shares one bucket.
 Hosts such as Vercel set `x-real-ip`, so each visitor gets their own. Also, counters live in memory,
-so on serverless hosting each instance counts separately. See [SCALING.md](SCALING.md).
+so on serverless hosting each instance counts separately. See [PERFORMANCE.md](PERFORMANCE.md).
 
 ### Can I change the limits?
 
