@@ -246,6 +246,7 @@ the committed template.
 | `HISTORY_DATABASE_URL`       | production only | Connection string for the `history_app` role (insert and read). Turns History on. Leave it unset everywhere else. See [History](#history).     |
 | `HISTORY_PURGE_DATABASE_URL` | production only | Connection string for the `history_purge` role (read and delete), used only by the daily clean-up.                                             |
 | `CRON_SECRET`                | production only | A long random string. Vercel sends it to the clean-up route, which refuses any caller without it.                                              |
+| `DRAFT_SIGNING_SECRET`       | production only | At least 32 characters. Signs the agent's drafts and resume tokens. Without it, `/api/agent` answers 503. Never shared with the browser.       |
 
 Every other tunable number (limits, timeouts, status codes) lives in **`lib/config.ts`**, and every
 piece of user-facing text in **`lib/messages.ts`**. Change them there, not in the code that uses them.

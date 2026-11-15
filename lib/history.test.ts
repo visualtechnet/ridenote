@@ -34,6 +34,7 @@ const emptyTrip = (over: Partial<Trip> = {}) =>
 const fakeStore = (over: Partial<HistoryStore> = {}): HistoryStore => ({
   insert: jest.fn().mockResolvedValue(true),
   list: jest.fn().mockResolvedValue([]),
+  insertDraft: jest.fn().mockResolvedValue("saved"),
   ...over,
 });
 

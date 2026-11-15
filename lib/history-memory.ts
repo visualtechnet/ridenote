@@ -1,4 +1,4 @@
-import type { HistoryRecord, HistoryRow, HistoryStore } from "./history";
+import type { DraftOutcome, HistoryRecord, HistoryRow, HistoryStore } from "./history";
 
 const DAY_MS = 86_400_000;
 
@@ -7,6 +7,7 @@ export function createMemoryStore(
   now: () => number = Date.now,
 ): HistoryStore & { rows: HistoryRow[] } {
   const rows: HistoryRow[] = [];
+  const drafts = new Set<string>();
   let nextId = 1;
 
   return {
@@ -17,6 +18,19 @@ export function createMemoryStore(
       if (recent >= dailyCap) return false;
       rows.push({ ...record, id: nextId++, created_at: new Date(now()) });
       return true;
+    },
+    async insertDraft(
+      record: HistoryRecord,
+      draftId: string,
+      dailyCap: number,
+    ): Promise<DraftOutcome> {
+      if (drafts.has(draftId)) return "already_saved";
+      const since = now() - DAY_MS;
+      const recent = rows.filter((r) => r.created_at.getTime() > since).length;
+      if (recent >= dailyCap) return "capped";
+      drafts.add(draftId);
+      rows.push({ ...record, id: nextId++, created_at: new Date(now()) });
+      return "saved";
     },
     async list(limit: number, sinceDays: number) {
       const cutoff = now() - sinceDays * DAY_MS;

@@ -20,6 +20,11 @@ type Options = {
   onStep?: (record: StepRecord) => void;
   /** A monotonic millisecond clock. */
   now?: () => number;
+  /**
+   * Rider ids already known to be real without a find_rider call in this run: the signed resume
+   * token carries the one the dispatcher chose, and the server issued it from a real search.
+   */
+  knownRiderIds?: readonly string[];
 };
 
 /**
@@ -32,7 +37,7 @@ export async function runAgent(options: Options): Promise<RunResult> {
   const start = now();
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: wrapNote(ctx.note) }];
   const steps: StepRecord[] = [];
-  const seenRiderIds = new Set<string>();
+  const seenRiderIds = new Set<string>(options.knownRiderIds ?? []);
   const usage = { steps: 0, inputTokens: 0, outputTokens: 0, cacheRead: 0, latencyMs: 0 };
   let errorSteps = 0;
   let reprompted = false;

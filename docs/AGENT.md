@@ -5,11 +5,12 @@ answers, the **loop** that runs it, and the **evals** that test it. It is writte
 never built one. The key numbers and names here were copied from the code, and a test checks that they
 appear on this page. It does not check every sentence, so read the code if something matters.
 
-A word on honesty first. The tools, the loop, the safety guards, replay and the eval harness are built
-and tested. The web route that streams a run to a page, the Approve button, the page itself and the
-per-step timeout are **not built yet**. This page describes work that sits on open pull requests, which must merge in
-order: the tools first, then the loop, then the evals and this page. The live eval has **not been run against the real model yet**,
-so this page shows no results and invents none. See [What is built and what is not yet](#what-is-built-and-what-is-not-yet).
+A word on honesty first. The tools, the loop, the safety guards, replay, the per-step timeout, the web
+route that streams a run, Approve and the page that shows a run are built and tested. Two pieces are
+**not built yet**: the tenth eval case (resuming after the dispatcher answers, as a live eval) and the
+performance docs. The work sits on open pull requests (Plan C), which must merge in order. The live
+eval has **not been run against the real model with the new route**, so this page shows no new results
+and invents none. See [What is built and what is not yet](#what-is-built-and-what-is-not-yet).
 
 ## What this is
 
@@ -62,8 +63,8 @@ back to the model. That is the whole idea.
 
 Why not simply pick one? A wrong Maria means the wrong person at the wrong address, so the rule is
 "never pick between riders yourself". The question is the safe answer. The dispatcher chooses, and
-the token is what a later run would use to pick up from the answer (that resume step is not built
-yet, see [the status table](#what-is-built-and-what-is-not-yet)).
+the token is what the next run uses to pick up from the answer. The route checks the token and the
+offered choice before any model call (see [the status table](#what-is-built-and-what-is-not-yet)).
 
 If the note had said "Maria Santos", step 1 would return one rider. Then the model would call
 `check_vehicle_availability` for that rider, date and time, and finally `propose_trip`, which ends the
@@ -321,7 +322,7 @@ One more detail the "facts in a draft" case showed. When the note says "her usua
 
 The "injection in the dispatcher's note" case does not test the whole "every rider" attack. The code blocks that attack by itself: rider ids must come from a lookup, and the first ending call wins. So this case checks that the draft stays for the right rider and that the agent is not talked into asking or failing instead. It is a guard check on the AI's side, not the only line of defence.
 
-A tenth case, resuming after the dispatcher answers, belongs to the part that is not built yet.
+A tenth case, resuming after the dispatcher answers, is not a live eval yet. The resume itself is built and has its own tests.
 
 ### Critical cases run three times
 
@@ -472,24 +473,25 @@ Each call re-sends the whole conversation so far, so the input grows with every 
 
 ## What is built and what is not yet
 
-This page describes work that sits on open pull requests, which must merge in order: the tools first, then the loop, then this branch.
+The route, Approve and the page sit on open pull requests (Plan C), which must merge in order. Approve needs the migration `db/migrations/2026-11-14-agent-approve.sql` before it can save.
 
-| Piece                                                                                                         | Status                                                    |
-| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| The four tools, with strict schemas and Zod checks                                                            | Built and tested                                          |
-| The loop, its limits and its stop reasons                                                                     | Built and tested                                          |
-| The guards (ids from a lookup, first ending call wins)                                                        | Built and tested                                          |
-| Signed drafts and resume tokens                                                                               | Built and tested                                          |
-| Replay                                                                                                        | Built and tested                                          |
-| The eval harness and its free scripted tests                                                                  | Built and tested                                          |
-| The live eval against the real model                                                                          | Written, **not run yet**, so there are no results to show |
-| The web route that streams a run to the browser                                                               | Not built yet                                             |
-| No start-up check that the signing secret is long enough, so a short secret appears as a confusing tool error | Known gap                                                 |
-| The per-step timeout                                                                                          | Not built yet (only the 60 second run deadline exists)    |
-| The page that shows a run                                                                                     | Not built yet                                             |
-| The Approve button and saving a trip                                                                          | Not built yet                                             |
-| Resuming a run after the dispatcher answers (the tenth case)                                                  | Not built yet                                             |
-| The performance docs and eval report page                                                                     | Not built yet                                             |
+| Piece                                                                                                         | Status                                                          |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| The four tools, with strict schemas and Zod checks                                                            | Built and tested                                                |
+| The loop, its limits and its stop reasons                                                                     | Built and tested                                                |
+| The guards (ids from a lookup, first ending call wins)                                                        | Built and tested                                                |
+| Signed drafts and resume tokens                                                                               | Built and tested                                                |
+| Replay                                                                                                        | Built and tested                                                |
+| The eval harness and its free scripted tests                                                                  | Built and tested                                                |
+| The live eval against the real model                                                                          | Run on Haiku before the route was built (see the results above) |
+| The web route `POST /api/agent` that streams a run to the browser                                             | Built and tested                                                |
+| The per-step timeout (15 seconds, one retry) and the 60 second run deadline                                   | Built and tested                                                |
+| The page panel "Plan trip (agent)" that shows each step                                                       | Built and tested, including browser tests on the stand-in       |
+| `POST /api/agent/approve`, the Approve button and saving a trip                                               | Built and tested; the database migration must run first         |
+| Resuming a run after the dispatcher answers                                                                   | Built and tested (not yet a live eval case)                     |
+| The tenth live eval case (resume with a choice)                                                               | Not built yet                                                   |
+| The performance docs and eval report page                                                                     | Not built yet                                                   |
+| No start-up check that the signing secret is long enough, so a short secret appears as a confusing tool error | Known gap                                                       |
 
 ### Where each piece lives
 
