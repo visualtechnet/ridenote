@@ -10,7 +10,7 @@ export const TOOL_ERRORS = {
   invalidInput: (tool: string, issue: string) =>
     `Invalid input for ${tool}: ${issue}. Fix the input and call the tool again.`,
   noRider: (name: string) =>
-    `No rider matches "${cut(name)}". Check the spelling, or call ask_dispatcher.`,
+    `No rider matches "${cut(name)}". Do not search again. Call ask_dispatcher to ask who the rider is.`,
   unknownRider: (id: string) =>
     `No rider has id "${cut(id)}". Call find_rider first and use an id it returned.`,
   notLookedUp: (id: string) =>

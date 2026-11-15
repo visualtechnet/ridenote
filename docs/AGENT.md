@@ -122,7 +122,7 @@ _about_ them. The model chooses actions. The code decides facts.
 
 If something goes wrong (an unknown tool name, a missing field, a rider id that does not exist, the
 vehicle service down), the tool does not crash. It returns an **error result**: a plain message such
-as "No rider matches 'Hector'. Check the spelling, or call ask_dispatcher." marked `is_error`.
+as "No rider matches 'Hector'. Do not search again. Call ask_dispatcher to ask who the rider is." marked `is_error`.
 
 Why? A crash would end the whole run and the model would learn nothing. An error message the model can
 read lets it recover: fix the input, try again, or ask the dispatcher. Every message says what went

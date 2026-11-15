@@ -27,7 +27,7 @@ describe("TOOL_ERRORS", () => {
       "Invalid input for propose_trip: rider_id is missing. Fix the input and call the tool again.",
     );
     expect(TOOL_ERRORS.noRider("Zed")).toBe(
-      'No rider matches "Zed". Check the spelling, or call ask_dispatcher.',
+      'No rider matches "Zed". Do not search again. Call ask_dispatcher to ask who the rider is.',
     );
     expect(TOOL_ERRORS.unknownRider("r9")).toBe(
       'No rider has id "r9". Call find_rider first and use an id it returned.',
@@ -44,6 +44,13 @@ describe("TOOL_ERRORS", () => {
     expect(TOOL_ERRORS.dropoffMissing).toBe(
       "The note gives no drop-off. Call ask_dispatcher to ask where the rider is going.",
     );
+  });
+
+  it("tells the model not to search again when no rider matches, and to ask the dispatcher", () => {
+    const message = TOOL_ERRORS.noRider("Hector");
+    expect(message).toContain("Do not search again");
+    expect(message).toContain("Call ask_dispatcher");
+    expect(message).not.toMatch(/spelling/i);
   });
 
   it("tells the model the note gives no date and to ask the dispatcher", () => {
