@@ -29,4 +29,12 @@ describe("Agent eval report docs", () => {
       expect(line).toContain(`${passed} of ${cases}`);
     }
   });
+
+  it("explains the no vehicle check note as a missing confirmed answer", () => {
+    const at = doc.indexOf("`no vehicle check` means");
+    expect(at).toBeGreaterThan(-1);
+    const explanation = doc.slice(at, at + 400);
+    expect(explanation).toContain("confirmed");
+    expect(explanation).toContain("vehicle available");
+  });
 });

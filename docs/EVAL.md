@@ -206,8 +206,9 @@ How to read a line: the case name, the number of steps (model turns) the last at
 run ended, and PASS or FAIL. Tokens, dollars and latency add up every attempt, so the cases marked
 critical, which run three times, cost about three times what one run does. `needs_info` means the
 agent stopped to ask the dispatcher a question; `proposed` means it proposed a trip. The note
-`no vehicle check` means the agent never called the vehicle tool in that case, which is expected
-when it ends by asking a question before it has a trip to check.
+`no vehicle check` means the agent did not get a confirmed "vehicle available" answer before it
+ended. Either it never called the vehicle tool, or the check came back unavailable or with an error.
+That is expected when it stops to ask a question.
 
 ### The history of the committed runs
 
@@ -221,18 +222,18 @@ failures below are read from each file's rows.
 | `2026-11-14-claude-haiku-5-5-after-no-match-rule.json` | 8 of 9 | `facts in a draft`: the draft pickup came from the note text ("Dorothy Nguyen's usual place"), not the rider file. | Nothing in the agent code. The parse step sometimes reads that phrase as the pickup instead of leaving it for the rider file, and it did not happen on the next run. |
 | `2026-11-14-claude-haiku-5-5-final-pre-merge.json`     | 9 of 9 | Nothing.                                                                                                           | This is the report run above.                                                                                                                                        |
 
-There was also an earlier run, the first run, whose results file was not kept. It passed 7 of 9 for
-about $0.023: `no date` failed 3 of 3 (the model assumed today's date) and `note and file disagree on
-mobility` failed. The date guard fixed the first of these.
+The very first live run passed 7 of 9 for about $0.023 (`no date` failed 3 of 3 because the model
+assumed today's date, and `note and file disagree on mobility` failed, and the date guard then fixed
+the first of these), but its results file was not kept in the repository, so it cannot be checked here.
 
 ### What this does not show
 
 - It is one small model. Nothing here says how a larger model would do.
-- Each case ran once, except the critical cases, which ran three times.
+- Most cases ran once. Critical cases run three times, and a non-critical case that fails is retried.
 - The cases were tuned while the agent was being built, so 9 of 9 is not proof the agent is reliable.
   The cases know what the builders had already seen go wrong.
-- A different single case failed in each of the three runs before the last one, and between some of
-  those runs there was no code change that could explain it. A single run is a sample, not a verdict.
+- A different single case failed in each of the three runs before the last one, so one run says
+  little about how reliable the agent is. A single run is a sample, not a verdict.
 - `facts in a draft` is intermittent in the parse step, so it can fail again with no change to the
   agent.
 
