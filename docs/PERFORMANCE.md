@@ -78,6 +78,80 @@ cost and faster. The 600-token cap leaves room for the worst case. If you ever t
 raise `UPSTREAM.maxTokens` too: reasoning counts against the cap, and a tricky note can use all of it
 and cut the answer off.
 
+## What an agent run costs and how long it takes
+
+The parse above is one AI call. The **agent** (see [the agent page](AGENT.md)) is different: it is an
+AI that can look things up and decide what to do next, so one **run** is several calls in a row, each
+one called a **step**. A **token** is the small piece of text, roughly three quarters of a word, that
+the AI service counts and charges for. More steps and more tokens mean more cost and more waiting.
+
+### What was measured
+
+These figures come from one saved live test, the file
+`evals/agent-results/2026-11-14-claude-haiku-5-5-final-pre-merge.json`, run on 2026-11-14 with the
+`claude-haiku-5-5` model. Treat them as a first reading, not a promise.
+
+- **Cost:** about $0.0011 per run, which is a little over a tenth of a cent. That is the whole bill for
+  the test divided by 19 runs.
+- **Tokens:** about 8,740 input tokens and 430 output tokens per run. Input is what we send (the
+  instructions, the note and everything the lookups returned so far). Output is what the AI writes.
+- **Steps:** about 3 steps per run. A clear note can finish sooner; a vague one needs a lookup and a question.
+- **Output per step:** about 150 output tokens per step, which is total output divided by total steps.
+- **Time:** from 4.6 seconds for the quickest case to 9.4 seconds for the slowest, per run.
+
+The limit on one step's output is 400 tokens. The saved results keep only totals for each case, not the
+longest single step, so that 400 limit is **not measured** beyond the average of about 150. It is a
+safety ceiling chosen by judgement, not a number the test confirmed.
+
+Two cautions:
+
+- **It is one small model on 9 cases and 19 runs on one day.** A different model, different notes or a
+  busier day can give different numbers. Re-run the live test (`npm run eval:agent`) after a change and
+  commit the new file.
+- **A saved case adds up its attempts.** The three cases that matter most run 3 times in parallel, and
+  the file stores their tokens and time as sums. So the per-run figures above divide time by the number of
+  attempts, and tokens by the number of runs. The per-step figure assumes every attempt took as many
+  steps as the last one did, so it is approximate.
+
+### Reserving the worst case first
+
+Before a run makes its first paid call, the route asks the shared pool of AI calls for the worst case
+at once: 7 model calls (the 6 steps plus the one that reads the note), in `app/api/agent/route.ts`. If
+the pool cannot cover that, the run is refused with a 503 before anything is spent. This stops many runs
+from starting together and then each running out of budget halfway.
+
+Two protections sit around every run:
+
+- **A per-client rate limit** counts how often one visitor can start something: 2 runs a minute in
+  production (5 elsewhere) and 10 approvals a minute.
+- **A concurrency gate** limits how many AI calls run at the same moment on one server. It has the same size as the
+  parse route's gate (10), so extra requests get a 503 at once instead of queueing.
+
+### Time limits
+
+Each step waits at most 15 seconds for the AI. On a timeout or a server error it tries once more. The
+whole run has a 60 second **deadline**, a wall-clock limit that also cancels a call still waiting. The
+retry shares that deadline, so it never extends it.
+
+### Each limit and what it protects against
+
+| Limit                          | Value                        | What it prevents                                                                                                   |
+| ------------------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Steps in one run               | 6 steps                      | A loop that keeps calling the AI. A normal run takes about 3, so 6 leaves room for one recovery.                   |
+| Tokens in one run              | 20,000 tokens                | A run that is cheap per step but grows without end, because the input grows each step. A hard cost cap.            |
+| Tokens the AI may write a step | 400 tokens                   | A rambling or manipulated answer. A tool call is short. This ceiling is not measured beyond the average.           |
+| Time for the whole run         | 60 seconds                   | A run that hangs, and the server work and money tied up while it waits.                                            |
+| Time for one step              | 15 seconds, one retry        | One slow call using up the whole deadline.                                                                         |
+| Runs per client                | 2 runs a minute (production) | One visitor, or a script, starting many runs.                                                                      |
+| Approvals per client           | 10 approvals a minute        | Someone hammering the Approve button.                                                                              |
+| Concurrency gate               | 10 calls at once per server  | A pile-up of work and memory when the AI service is slow.                                                          |
+| Ids only from a lookup         | Checked in code              | The AI inventing a rider id. A rider id must come from a lookup earlier in the same run, so it cannot make one up. |
+| Signed drafts                  | Expire after 15 minutes      | A changed or old draft being approved. The draft carries a signature, so an edit is detected.                      |
+
+Everything in this table that has a number lives in `lib/config.ts` (`AGENT`, `AGENT_RATE` and
+`BUDGET`), and a test reads it from there, so this page cannot drift from the code without a test
+failing.
+
 ## Known limits
 
 - Without a proxy header (local dev, bare `next start`) all clients share one bucket.
