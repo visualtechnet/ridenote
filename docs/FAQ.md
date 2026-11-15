@@ -43,11 +43,9 @@ The validator blocks HTML and script text. The rule is "`<` followed by a letter
 
 The Docs page explains 400, 404, 405, 413, 415, 422, 429, 500, 502 and 503.
 
-### What does 429 mean, and what does 503 mean? They both say "try later".
+### What do 429 and 503 mean?
 
-- **429**: _you_ sent too many requests (3 per minute per client on the live site, 10 in development and preview). The `Retry-After` header says when.
-- **503**: _everyone together_ is using too much (the shared AI budget or the simultaneous-call cap).
-  It protects cost and the server. It is not about you in particular.
+Moved to Performance: [429 versus 503](/docs/performance#what-does-429-mean-and-what-does-503-mean-they-both-say-try-later).
 
 ### Does the app store my notes?
 
@@ -62,28 +60,21 @@ Server logs record an error _type_, plus token counts, stop reason and latency p
 See "Querying History from a Mac" in the README for `psql` and example queries. To remove a row, run
 `delete from history where id = ...;` in the Neon console as the owner: the app itself cannot delete.
 
-### Why do two people sending the same note at the same moment cost one AI call?
+### Why do two identical notes cost one AI call?
 
-On purpose. Identical concurrent requests share one call (`lib/coalesce.ts`). Nothing is kept
-afterwards. A longer-lived cache was deliberately not added because it would hold passenger details
-in memory. Decide that with a privacy review first.
+Moved to Performance: [two people, one AI call](/docs/performance#why-do-two-people-sending-the-same-note-at-the-same-moment-cost-one-ai-call).
 
-### Why does pressing Parse twice on the same note do nothing?
+### Why does pressing Parse twice do nothing?
 
-The result on screen is already the answer for that exact note, and every call costs money. Edit the
-note and Parse again, or press Clear.
+Moved to Performance: [pressing Parse twice](/docs/performance#why-does-pressing-parse-twice-on-the-same-note-do-nothing).
 
-### Why does the rate limit behave oddly on my machine?
+### Why is the rate limit odd on my machine?
 
-With no proxy headers (local `npm run dev`), every client looks identical and shares one bucket.
-Hosts such as Vercel set `x-real-ip`, so each visitor gets their own. Also, counters live in memory,
-so on serverless hosting each instance counts separately. See [PERFORMANCE.md](PERFORMANCE.md).
+Moved to Performance: [the rate limit on your machine](/docs/performance#why-does-the-rate-limit-behave-oddly-on-my-machine).
 
-### Can I change the limits?
+### How do I change the limits?
 
-Yes, in `lib/config.ts` only. If you raise `LIMITS.noteMax`, raise `LIMITS.bodyMaxBytes` too (body =
-6 x note length + 100, rounded up). Run `npm test`; the tests are written against the constants, so
-they follow the change.
+Moved to Performance: [changing the limits](/docs/performance#can-i-change-the-limits).
 
 ### Why does the Tests page show a count? Where does it come from?
 
@@ -187,11 +178,9 @@ about $5 a month for everyone together, and that limit is not raised, so it can 
 your own computer you **do** need your own Anthropic API key, created in your own account. API keys
 are not provided or shared. The README and the Setup page have the steps.
 
-### It says "This demo has used up its AI budget". What now?
+### The demo says its AI budget is used up. What now?
 
-The demo's fixed monthly limit is spent. It stays unavailable until the limit renews, and it is not
-raised on request. To keep going, run RideNote yourself: clone the repository, create your own key in
-your Anthropic account, put it in `.env.local` (or run `npm run dev:key` on a Mac), and start it.
+Moved to Performance: [the used up AI budget](/docs/performance#it-says-this-demo-has-used-up-its-ai-budget-what-now).
 
 ### How do I deploy it to Vercel?
 
@@ -201,7 +190,7 @@ changed variable only applies to new deployments, so redeploy after changing it.
 
 ### Is it safe to leave the public demo running?
 
-The most it can cost is the spend limit on the demo's API key, because the key has a small fixed cap.
+The cost half moved to Performance: [what it can cost](/docs/performance#is-it-safe-to-leave-the-public-demo-running).
 The code adds per-client and shared limits, input checks, and strict handling of the AI's answer. The
 key is never in the repository or sent to the browser. `SECURITY.md` lists what is protected and the
 known limits, such as the in-memory rate limiter counting per server instance.

@@ -84,3 +84,46 @@ and cut the answer off.
 - Per-instance counters mean the effective global limit is `300 x number of instances` until a
   shared store is added.
 - Coalescing and the concurrency gate are per instance too.
+
+## Questions about limits and cost
+
+These answers moved here from the [FAQ](FAQ.md), because they are about the limits and the cost.
+
+### What does 429 mean, and what does 503 mean? They both say "try later".
+
+- **429**: _you_ sent too many requests (3 per minute per client on the live site, 10 in development and preview). The `Retry-After` header says when.
+- **503**: _everyone together_ is using too much (the shared AI budget or the simultaneous-call cap).
+  It protects cost and the server. It is not about you in particular.
+
+### Why do two people sending the same note at the same moment cost one AI call?
+
+On purpose. Identical concurrent requests share one call (`lib/coalesce.ts`). Nothing is kept
+afterwards. A longer-lived cache was deliberately not added because it would hold passenger details
+in memory. Decide that with a privacy review first.
+
+### Why does pressing Parse twice on the same note do nothing?
+
+The result on screen is already the answer for that exact note, and every call costs money. Edit the
+note and Parse again, or press Clear.
+
+### Why does the rate limit behave oddly on my machine?
+
+With no proxy headers (local `npm run dev`), every client looks identical and shares one bucket.
+Hosts such as Vercel set `x-real-ip`, so each visitor gets their own. Also, counters live in memory,
+so on serverless hosting each instance counts separately. See "Known limits" below.
+
+### Can I change the limits?
+
+Yes, in `lib/config.ts` only. If you raise `LIMITS.noteMax`, raise `LIMITS.bodyMaxBytes` too (body =
+6 x note length + 100, rounded up). Run `npm test`; the tests are written against the constants, so
+they follow the change.
+
+### It says "This demo has used up its AI budget". What now?
+
+The demo's fixed monthly limit is spent. It stays unavailable until the limit renews, and it is not
+raised on request. To keep going, run RideNote yourself: clone the repository, create your own key in
+your Anthropic account, put it in `.env.local` (or run `npm run dev:key` on a Mac), and start it.
+
+### Is it safe to leave the public demo running?
+
+The most it can cost is the spend limit on the demo's API key, because the key has a small fixed cap. For how the demo is kept cheap, see "Running a public demo cheaply" above.

@@ -37,6 +37,14 @@ describe("Markdown", () => {
     expect(screen.getByRole("link", { name: "Eval" })).toHaveAttribute("href", "/docs/eval");
   });
 
+  it("points a link to PERFORMANCE.md at the Performance page", () => {
+    render(<Markdown source={"[Performance](PERFORMANCE.md)"} />);
+    expect(screen.getByRole("link", { name: "Performance" })).toHaveAttribute(
+      "href",
+      "/docs/performance",
+    );
+  });
+
   it("shows links to repository-only files as plain text, not dead links", () => {
     render(<Markdown source={"See [the README](../README.md)."} />);
     expect(screen.queryByRole("link")).toBeNull();

@@ -11,6 +11,7 @@ const HEADING_CLASS = {
 const SITE_PAGE: Record<string, string> = {
   "FAQ.md": Routes.page("docsFaq"),
   "EVAL.md": Routes.page("docsEval"),
+  "PERFORMANCE.md": Routes.page("docsPerformance"),
 };
 
 const BODY = "text-zinc-300";
@@ -33,7 +34,7 @@ function renderInline(nodes: Inline[]): ReactNode {
         return <em key={i}>{renderInline(node.children)}</em>;
       case "link": {
         const href = SITE_PAGE[node.href] ?? node.href;
-        // Links to other files in the repository (README.md, PERFORMANCE.md) have no page here.
+        // Links to other files in the repository (README.md, SECURITY.md) have no page here.
         // "//host" is a link to another site that looks local, so only a single "/" counts.
         const local = href.startsWith("#") || (href.startsWith("/") && !href.startsWith("//"));
         if (!local && !/^https?:/.test(href)) {
