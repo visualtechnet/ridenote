@@ -150,8 +150,9 @@ retry shares that deadline, so it never extends it.
 | Signed drafts                  | Expire after 15 minutes      | A changed or old draft being approved. The draft carries a signature, so an edit is detected.                      |
 
 Everything in this table that has a number lives in `lib/config.ts` (`AGENT`, `AGENT_RATE` and
-`BUDGET`), and a test reads it from there, so this page cannot drift from the code without a test
-failing.
+`BUDGET`), and a test reads it from there. The measured figures and most limits are also checked by tests
+against the committed results and `lib/config.ts`. A few rows are not pinned by a test: the 5 per
+minute outside production, the 15 minute draft expiry, "ids only from a lookup" and the retry count.
 
 ## Known limits
 

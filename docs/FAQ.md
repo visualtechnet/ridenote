@@ -781,7 +781,7 @@ model to ask the dispatcher.
 or call ask_dispatcher". The model kept trying other spellings, and every call was an error. After three
 steps in a row the run stopped as failed, instead of asking the dispatcher.
 
-**Caught by.** The live eval. The case passed once by luck and then failed on every run.
+**Caught by.** The live eval. In the first live run, whose results file was not kept in the repository, this case passed; in a later committed run it failed.
 
 **Fix.** Two parts. A search that finds nobody is now marked as an expected result, so it no longer counts
 toward the three-mistakes stop. And the error text now says "Do not search again. Call ask_dispatcher to
@@ -808,10 +808,11 @@ And after changing an environment variable, redeploy.
 
 ### 44. One run of a small model is a sample, not a verdict
 
-**What happened.** Across the committed live runs of 2026-11-14, three runs each scored 8 of 9, and a
+**What happened.** Across the committed live runs of 2026-11-14, three of the committed live runs each scored 8 of 9, and a
 different single case failed each time: "note and file disagree on mobility", then "unknown rider", then
 "facts in a draft". The last run scored 9 of 9. Re-running two of the failing cases showed "facts in a
-draft" pass once and fail twice, with no change to the code that decides it. The parse step reads
+draft" pass once and fail twice, with no change to the code that decides it. These re-runs were not saved to the repository, so only the four
+committed runs can be checked here. The parse step reads
 "Dorothy Nguyen's usual place" as the pickup some of the time.
 
 **Caught by.** Re-running the same cases.

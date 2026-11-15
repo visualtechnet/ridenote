@@ -10,8 +10,8 @@ route that streams a run, Approve and the page that shows a run are built and te
 them is in this repository. The performance docs and the eval report are written too. Two pieces are
 **not built yet**: the tenth eval case (resuming after the dispatcher answers, as a live eval) and the
 trace line for every tool call (requirement TC-10). The live
-eval has **not been run against the real model with the new route**, so this page shows no new results
-and invents none. See [What is built and what is not yet](#what-is-built-and-what-is-not-yet).
+eval has **not been run against the real model with the new route**, so no results for it are shown or
+invented. The results of the earlier live runs are in the [agent eval report](/docs/eval). See [What is built and what is not yet](#what-is-built-and-what-is-not-yet).
 
 ## What this is
 
@@ -484,7 +484,7 @@ The route, Approve and the page are in the code. Approve needs the migration `db
 | Signed drafts and resume tokens                                                                                               | Built and tested                                                                                  |
 | Replay                                                                                                                        | Built and tested                                                                                  |
 | The eval harness and its free scripted tests                                                                                  | Built and tested                                                                                  |
-| The live eval against the real model                                                                                          | Run on Haiku before the route was built (see the results above)                                   |
+| The live eval against the real model                                                                                          | Run on Haiku before the route was built (see the [agent eval report](/docs/eval))                 |
 | The web route `POST /api/agent` that streams a run to the browser                                                             | Built and tested                                                                                  |
 | The per-step timeout (15 seconds, one retry) and the 60 second run deadline                                                   | Built and tested                                                                                  |
 | The page panel "Plan trip (agent)" that shows each step                                                                       | Built and tested, including browser tests on the stand-in                                         |
