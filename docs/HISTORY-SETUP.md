@@ -181,8 +181,9 @@ The app limits each address in code, but the edge rule stops abuse before it rea
 **The agent routes.** Add two more rules the same way, for `POST /api/agent` (key **IP address**, **60
 seconds**, limit **2**, the value of `AGENT_RATE.runProduction` in `lib/config.ts`) and `POST
 /api/agent/approve` (limit **10**, the value of `AGENT_RATE.approve`). Action **Log** first, **Deny**
-later, exactly as for the parse rule. Note the Hobby plan limit below: only one rate-limit rule is allowed,
-so there the app's own limits cover the agent routes.
+later, exactly as for the parse rule. On the Hobby plan a project can have only **one** rate-limit rule (see
+below) and the parse rule already uses it, so the two agent rules need a plan that allows more. The app's
+own limits apply either way.
 
 Dashboard field names change from time to time. Follow what the page shows; the settings above are what
 matter.

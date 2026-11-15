@@ -139,8 +139,21 @@ describe("README agent set-up steps", () => {
   });
 
   it("README troubleshooting explains Agent unavailable and the redeploy", () => {
-    expect(readme).toContain("Agent unavailable");
-    expect(readme).toContain("`unavailable`");
-    expect(readme).toMatch(/Agent unavailable[^\n]*redeploy/);
+    const row = readme.split("\n").find((l) => l.startsWith("| Agent unavailable")) ?? "";
+    expect(row).toContain("503");
+    expect(row).toContain("`unavailable`");
+    expect(row).toContain("`DRAFT_SIGNING_SECRET`");
+    expect(row).toContain(`${AGENT.secretMinLength} characters`);
+    expect(row).toContain("redeploy");
+    expect(row).not.toMatch(/disabled|not switched on|note on the page/);
+  });
+
+  it("README and HISTORY-SETUP say why the agent rules need more than the one Hobby rule", () => {
+    for (const text of [readme, setup]) {
+      expect(text).toMatch(
+        /Hobby plan a project\s+can have only \*{0,2}one\*{0,2} rate-limit rule/,
+      );
+      expect(text).toContain("already uses it");
+    }
   });
 });
