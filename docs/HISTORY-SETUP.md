@@ -39,6 +39,10 @@ an email. They go only into Neon and into Vercel's environment variables.
 An existing database also needs `db/migrations/2026-11-01-pickup-date.sql` run once, the same way, before
 you deploy the code that writes the `pickup_date` column. It is safe to run twice.
 
+A database from before the agent also needs `db/migrations/2026-11-14-agent-approve.sql` run once, the same
+way, before you deploy the agent. It adds the `source` and `draft_id` columns and a unique index, so a
+repeated Approve click saves nothing a second time. Approve cannot save a trip without it.
+
 Run it as the database owner (Neon's default login, `neondb_owner`). The script creates the two logins
 itself. **Do not create them in the console's Roles page**: a login made there is given broad powers that
 the script cannot take away.
@@ -173,6 +177,12 @@ The app limits each address in code, but the edge rule stops abuse before it rea
 4. Set the action to **Log** first. Click **Review Changes**, then **Publish**.
 5. After a few days of real traffic, look at the Firewall overview. If only abusive traffic was logged, edit
    the rule, change the action to **Deny** (or the default 429), and publish again.
+
+**The agent routes.** Add two more rules the same way, for `POST /api/agent` (key **IP address**, **60
+seconds**, limit **2**, the value of `AGENT_RATE.runProduction` in `lib/config.ts`) and `POST
+/api/agent/approve` (limit **10**, the value of `AGENT_RATE.approve`). Action **Log** first, **Deny**
+later, exactly as for the parse rule. Note the Hobby plan limit below: only one rate-limit rule is allowed,
+so there the app's own limits cover the agent routes.
 
 Dashboard field names change from time to time. Follow what the page shows; the settings above are what
 matter.

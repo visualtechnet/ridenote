@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { AGENT_CASES } from "@/evals/agent-cases";
 import { PRICES_AS_OF } from "@/evals/prices";
-import { AGENT, UPSTREAM } from "@/lib/config";
+import { AGENT, AGENT_RATE, UPSTREAM } from "@/lib/config";
 
 // docs/AGENT.md is read by people who cannot see the code. Every number and name in it must be the
 // one the code uses, or the page is a story.
@@ -116,5 +116,31 @@ describe("docs/AGENT.md", () => {
     expect(doc).toContain("No date in the note, no check and no proposal");
     expect(doc).toContain("a rule in code cannot");
     expect(doc).toContain("Three guards live in the code itself");
+  });
+});
+
+describe("README agent set-up steps", () => {
+  const readme = readFileSync(join(process.cwd(), "README.md"), "utf8");
+  const setup = readFileSync(join(process.cwd(), "docs/HISTORY-SETUP.md"), "utf8");
+
+  it("README tells the owner to run the agent approve migration before using Approve", () => {
+    expect(readme).toContain("2026-11-14-agent-approve.sql");
+    expect(readme).toMatch(/2026-11-14-agent-approve\.sql[^]*before/);
+    expect(setup).toContain("2026-11-14-agent-approve.sql");
+  });
+
+  it("README names a firewall rule for the agent routes with the limits from config", () => {
+    expect(readme).toContain("POST /api/agent");
+    expect(readme).toContain("POST /api/agent/approve");
+    expect(readme).toContain(`limit ${AGENT_RATE.runProduction}`);
+    expect(readme).toContain(`limit ${AGENT_RATE.approve}`);
+    expect(AGENT_RATE.windowMs).toBe(60_000);
+    expect(setup).toContain("/api/agent/approve");
+  });
+
+  it("README troubleshooting explains Agent unavailable and the redeploy", () => {
+    expect(readme).toContain("Agent unavailable");
+    expect(readme).toContain("`unavailable`");
+    expect(readme).toMatch(/Agent unavailable[^\n]*redeploy/);
   });
 });
