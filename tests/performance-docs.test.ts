@@ -84,6 +84,17 @@ describe("Performance docs", () => {
     expect(perf).toContain(`${nearest10(outputTokens / steps)} output tokens per step`);
   });
 
+  it("states how many cases ran three times and how many ran once", () => {
+    const perf = readFileSync("docs/PERFORMANCE.md", "utf8").replace(/\s+/g, " ");
+    const words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+    const thrice = RESULTS.rows.filter((r) => r.attempts === 3).length;
+    const once = RESULTS.rows.filter((r) => r.attempts === 1).length;
+    expect(thrice * 3 + once).toBe(RESULTS.calls);
+    expect(perf).toContain(`${words[thrice]} cases run 3 times each`);
+    expect(perf).toContain(`the other ${words[once]} once`);
+    expect(perf).not.toContain("in parallel");
+  });
+
   it("quotes per-run latency as latencyMs divided by attempts", () => {
     const perf = readFileSync("docs/PERFORMANCE.md", "utf8");
     const secs = RESULTS.rows.map((r) => r.latencyMs / r.attempts / 1000);

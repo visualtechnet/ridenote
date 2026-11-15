@@ -108,8 +108,9 @@ Two cautions:
 - **It is one small model on 9 cases and 19 runs on one day.** A different model, different notes or a
   busier day can give different numbers. Re-run the live test (`npm run eval:agent`) after a change and
   commit the new file.
-- **A saved case adds up its attempts.** The three cases that matter most run 3 times in parallel, and
-  the file stores their tokens and time as sums. So the per-run figures above divide time by the number of
+- **A saved case adds up its attempts.** Of the 9 cases, five cases run 3 times each (the ones that
+  matter most) and the other four once, which makes 19 runs. The file stores each case's tokens and
+  time as sums. So the per-run figures above divide time by the number of
   attempts, and tokens by the number of runs. The per-step figure assumes every attempt took as many
   steps as the last one did, so it is approximate.
 
