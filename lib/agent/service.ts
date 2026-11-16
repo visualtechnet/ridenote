@@ -3,6 +3,7 @@ import type { Clock } from "../clock";
 import type { Extraction } from "../extract";
 import type { AskOption } from "./ask-dispatcher";
 import type { ResumePayload } from "./ask-dispatcher";
+import { toolLogLines } from "./log";
 import { runAgent } from "./loop";
 import { endedEvent, parsedEvent, stepEvent, type StreamEvent } from "./stream";
 import { withStepTimeout } from "./step-timeout";
@@ -21,6 +22,10 @@ export type ServiceDeps = {
   signal: AbortSignal;
   /** Receives each event in order. Must not throw; a throw is caught and ends the run as failed. */
   emit: (event: StreamEvent) => void;
+  /** Writes one log line per tool call (see lib/agent/log.ts). Defaults to console.info, like the parse route. */
+  log?: (line: string) => void;
+  /** The time written in each log line. */
+  now?: () => Date;
 };
 
 /** The model for one step: its own time limit and one retry (AGENT.stepMs, AGENT.stepRetries). */
@@ -105,12 +110,18 @@ export function resumeNote(payload: ResumePayload, option: AskOption): string {
 }
 
 async function finish(deps: ServiceDeps, ctx: ToolContext, knownRiderIds: string[]) {
+  const log = deps.log ?? ((line: string) => console.info(line));
+  const now = deps.now ?? (() => new Date());
   const result = await runAgent({
     model: timedModel(deps.model),
     ctx,
     signal: deps.signal,
     knownRiderIds,
-    onStep: (record) => deps.emit(stepEvent(record)),
+    onStep: (record) => {
+      deps.emit(stepEvent(record));
+      // A throwing sink is caught by the loop, which does not let an observer change the run.
+      for (const line of toolLogLines(record, ctx.runId, now())) log(line);
+    },
   });
   deps.emit(endedEvent(result));
 }

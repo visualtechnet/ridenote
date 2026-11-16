@@ -186,3 +186,41 @@ describe("parseModelName", () => {
     );
   });
 });
+
+describe("runAgentCase trace", () => {
+  const twoCalls = () =>
+    scriptedModel([
+      toolReply([{ name: "find_rider", input: { name: "Maria" } }]),
+      toolReply([
+        {
+          name: "ask_dispatcher",
+          input: { question: "Which Maria?", options: [{ label: "Maria S", rider_id: null }] },
+        },
+      ]),
+    ]);
+
+  it("sends one [tool] line per call to trace", async () => {
+    const lines: string[] = [];
+    await runAgentCase(
+      { parse: okParse, model: twoCalls(), trace: (l) => lines.push(l) },
+      byName("two Marias"),
+    );
+    expect(lines).toEqual([
+      "[tool] two Marias step 1 find_rider ok",
+      "[tool] two Marias step 2 ask_dispatcher ok",
+    ]);
+  });
+
+  it("prints nothing without trace", async () => {
+    const log = jest.spyOn(console, "log").mockImplementation(() => {});
+    const info = jest.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      await runAgentCase({ parse: okParse, model: twoCalls() }, byName("two Marias"));
+      expect(log).not.toHaveBeenCalled();
+      expect(info).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+      info.mockRestore();
+    }
+  });
+});
