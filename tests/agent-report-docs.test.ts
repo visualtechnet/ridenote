@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { formatTable, type AgentRow } from "@/evals/agent-results";
 
 const DIR = "evals/agent-results";
@@ -20,7 +21,11 @@ describe("Agent eval report docs", () => {
   });
 
   it("lists the pass count of each committed run in the history table", () => {
-    const files = readdirSync(DIR).filter((f) => f.endsWith(".json"));
+    // Committed runs only: an untracked result from a local eval run is not yet part of the report.
+    const files = execFileSync("git", ["ls-files", DIR], { encoding: "utf8" })
+      .split("\n")
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => f.slice(DIR.length + 1));
     expect(files.length).toBeGreaterThanOrEqual(4);
     for (const name of files) {
       const { passed, cases } = read(name);
