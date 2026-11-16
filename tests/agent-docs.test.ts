@@ -19,6 +19,11 @@ describe("docs/AGENT.md", () => {
     expect(doc).toContain(`${AGENT.maxToolErrors} steps in a row`);
   });
 
+  it("says the page asks the server whether the agent is switched on", () => {
+    expect(doc).toContain("it asks the server (`GET /api/agent`) whether the agent is switched on");
+    expect(doc).toContain('disables the "Plan trip (agent)" button and says so in plain words');
+  });
+
   it("says a search that finds no rider does not count toward the repeated-mistakes rule", () => {
     expect(doc).toContain("A search that finds no rider is not a mistake, so it does not count.");
     expect(doc).toContain("a search that finds no rider is not one");

@@ -3,14 +3,16 @@ import { z } from "zod";
 import { resolveTimeZone, type Clock } from "@/lib/clock";
 import { AGENT, AGENT_RATE, BUDGET, HTTP, LIMITS, RATE_LIMIT } from "@/lib/config";
 import { clientKey, UNKNOWN_CLIENT } from "@/lib/client-key";
+import { guardRoute } from "@/lib/api-guard";
 import { createGate } from "@/lib/concurrency";
 import { createStubClient, stubActive } from "@/lib/e2e-stub-client";
 import { extractTrip } from "@/lib/extract";
-import { readLimitedText } from "@/lib/read-body";
+import { readBodyText } from "@/lib/read-body";
+import { MESSAGES } from "@/lib/messages";
 import { createRateLimiter } from "@/lib/rate-limit";
+import { upstreamBudget } from "@/lib/upstream-budget";
 import { validateRequestBody } from "@/lib/validation";
 import { checkResumeChoice } from "@/lib/agent/ask-dispatcher";
-import { createUnitBudget } from "@/lib/agent/budget";
 import { fakeAgentModel } from "@/lib/agent/fake-agent";
 import { createAnthropicModel, agentModelName } from "@/lib/agent/model";
 import { agentSystemPrompt } from "@/lib/agent/prompt";
@@ -30,10 +32,15 @@ const checkRunUnknownClient = createRateLimiter({
   windowMs: AGENT_RATE.windowMs,
   maxKeys: 1,
 });
-// Shared by every run in this instance: the same pool the parse route uses, in model calls.
-const budget = createUnitBudget({ limit: BUDGET.maxCallsPerWindow, windowMs: BUDGET.windowMs });
-// Runs in flight in this instance; a run holds its slot until its stream ends.
+// Runs in flight in this instance; a run holds its slot until its stream ends. Kept apart from the
+// parse route's gate so a slow agent run can never slow a parse (AL-6).
 const gate = createGate(BUDGET.maxConcurrent);
+
+/**
+ * The most model calls one run can make: every step, each with its one retry, plus the parse step.
+ * A run takes this up front and gives back whatever it did not use (see the refund in POST).
+ */
+const WORST_CASE_CALLS = AGENT.maxSteps * (AGENT.stepRetries + 1) + 1;
 
 /** A run can take up to a minute: give the platform room for it. */
 export const maxDuration = 60;
@@ -86,7 +93,17 @@ function models(clock: Clock): { parse: ServiceDeps["parse"]; model: AgentModel 
   }
 }
 
-export async function POST(req: Request) {
+/**
+ * Lets the page ask, before anyone presses the button, whether the agent is switched on. It answers
+ * yes or no only: no model call, no budget, gate or rate limit, and nothing about why.
+ */
+async function availability() {
+  const available =
+    signingSecret(process.env).ok && models({ now: new Date(), timeZone: "UTC" }) !== null;
+  return json({ available }, HTTP.ok);
+}
+
+async function handle(req: Request) {
   const key = clientKey(req);
   const rate = key === UNKNOWN_CLIENT ? checkRunUnknownClient(key) : checkRunByClient(key);
   if (!rate.allowed) {
@@ -100,12 +117,16 @@ export async function POST(req: Request) {
   if (Number(req.headers.get("content-length")) > LIMITS.bodyMaxBytes) {
     return json({ error: "The note is too long." }, HTTP.payloadTooLarge);
   }
-  const raw = await readLimitedText(req, LIMITS.bodyMaxBytes);
-  if (raw === null) return json({ error: "The note is too long." }, HTTP.payloadTooLarge);
+  const read = await readBodyText(req, LIMITS.bodyMaxBytes);
+  if (!read.ok) {
+    return read.reason === "too_large"
+      ? json({ error: "The note is too long." }, HTTP.payloadTooLarge)
+      : json({ error: MESSAGES.unreadable, code: "unreadable" }, HTTP.badRequest);
+  }
 
   let body: unknown;
   try {
-    body = JSON.parse(raw);
+    body = JSON.parse(read.text);
   } catch {
     return json({ error: "The request is not valid JSON." }, HTTP.badRequest);
   }
@@ -146,17 +167,31 @@ export async function POST(req: Request) {
 
   const release = gate.tryAcquire();
   if (!release) return json({ error: BUSY }, HTTP.unavailable, { "Retry-After": "1" });
-  // A run asks for its worst case (every step plus the parse step) before the first model call.
-  if (!budget.reserve(AGENT.maxSteps + 1)) {
+  // A run asks for its worst case before the first model call; the unused part is refunded at the end.
+  const grant = upstreamBudget.reserve(WORST_CASE_CALLS);
+  if (!grant) {
     release();
     return json({ error: BUSY }, HTTP.unavailable, {
-      "Retry-After": String(budget.retryAfterSec()),
+      "Retry-After": String(upstreamBudget.retryAfterSec()),
     });
   }
 
+  // Counts the calls this run actually starts, so the unused units can be given back.
+  let spent = 0;
+  const countedModel: AgentModel = (modelReq) => {
+    spent += 1;
+    return wiring.model(modelReq);
+  };
+  const countedParse: ServiceDeps["parse"] = (n, c, signal) => {
+    spent += 1;
+    return wiring.parse(n, c, signal);
+  };
+
   const encoder = new TextEncoder();
   const abort = new AbortController();
-  req.signal.addEventListener("abort", () => abort.abort(), { once: true });
+  // A client that disconnected while the checks above ran has already fired its abort event.
+  if (req.signal.aborted) abort.abort();
+  else req.signal.addEventListener("abort", () => abort.abort(), { once: true });
   const riders: readonly Rider[] = RIDERS;
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -168,8 +203,8 @@ export async function POST(req: Request) {
         }
       };
       const deps: ServiceDeps = {
-        parse: wiring.parse,
-        model: wiring.model,
+        parse: countedParse,
+        model: countedModel,
         secret: secret.secret,
         riders,
         newId: () => crypto.randomUUID(),
@@ -183,6 +218,7 @@ export async function POST(req: Request) {
       run
         .catch(() => emit({ type: "error", code: "unavailable" }))
         .finally(() => {
+          upstreamBudget.refund(WORST_CASE_CALLS - spent, grant);
           release();
           try {
             controller.close();
@@ -193,6 +229,7 @@ export async function POST(req: Request) {
     },
     cancel() {
       abort.abort();
+      // The run's own finally also releases; the gate ignores a second release.
       release();
     },
   });
@@ -202,3 +239,6 @@ export async function POST(req: Request) {
     headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store" },
   });
 }
+
+export const GET = guardRoute("agent availability", availability);
+export const POST = guardRoute("agent", handle);

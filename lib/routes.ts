@@ -3,6 +3,7 @@ const PAGES = {
   docs: "/docs",
   docsEval: "/docs/eval",
   docsFaq: "/docs/faq",
+  docsBusiness: "/docs/business",
   docsPerformance: "/docs/performance",
   docsAgents: "/docs/agents",
   docsAgent: "/docs/agent",

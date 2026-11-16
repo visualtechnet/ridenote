@@ -133,6 +133,8 @@ short. The tool runner the loop calls (`runTool` in `lib/agent/tools.ts`) catche
 as a confusing tool failure rather than a clear set-up error (see the status table: there is no
 start-up check yet).
 
+The page does not wait for that to go wrong. When it loads, it asks the server (`GET /api/agent`) whether the agent is switched on, and if not it disables the "Plan trip (agent)" button and says so in plain words. The answer is only yes or no, and never says why.
+
 ## The loop
 
 The **loop** is the cycle that runs the agent:

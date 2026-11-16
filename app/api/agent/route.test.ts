@@ -12,7 +12,7 @@ import { jsonContent } from "../../../tests/model-reply";
 import { toolReply } from "@/lib/agent/test-model";
 import { DEVELOPMENT_SECRET } from "@/lib/agent/secret";
 import { sign } from "@/lib/agent/sign";
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 const NOTE = "James O'Neil to County Hospital tomorrow at 9am";
 const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
@@ -203,6 +203,21 @@ describe("POST /api/agent", () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
+  it("hands the model an already-aborted signal when the client left before the run began", async () => {
+    answerWith([]);
+    const gone = new Request("http://localhost/api/agent", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-real-ip": `10.9.0.${++ip}` },
+      body: JSON.stringify({ note: NOTE, timeZone: "UTC" }),
+      signal: AbortSignal.abort(),
+    });
+    const res = await POST(gone);
+    await events(res);
+    const signals = mockCreate.mock.calls.map(([, options]) => options?.signal as AbortSignal);
+    expect(signals.length).toBeGreaterThan(0);
+    expect(signals.every((s) => s.aborted)).toBe(true);
+  });
+
   it("answers 503 when the agent's model is one that cannot force a tool", async () => {
     process.env.AGENT_MODEL = "claude-sonnet-5-5";
     try {
@@ -257,12 +272,62 @@ describe("POST /api/agent", () => {
       return toolReply([{ name: "find_rider", input: { name: "Nobody Here" } }]);
     });
     let refused: Response | undefined;
-    for (let i = 0; i < 80 && !refused; i += 1) {
+    // Runs that end early give their unused units back, so it takes more of them to spend the pool.
+    for (let i = 0; i < 400 && !refused; i += 1) {
       const res = await POST(request({ note: NOTE, timeZone: "UTC" }));
       if (res.status === 503) refused = res;
       else await res.body?.cancel();
     }
     expect(refused?.status).toBe(503);
     expect(refused?.headers.get("Retry-After")).toMatch(/^\d+$/);
+  });
+});
+
+describe("GET /api/agent", () => {
+  beforeEach(() => {
+    mockCreate.mockClear();
+    delete process.env.DRAFT_SIGNING_SECRET;
+    delete process.env.VERCEL_ENV;
+    delete process.env.E2E_STUB_PARSE;
+    delete process.env.AGENT_MODEL;
+  });
+
+  it("says the agent is available when the secret and the model are in place", async () => {
+    const res = await GET(new Request("http://localhost/api/agent"));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ available: true });
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it("says it is not available in production when the secret is too short", async () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.DRAFT_SIGNING_SECRET = "too-short-secret";
+    const res = await GET(new Request("http://localhost/api/agent"));
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(JSON.parse(text)).toEqual({ available: false });
+    expect(text).not.toContain("too-short-secret");
+  });
+
+  it("says it is available in production with a long enough secret, without showing it", async () => {
+    process.env.VERCEL_ENV = "production";
+    const secret = "s".repeat(40);
+    process.env.DRAFT_SIGNING_SECRET = secret;
+    const res = await GET(new Request("http://localhost/api/agent"));
+    const text = await res.text();
+    expect(JSON.parse(text)).toEqual({ available: true });
+    expect(text).not.toContain(secret);
+  });
+
+  it("says it is not available when the agent's model cannot force a tool", async () => {
+    process.env.AGENT_MODEL = "claude-sonnet-5-5";
+    expect(await (await GET(new Request("http://localhost/api/agent"))).json()).toEqual({
+      available: false,
+    });
+  });
+
+  it("is never cached", async () => {
+    const res = await GET(new Request("http://localhost/api/agent"));
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 });

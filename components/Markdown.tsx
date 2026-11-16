@@ -10,6 +10,7 @@ const HEADING_CLASS = {
 /** Guides that link to each other by file name (so the links work on GitHub) get the site's route. */
 const SITE_PAGE: Record<string, string> = {
   "FAQ.md": Routes.page("docsFaq"),
+  "BUSINESS.md": Routes.page("docsBusiness"),
   "EVAL.md": Routes.page("docsEval"),
   "PERFORMANCE.md": Routes.page("docsPerformance"),
 };

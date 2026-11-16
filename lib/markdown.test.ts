@@ -69,6 +69,13 @@ describe("parseMarkdown", () => {
     expect(levels).toEqual([2, 3, 4, 3, 4, 2]);
   });
 
+  it("gives every heading of the same depth the same level, even when the first had to be clamped", () => {
+    const levels = parseMarkdown("## One\n\nText\n\n## Two\n\n## Three")
+      .filter((b) => b.type === "heading")
+      .map((b) => (b.type === "heading" ? b.level : 0));
+    expect(levels).toEqual([2, 2, 2]);
+  });
+
   it("gives repeated headings different ids", () => {
     const ids = parseMarkdown("## Same\n\n## Same")
       .filter((b) => b.type === "heading")
