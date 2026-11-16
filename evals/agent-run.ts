@@ -1,5 +1,6 @@
 import { UPSTREAM } from "../lib/config";
 import { RIDERS } from "../lib/agent/riders";
+import { toolTraceLines } from "../lib/agent/log";
 import { runAgent } from "../lib/agent/loop";
 import type { AgentModel, RunResult, ToolContext } from "../lib/agent/types";
 import type { Trip } from "../lib/trip";
@@ -16,6 +17,8 @@ export type CaseDeps = {
     | { ok: false; error: string }
   >;
   model: AgentModel;
+  /** Receives one `[tool]` line per tool call. Unset prints nothing. */
+  trace?: (line: string) => void;
 };
 
 export type Attempted = {
@@ -114,7 +117,13 @@ export async function runAgentCase(deps: CaseDeps, c: AgentCase): Promise<Attemp
 
   let result: RunResult;
   try {
-    result = await runAgent({ model: deps.model, ctx });
+    result = await runAgent({
+      model: deps.model,
+      ctx,
+      onStep: (record) => {
+        for (const line of toolTraceLines(record, c.name)) deps.trace?.(line);
+      },
+    });
   } catch (err) {
     return {
       problems: [`run threw: ${firstLine(err)}`],

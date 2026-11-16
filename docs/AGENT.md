@@ -7,9 +7,9 @@ appear on this page. It does not check every sentence, so read the code if somet
 
 A word on honesty first. The tools, the loop, the safety guards, replay, the per-step timeout, the web
 route that streams a run, Approve and the page that shows a run are built and tested, and the code for
-them is in this repository. The performance docs and the eval report are written too. Two pieces are
-**not built yet**: the tenth eval case (resuming after the dispatcher answers, as a live eval) and the
-trace line for every tool call (requirement TC-10). The live
+them is in this repository. The performance docs, the eval report and the log line for every tool call
+(requirement TC-10) are built too. One piece is **not built yet**: the tenth eval case (resuming after
+the dispatcher answers, as a live eval). The live
 eval has **not been run against the real model with the new route**, so no results for it are shown or
 invented. The results of the earlier live runs are in the [agent eval report](/docs/eval). See [What is built and what is not yet](#what-is-built-and-what-is-not-yet).
 
@@ -252,6 +252,28 @@ model's free text. But be exact about what it does hold:
 So a record is not free of personal details. Nothing saves records yet. Anyone who adds a save later
 must clean them first with the project's scrubbing (`lib/scrub.ts`), as History does for trips.
 
+### The log line for each tool call
+
+The server writes one **log line** for every tool call. A log line is a short line of text that the
+server prints for the people who run it, so they can see what happened. The route writes this one for
+new runs and for resumed runs, with `console.info`, the same way the parse route writes its usage line
+(event `llm_call`). Each line is one piece of JSON, a simple text format of named fields, and its event
+is `agent_tool`. It has six fields:
+
+- `event`: always `agent_tool`.
+- `runId`: the id of the run.
+- `at`: the time, as an ISO date and time.
+- `step`: the step number.
+- `tool`: the name of the tool. It is written only if it is one of the four known tools. The model picks
+  the name, so anything else is written as `unknown`.
+- `ok`: `true` if the call worked, `false` if it returned an error.
+
+The line never holds a tool input, a tool result, an error message, the note, a rider name or id, or a
+draft. Those are the places where personal details can appear (see the step records above).
+
+The eval script prints the same facts as one `[tool]` line per call, in the form
+`[tool] <case name> step <N> <tool> <ok|error>`. It uses the same four-tool rule.
+
 ## Replay
 
 Every step of a run is recorded, so a run can be played back later. **Replay** takes the recorded tool
@@ -478,24 +500,24 @@ Each call re-sends the whole conversation so far, so the input grows with every 
 
 The route, Approve and the page are in the code. Approve needs the migration `db/migrations/2026-11-14-agent-approve.sql` before it can save.
 
-| Piece                                                                                                                         | Status                                                                                            |
-| ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| The four tools, with strict schemas and Zod checks                                                                            | Built and tested                                                                                  |
-| The loop, its limits and its stop reasons                                                                                     | Built and tested                                                                                  |
-| The guards (ids from a lookup, first ending call wins)                                                                        | Built and tested                                                                                  |
-| Signed drafts and resume tokens                                                                                               | Built and tested                                                                                  |
-| Replay                                                                                                                        | Built and tested                                                                                  |
-| The eval harness and its free scripted tests                                                                                  | Built and tested                                                                                  |
-| The live eval against the real model                                                                                          | Run on Haiku before the route was built (see the [agent eval report](/docs/eval))                 |
-| The web route `POST /api/agent` that streams a run to the browser                                                             | Built and tested                                                                                  |
-| The per-step timeout (15 seconds, one retry) and the 60 second run deadline                                                   | Built and tested                                                                                  |
-| The page panel "Plan trip (agent)" that shows each step                                                                       | Built and tested, including browser tests on the stand-in                                         |
-| `POST /api/agent/approve`, the Approve button and saving a trip                                                               | Built and tested; the database migration must run first                                           |
-| Resuming a run after the dispatcher answers                                                                                   | Built and tested (not yet a live eval case)                                                       |
-| The tenth live eval case (resume with a choice)                                                                               | Not built yet                                                                                     |
-| The performance docs and eval report page                                                                                     | Built and tested (docs, with tests that pin their numbers to config and to the committed results) |
-| TC-10: every tool call prints one trace line in the script and one log line in the route, with no inputs and no personal data | Not built yet (no per-tool-call trace or log line exists; the route only logs a failed Approve)   |
-| No start-up check that the signing secret is long enough, so a short secret appears as a confusing tool error                 | Known gap                                                                                         |
+| Piece                                                                                                                         | Status                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The four tools, with strict schemas and Zod checks                                                                            | Built and tested                                                                                                                                       |
+| The loop, its limits and its stop reasons                                                                                     | Built and tested                                                                                                                                       |
+| The guards (ids from a lookup, first ending call wins)                                                                        | Built and tested                                                                                                                                       |
+| Signed drafts and resume tokens                                                                                               | Built and tested                                                                                                                                       |
+| Replay                                                                                                                        | Built and tested                                                                                                                                       |
+| The eval harness and its free scripted tests                                                                                  | Built and tested                                                                                                                                       |
+| The live eval against the real model                                                                                          | Run on Haiku before the route was built (see the [agent eval report](/docs/eval))                                                                      |
+| The web route `POST /api/agent` that streams a run to the browser                                                             | Built and tested                                                                                                                                       |
+| The per-step timeout (15 seconds, one retry) and the 60 second run deadline                                                   | Built and tested                                                                                                                                       |
+| The page panel "Plan trip (agent)" that shows each step                                                                       | Built and tested, including browser tests on the stand-in                                                                                              |
+| `POST /api/agent/approve`, the Approve button and saving a trip                                                               | Built and tested; the database migration must run first                                                                                                |
+| Resuming a run after the dispatcher answers                                                                                   | Built and tested (not yet a live eval case)                                                                                                            |
+| The tenth live eval case (resume with a choice)                                                                               | Not built yet                                                                                                                                          |
+| The performance docs and eval report page                                                                                     | Built and tested (docs, with tests that pin their numbers to config and to the committed results)                                                      |
+| TC-10: every tool call prints one trace line in the script and one log line in the route, with no inputs and no personal data | Built and tested (the route logs one `agent_tool` line per tool call and the eval script prints one `[tool]` line; neither holds an input or a result) |
+| No start-up check that the signing secret is long enough, so a short secret appears as a confusing tool error                 | Known gap                                                                                                                                              |
 
 ### Where each piece lives
 

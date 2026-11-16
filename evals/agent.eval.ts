@@ -72,6 +72,7 @@ const rows: AgentRow[] = [];
           : { ok: false, error: out.error };
       },
       model: createAnthropicModel(client, { model, system: agentSystemPrompt(CLOCK) }),
+      trace: console.log,
     };
 
     for (let i = 0; i < AGENT_CASES.length; i += BATCH) {

@@ -693,7 +693,9 @@ export default function DocsPage() {
               note itself is never saved, but the parsed trip is shown publicly on the History page
               for 7 days on the live site, with phone numbers and emails removed. Server logs record
               an error type, plus token counts, stop reason and latency per model call, with a
-              request id and the prompt version, never the note.
+              request id and the prompt version, never the note. The agent also writes one line per
+              tool call (event <code>agent_tool</code>) with a run id, step, tool name and whether
+              it worked, and never a tool input, a tool result or the note.
             </li>
             <li>Use fictional names and addresses in examples, tests and bug reports.</li>
             <li>

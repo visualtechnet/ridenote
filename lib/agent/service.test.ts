@@ -32,6 +32,7 @@ function deps(over: Partial<ServiceDeps> = {}) {
     newRunId: () => "run-1",
     signal: new AbortController().signal,
     emit: (e) => events.push(e),
+    log: () => {},
     ...over,
   };
   return { deps: base, events };
@@ -172,5 +173,73 @@ describe("runResume", () => {
     const { deps: d, events } = deps({ model: scriptedModel([textReply("hm")]) });
     await runResume(d, payload, payload.options[0], CLOCK);
     expect(events.at(-1)).toMatchObject({ status: "failed" });
+  });
+});
+
+describe("tool logging", () => {
+  const askReply = () =>
+    toolReply([
+      {
+        name: "ask_dispatcher",
+        input: { question: "Which Maria?", options: [{ label: "Maria S", rider_id: null }] },
+      },
+    ]);
+
+  it("writes one agent_tool line per call to the injected log, in order", async () => {
+    const lines: string[] = [];
+    const { deps: d } = deps({
+      model: scriptedModel([
+        toolReply([{ name: "find_rider", input: { name: "Maria" } }]),
+        askReply(),
+      ]),
+      log: (line) => lines.push(line),
+      now: () => new Date("2026-11-16T12:00:00.000Z"),
+    });
+    await runNote(d, "Maria tomorrow", CLOCK);
+    const parsed = lines.map((l) => JSON.parse(l));
+    expect(parsed).toEqual([
+      {
+        event: "agent_tool",
+        runId: "run-1",
+        at: "2026-11-16T12:00:00.000Z",
+        step: 1,
+        tool: "find_rider",
+        ok: true,
+      },
+      {
+        event: "agent_tool",
+        runId: "run-1",
+        at: "2026-11-16T12:00:00.000Z",
+        step: 2,
+        tool: "ask_dispatcher",
+        ok: true,
+      },
+    ]);
+  });
+
+  it("still ends needs_info when the log throws", async () => {
+    const { deps: d, events } = deps({
+      model: scriptedModel([
+        toolReply([{ name: "find_rider", input: { name: "Maria" } }]),
+        askReply(),
+      ]),
+      log: () => {
+        throw new Error("disk full");
+      },
+    });
+    await runNote(d, "Maria tomorrow", CLOCK);
+    expect(events.at(-1)).toMatchObject({ type: "ended", status: "needs_info" });
+  });
+
+  it("logs to console.info by default", async () => {
+    const info = jest.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      const { deps: d } = deps({ model: scriptedModel([askReply()]), log: undefined });
+      await runNote(d, "Maria tomorrow", CLOCK);
+      expect(info).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(info.mock.calls[0][0] as string)).toMatchObject({ tool: "ask_dispatcher" });
+    } finally {
+      info.mockRestore();
+    }
   });
 });
