@@ -145,18 +145,20 @@ written to a file or shown on screen. The Keychain entry is called `ridenote-dem
 
 These commands all use the saved key, so you never type a key or an entry name:
 
-| Command              | What it does                                                        |
-| -------------------- | ------------------------------------------------------------------- |
-| `npm run dev:key`    | Start the development server (asks for the key the first time)      |
-| `npm run start:key`  | Start the production server (after `npm run build`)                 |
-| `npm run eval:key`   | Run the live accuracy eval                                          |
-| `npm run key:status` | Say whether a key is saved (never shows it)                         |
-| `npm run key:set`    | Save a new key, replacing the old one (for example when it expires) |
-| `npm run key:remove` | Delete the saved key                                                |
-| `npm run key`        | List these commands                                                 |
+| Command                  | What it does                                                        |
+| ------------------------ | ------------------------------------------------------------------- |
+| `npm run dev:key`        | Start the development server (asks for the key the first time)      |
+| `npm run start:key`      | Start the production server (after `npm run build`)                 |
+| `npm run eval:key`       | Run the live evals (parser and agent; see the note below)           |
+| `npm run eval:agent:key` | Run the live agent eval only                                        |
+| `npm run key:status`     | Say whether a key is saved (never shows it)                         |
+| `npm run key:set`        | Save a new key, replacing the old one (for example when it expires) |
+| `npm run key:remove`     | Delete the saved key                                                |
+| `npm run key`            | List these commands                                                 |
 
 Good to know:
 
+- `npm run eval` and `npm run eval:key` run BOTH the parser eval and the agent eval, because the config matches every `*.eval.ts`. The parser eval alone is `npx jest --config jest.eval.config.mjs evals/parser.eval`.
 - Paste the key when asked (Cmd + V). Nothing appears as you paste. That is normal.
 - It only accepts something that starts with `sk-ant-`. Anything else is refused and nothing is saved.
 - macOS may ask once whether Terminal can use the item. Choose Allow.
@@ -238,10 +240,13 @@ the committed template.
 | Variable                     | Required        | What it does                                                                                                                                   |
 | ---------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ANTHROPIC_API_KEY`          | yes             | Your key. Read only on the server, never sent to the browser.                                                                                  |
+| `AGENT_MODEL`                | no              | Model for the agent. Falls back to `MODEL`, then the default. Models that cannot be forced to call a tool are refused.                         |
+| `EVAL_MAX_USD`               | no              | Spend cap for the live agent eval, default 1. A value that is not a number above 0 (or `Infinity`) is refused.                                 |
 | `MODEL`                      | no              | Claude model to use. Defaults to `UPSTREAM.defaultModel`. If another model rejects the request, see the `thinking` setting in `lib/config.ts`. |
 | `HISTORY_DATABASE_URL`       | production only | Connection string for the `history_app` role (insert and read). Turns History on. Leave it unset everywhere else. See [History](#history).     |
 | `HISTORY_PURGE_DATABASE_URL` | production only | Connection string for the `history_purge` role (read and delete), used only by the daily clean-up.                                             |
 | `CRON_SECRET`                | production only | A long random string. Vercel sends it to the clean-up route, which refuses any caller without it.                                              |
+| `DRAFT_SIGNING_SECRET`       | production only | At least 32 characters. Signs the agent's drafts and resume tokens. Without it, `/api/agent` answers 503. Never shared with the browser.       |
 
 Every other tunable number (limits, timeouts, status codes) lives in **`lib/config.ts`**, and every
 piece of user-facing text in **`lib/messages.ts`**. Change them there, not in the code that uses them.
@@ -250,15 +255,16 @@ piece of user-facing text in **`lib/messages.ts`**. Change them there, not in th
 
 The site has five sections, reachable from the navigation on the left (a **Menu** button on phones):
 
-| Page             | Path            | What it is                                                                           |
-| ---------------- | --------------- | ------------------------------------------------------------------------------------ |
-| **Parser**       | `/`             | The tool itself.                                                                     |
-| **Requirements** | `/requirements` | The PRD, required input, expected JSON output and what valid JSON is.                |
-| **Docs**         | `/docs`         | Setup, accepted and rejected inputs, JSON pitfalls, every error explained.           |
-| Docs: **Eval**   | `/docs/eval`    | How the live accuracy eval works, with every case listed.                            |
-| Docs: **FAQ**    | `/docs/faq`     | Common questions, and the bugs found along the way with their lessons.               |
-| **Contact**      | `/contact`      | How to reach the owner on GitHub with questions or feedback (keys are not provided). |
-| **Tests**        | `/tests`        | Every automated test name, read from the real test files at build time.              |
+| Page                          | Path            | What it is                                                                           |
+| ----------------------------- | --------------- | ------------------------------------------------------------------------------------ |
+| **Parser**                    | `/`             | The tool itself.                                                                     |
+| **Requirements**              | `/requirements` | The PRD, required input, expected JSON output and what valid JSON is.                |
+| **Docs**                      | `/docs`         | Setup, accepted and rejected inputs, JSON pitfalls, every error explained.           |
+| Docs: **Eval**                | `/docs/eval`    | How the live accuracy eval works, with every case listed.                            |
+| Docs: **How the agent works** | `/docs/agent`   | A beginner's guide to the agent's tools, loop and evals.                             |
+| Docs: **FAQ**                 | `/docs/faq`     | Common questions, and the bugs found along the way with their lessons.               |
+| **Contact**                   | `/contact`      | How to reach the owner on GitHub with questions or feedback (keys are not provided). |
+| **Tests**                     | `/tests`        | Every automated test name, read from the real test files at build time.              |
 
 What to type, in short: who, where from, where to, when, and mobility: name every aid the passenger
 uses (a wheelchair, a cane, a walker, and so on) and all of them are returned as a list. The card shows
@@ -324,7 +330,7 @@ explains each status and each validation code.
 
 ## Limits
 
-All in `lib/config.ts`. The reasoning behind each number is in [docs/SCALING.md](docs/SCALING.md).
+All in `lib/config.ts`. The reasoning behind each number is in [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
 
 | Limit                 | Value                                                                                              |
 | --------------------- | -------------------------------------------------------------------------------------------------- |
@@ -387,12 +393,22 @@ short, once and in order:
    before the usage columns needs `db/migrations/2026-10-28-history-usage.sql` run once instead, **before**
    deploying the code that writes them. A database from before 2026-11-01 also needs
    `db/migrations/2026-11-01-pickup-date.sql` run once, the same way, **before** deploying the code that
-   writes `pickup_date`; it is safe to run twice. Optionally prove the grants with `db/verify.sql`.
+   writes `pickup_date`; it is safe to run twice. A database from before the agent also needs
+   `db/migrations/2026-11-14-agent-approve.sql` run once, as the database owner in the Neon console SQL
+   editor, **before** deploying the agent: it adds a `source` column and a `draft_id` column to the history
+   table, so each saved agent trip records where it came from, and a unique index so that a repeated
+   Approve click saves nothing a second time. Approve cannot save a trip without it. Optionally prove the
+   grants with `db/verify.sql`.
 3. Set each role's password with `alter role`, then build the two connection strings from the owner's pooled
    string (swap user and password, drop `&channel_binding=require`).
 4. Add `HISTORY_DATABASE_URL`, `HISTORY_PURGE_DATABASE_URL` and `CRON_SECRET` in **Settings, Environment
    Variables** (Production only, Sensitive), then redeploy.
 5. Add the Firewall rule on `POST /api/parse` (IP key, 60 s window, limit 3), action Log first, Deny later.
+   Add two more rules the same way for the agent: `POST /api/agent` (IP key, 60 s window, limit 2, which is
+   `AGENT_RATE.runProduction` in `lib/config.ts`) and `POST /api/agent/approve` (IP key, 60 s window,
+   limit 10, which is `AGENT_RATE.approve`), each with action Log first, Deny later. On the Hobby plan a project
+   can have only one rate-limit rule and the parse rule already uses it, so the two agent rules need a plan
+   that allows more. The app's own limits apply either way.
 6. Check **Settings, Cron Jobs** and the logs for the 04:00 purge run.
 
 **Check after each deploy:** from one machine send five quick parses (the example note, Parse, five times
@@ -499,7 +515,8 @@ Found a problem? See [SECURITY.md](SECURITY.md) for how to report it and for the
 npm test                # unit and component tests (Jest)
 npm run test:coverage   # same, with a coverage report and an enforced floor
 npm run test:e2e        # real-browser tests (first run: npx playwright install chromium)
-npm run eval            # live accuracy check against the real model (needs a key, costs cents)
+npm run eval            # live accuracy check against the real model (needs a key, costs cents); also runs the agent eval, see below
+npm run eval:agent:key  # live agent eval only (costs cents, capped by EVAL_MAX_USD, default 1)
 npm run check           # types + lint + formatting + unit tests with the coverage floor
 npm run test:all        # everything
 ```
@@ -597,27 +614,30 @@ harness works.
 | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | [docs/GUIDE.md](docs/GUIDE.md)                                            | Understand the whole project from scratch                                                                                  |
 | [docs/EVAL.md](docs/EVAL.md)                                              | Learn how the live accuracy eval works and how it ties into prompt and schema                                              |
+| [docs/AGENT.md](docs/AGENT.md)                                            | Learn, from scratch, how the agent's tools, loop, limits and evals work (also on the site under Docs, How the agent works) |
 | [docs/FAQ.md](docs/FAQ.md)                                                | See common questions and **the bugs we hit and what they taught us**                                                       |
+| [docs/BUSINESS.md](docs/BUSINESS.md)                                      | Explain RideNote to a non-technical reader: what it does, what it will not do, and what to expect                          |
 | [docs/BEST-PRACTICES.md](docs/BEST-PRACTICES.md)                          | Learn the habits this code is built on                                                                                     |
 | [docs/SUBAGENTS.md](docs/SUBAGENTS.md)                                    | Learn, step by step, how a feature was planned and built with a team of AI subagents (also on the site under Docs, Agents) |
 | [docs/HISTORY-SETUP.md](docs/HISTORY-SETUP.md)                            | Set up the History database on Neon and Vercel, step by step, with troubleshooting                                         |
 | [The History design](docs/superpowers/specs/2026-10-27-history-design.md) | Read the approved design of the History feature, with the options weighed                                                  |
 | [The History plan](docs/superpowers/plans/2026-10-27-history.md)          | Read the task-by-task plan that was executed to build it                                                                   |
 | [SECURITY.md](SECURITY.md)                                                | Report a problem, and see what is protected and the known limits                                                           |
-| [docs/SCALING.md](docs/SCALING.md)                                        | Understand cost, limits and abuse protection, and what to add for production                                               |
+| [docs/PERFORMANCE.md](docs/PERFORMANCE.md)                                | Understand cost, limits and abuse protection, and what to add for production (also on the site under Docs, Performance)    |
 
 This repository uses Next.js 16, which differs from older versions. See `AGENTS.md`: read the guides in
 `node_modules/next/dist/docs/` before changing framework-level code.
 
 ## Troubleshooting
 
-| Symptom                                       | Likely cause and fix                                                                                                                               |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "This demo has used up its AI budget"         | The demo's fixed monthly limit is spent. It stays off until the limit renews. Run RideNote yourself with your own key (Quick start).               |
-| "We couldn't parse that note" every time      | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`.                                                              |
-| 429 while testing by hand                     | You passed the per-client limit (3 a minute on the live site, 10 a minute locally). Wait for `Retry-After` seconds.                                |
-| Everyone shares one rate limit locally        | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.                                                                        |
-| `npm run test:e2e` cannot launch a browser    | Run `npx playwright install chromium` once.                                                                                                        |
-| `npm run dev:key` says it only works on a Mac | It uses the macOS Keychain. Use `.env.local` and `npm run dev` instead.                                                                            |
-| History page is empty, or purge does not run  | See the troubleshooting table in [docs/HISTORY-SETUP.md](docs/HISTORY-SETUP.md): usually a variable set for the wrong environment, or no redeploy. |
-| Tests page says it found no test files        | The build must run where the source files exist. See the FAQ.                                                                                      |
+| Symptom                                       | Likely cause and fix                                                                                                                                                                                                                                       |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "This demo has used up its AI budget"         | The demo's fixed monthly limit is spent. It stays off until the limit renews. Run RideNote yourself with your own key (Quick start).                                                                                                                       |
+| "We couldn't parse that note" every time      | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`.                                                                                                                                                                      |
+| 429 while testing by hand                     | You passed the per-client limit (3 a minute on the live site, 10 a minute locally). Wait for `Retry-After` seconds.                                                                                                                                        |
+| Everyone shares one rate limit locally        | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.                                                                                                                                                                                |
+| `npm run test:e2e` cannot launch a browser    | Run `npx playwright install chromium` once.                                                                                                                                                                                                                |
+| `npm run dev:key` says it only works on a Mac | It uses the macOS Keychain. Use `.env.local` and `npm run dev` instead.                                                                                                                                                                                    |
+| History page is empty, or purge does not run  | See the troubleshooting table in [docs/HISTORY-SETUP.md](docs/HISTORY-SETUP.md): usually a variable set for the wrong environment, or no redeploy.                                                                                                         |
+| Agent unavailable                             | `POST /api/agent` or `/api/agent/approve` answers 503 with code `unavailable`. `DRAFT_SIGNING_SECRET` is missing, under 32 characters, or a shared Vercel variable not linked to this project. Add it to Production variables (or link it), then redeploy. |
+| Tests page says it found no test files        | The build must run where the source files exist. See the FAQ.                                                                                                                                                                                              |

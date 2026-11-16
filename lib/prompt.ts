@@ -44,10 +44,15 @@ Unusual notes:
  */
 export const PROMPT_VERSION = createHash("sha256").update(SYSTEM).digest("hex").slice(0, 8);
 
+/** The one line that depends on the day: today's weekday and date in the dispatcher's zone. */
+export function todayLine(clock: Clock): string {
+  const today = localDate(clock);
+  return `Today is ${weekdayOf(today)}, ${today} (${clock.timeZone}).`;
+}
+
 /** The full instructions for one call: the fixed rules plus today's date in the dispatcher's zone. */
 export function systemPrompt(clock: Clock): string {
-  const today = localDate(clock);
-  return `${SYSTEM}\n\nToday is ${weekdayOf(today)}, ${today} (${clock.timeZone}).`;
+  return `${SYSTEM}\n\n${todayLine(clock)}`;
 }
 
 /** Escape angle brackets so a note cannot close the <note> tag and smuggle in instructions. */

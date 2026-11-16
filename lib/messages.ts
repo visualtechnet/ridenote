@@ -14,6 +14,7 @@ export const MESSAGES = {
   noteMarkup:
     "Notes can't contain HTML, code or script links (for example <script>). Please remove them and try again.",
   invalidJson: "We couldn't read that request. Please refresh the page and try again.",
+  unreadable: "We lost the connection while sending your note. Please try again.",
   bodyTooLarge: "That request is too large. Please shorten your note and try again.",
   unsupportedMediaType: "Requests must be sent as JSON (Content-Type: application/json).",
   busy: "We're handling a lot of requests right now. Please try again in a moment.",
@@ -136,7 +137,10 @@ export const COPY = {
   navDocsSetup: "Setup",
   navDocsEval: "Eval",
   navDocsFaq: "FAQ",
+  navDocsBusiness: "For business users",
+  navDocsPerformance: "Performance",
   navDocsAgents: "Agents",
+  navDocsAgent: "How the agent works",
   historyTitle: "History",
   historyDescription: "The most recent notes parsed on this site.",
   historyPrivacy:

@@ -24,6 +24,37 @@ export const DATES = {
   maxDaysAhead: 60,
 } as const;
 
+/** The agent tools (lib/agent/): limits on what a tool accepts and returns, and how long a token lives. */
+export const AGENT = {
+  maxMatches: 3, // riders returned by find_rider
+  nameMax: 100, // characters accepted in find_rider's name
+  riderNotesMax: 200, // characters of a rider's notes returned
+  maxOptions: 4, // options in ask_dispatcher
+  questionMax: 200,
+  optionLabelMax: 80,
+  maxReasons: 5, // reasons in propose_trip
+  reasonMax: 120,
+  tokenTtlMs: 15 * 60_000, // drafts and resume tokens
+  issueMax: 200, // characters of a validation message sent back to the model
+  secretMinLength: 32,
+  serviceDownDayOfMonth: 13, // the fake vehicle service fails on this day
+  maxSteps: 6, // model calls in one agent run
+  maxRunTokens: 20_000, // input plus output tokens across one run
+  maxStepTokens: 400, // output tokens allowed in one model call
+  deadlineMs: 60_000, // wall-clock limit for one run
+  maxToolErrors: 3, // consecutive steps in which every call errored, before the run stops
+  stepMs: 15_000, // wait for one model call before giving up on it
+  stepRetries: 1, // retries of one model call after a timeout or a server error
+} as const;
+
+/** Per client limits for the agent routes. Unknown clients share the parse route's looser limit. */
+export const AGENT_RATE = {
+  runProduction: 2, // agent runs a minute per client in production
+  runOther: 5, // agent runs a minute per client elsewhere
+  approve: 10, // Approve clicks a minute per client
+  windowMs: 60_000,
+} as const;
+
 export const RATE_LIMIT = {
   /** Per client, counting every request, valid or not, so junk traffic is throttled too. */
   maxRequests: 10,
@@ -84,7 +115,6 @@ export const HTTP = {
   unsupportedMediaType: 415,
   unprocessable: 422,
   tooManyRequests: 429,
-  serverError: 500,
   badGateway: 502,
   unavailable: 503,
   clientClosed: 499,

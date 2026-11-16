@@ -105,12 +105,15 @@ describe("SideNav", () => {
       }
     });
 
-    it("lists Setup, Eval, FAQ and Agents under Docs on every documentation page", () => {
+    it("lists Setup, Eval, FAQ, For business users, Performance, Agents and How the agent works under Docs on every documentation page", () => {
       for (const page of [
         "docs",
         "docsEval",
         "docsFaq",
+        "docsBusiness",
+        "docsPerformance",
         "docsAgents",
+        "docsAgent",
         "docsAgentsDesign",
         "docsAgentsPlan",
       ] as const) {
@@ -121,7 +124,10 @@ describe("SideNav", () => {
           [COPY.navDocsSetup, Routes.page("docs")],
           [COPY.navDocsEval, Routes.page("docsEval")],
           [COPY.navDocsFaq, Routes.page("docsFaq")],
+          [COPY.navDocsBusiness, Routes.page("docsBusiness")],
+          [COPY.navDocsPerformance, Routes.page("docsPerformance")],
           [COPY.navDocsAgents, Routes.page("docsAgents")],
+          [COPY.navDocsAgent, Routes.page("docsAgent")],
         ]);
         unmount();
       }
@@ -137,6 +143,18 @@ describe("SideNav", () => {
         );
         unmount();
       }
+    });
+
+    it("marks only the How the agent works current on its own page, not Agents", () => {
+      pathname = Routes.page("docsAgent");
+      render(<SideNav />);
+      expect(screen.getByRole("link", { name: COPY.navDocsAgent })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      expect(screen.getByRole("link", { name: COPY.navDocsAgents })).not.toHaveAttribute(
+        "aria-current",
+      );
     });
 
     it("sits inside the Docs item, between Docs and Tests", () => {

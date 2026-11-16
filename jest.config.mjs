@@ -24,6 +24,9 @@ const config = {
     "components/**/*.{ts,tsx}",
     "lib/**/*.ts",
     "!**/*.test.*",
+    // Type-only modules: no runtime code to measure, so they only dilute the figures.
+    "!lib/agent/types.ts",
+    "!lib/stream-events.ts",
   ],
   coverageProvider: "v8",
   // A floor, not a goal: the build fails if coverage quietly erodes below this.

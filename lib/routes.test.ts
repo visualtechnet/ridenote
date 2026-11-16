@@ -22,6 +22,11 @@ describe("Routes", () => {
     expect(Routes.all()).toEqual(expect.arrayContaining(["/docs/eval", "/docs/faq"]));
   });
 
+  it("gives the agent guide its own page", () => {
+    expect(Routes.page("docsAgent")).toBe("/docs/agent");
+    expect(Routes.all()).toContain("/docs/agent");
+  });
+
   it("gives the Agents section three pages under /docs", () => {
     expect(Routes.page("docsAgents")).toBe("/docs/agents");
     expect(Routes.page("docsAgentsDesign")).toBe("/docs/agents/design");

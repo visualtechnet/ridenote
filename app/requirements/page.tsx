@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import {
+  AGENT,
   BUDGET,
   DATES,
   HTTP,
@@ -65,6 +67,132 @@ const jsonRules = [
   ["One top-level value", "Exactly one value and nothing after it.", '{"a":1}{"b":2}  →  invalid'],
 ] as const;
 
+const toolRequirements: readonly (readonly [string, ReactNode])[] = [
+  [
+    "TC-1",
+    "Each tool has a name, a plain description (what it does, when to use it, what it returns, when not to use it) and a JSON schema for its inputs.",
+  ],
+  [
+    "TC-2",
+    <>
+      Every tool is strict: its schema allows no extra properties and lists every property as
+      required (<code className={code}>strict: true</code>).
+    </>,
+  ],
+  ["TC-3", "A tool’s inputs are checked again in code, with Zod, before the tool runs."],
+  [
+    "TC-4",
+    <>
+      A tool never throws. A failure comes back as a tool result marked{" "}
+      <code className={code}>is_error: true</code>, with a message that says what to try next.
+    </>,
+  ],
+  [
+    "TC-5",
+    <>
+      <code className={code}>find_rider</code> returns at most {AGENT.maxMatches} matches, with only
+      the fields the task needs.
+    </>,
+  ],
+  ["TC-6", "When two riders match “Maria”, the agent asks which one and never proposes a trip."],
+  [
+    "TC-7",
+    <>
+      <code className={code}>propose_trip</code> takes a <code className={code}>rider_id</code>,
+      never retyped facts. The code fills in the name, address and mobility.
+    </>,
+  ],
+  [
+    "TC-8",
+    <>
+      <code className={code}>propose_trip</code> saves nothing. It returns a signed draft and a{" "}
+      <code className={code}>draft_id</code>.
+    </>,
+  ],
+  [
+    "TC-9",
+    "An instruction planted in a rider’s notes, or in the dispatcher’s note, changes no tool call and no draft.",
+  ],
+  [
+    "TC-10",
+    <>
+      Every tool call prints one <code className={code}>[tool]</code> trace line in the script, and
+      one log line in the route. The line holds no inputs and nothing personal.
+    </>,
+  ],
+];
+
+const loopRequirements: readonly (readonly [string, ReactNode])[] = [
+  [
+    "AL-1",
+    <>
+      The loop adds the model’s full reply to the conversation, then one user message that answers
+      every <code className={code}>tool_use</code> block.
+    </>,
+  ],
+  [
+    "AL-2",
+    "A run ends only through an ending tool or a named limit. Loose text is never shown as an answer.",
+  ],
+  [
+    "AL-3",
+    `Limits: ${AGENT.maxSteps} steps, ${AGENT.maxRunTokens.toLocaleString("en-US")} tokens per run, ${AGENT.maxStepTokens} output tokens per step, ${AGENT.deadlineMs / 1000} seconds per run. All are set in lib/config.ts.`,
+  ],
+  [
+    "AL-4",
+    <>
+      Every <code className={code}>stop_reason</code> is handled by name:{" "}
+      <code className={code}>tool_use</code>, <code className={code}>end_turn</code>,{" "}
+      <code className={code}>max_tokens</code>, <code className={code}>refusal</code>, and anything
+      unknown.
+    </>,
+  ],
+  [
+    "AL-5",
+    "The run’s budget is set aside before the first paid call, so a run is never cut off half-way because the budget ran out.",
+  ],
+  ["AL-6", "Agent runs have their own limit on how many run at once, so they cannot slow Parse."],
+  ["AL-7", "The loop stops calling the model when the client disconnects."],
+  [
+    "AL-8",
+    <>
+      Every stream ends with an <code className={code}>ended</code> event that carries the status,
+      the reason and the usage. A stream without one is shown as failed.
+    </>,
+  ],
+  [
+    "AL-9",
+    "Only a person’s Approve click saves a trip. Approve checks the signature, the expiry and the schema, and a replay does nothing.",
+  ],
+  [
+    "AL-10",
+    <>
+      The page shows each step as it happens, in a list marked{" "}
+      <code className={code}>aria-live=&quot;polite&quot;</code>.
+    </>,
+  ],
+  [
+    "AL-11",
+    "Each run reports its steps, input, output and cached tokens, its time, and how it ended.",
+  ],
+  [
+    "AL-12",
+    "Live agent evals grade the path the agent took (which tools, in what order, and whether it stayed safe). The five critical cases must pass 3 runs out of 3.",
+  ],
+  [
+    "AL-13",
+    "Nothing gets worse: npm run check, the browser tests and the parser eval floor (90%, with the critical cases at 100%) stay green.",
+  ],
+  [
+    "AL-14",
+    "docs/AGENT.md answers the six “Check yourself” questions, and the eval report records the steps, cost and failures for each case.",
+  ],
+  [
+    "AL-15",
+    "Every step of a run is recorded so the run can be replayed: the model’s tool call, the tool result, the tokens and the time. The records hold fixture data only.",
+  ],
+];
+
 export default function RequirementsPage() {
   const required = REQUIRED_TRIP_FIELDS.join(", ");
   return (
@@ -72,9 +200,9 @@ export default function RequirementsPage() {
       <main id="main" className="w-full max-w-3xl px-4 py-10 sm:px-6">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Requirements</h1>
         <p className={p}>
-          What the product must do, what it needs as input, and exactly what it returns. Written
-          from what the app does today, and the examples on this page are checked by automated
-          tests.
+          What the product must do, what it needs as input, and exactly what it returns. The Parse
+          sections describe what the app does today, and their examples are checked by automated
+          tests. The agent section lists requirements and does not say which are built.
         </p>
         <nav aria-label="On this page" className="mt-4">
           <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-50 underline underline-offset-4">
@@ -84,6 +212,7 @@ export default function RequirementsPage() {
               ["output", "Expected output"],
               ["json", "What is valid JSON"],
               ["success", "What makes a parse succeed"],
+              ["agent", "The agent"],
             ].map(([id, label]) => (
               <li key={id}>
                 <a href={`#${id}`} className="inline-flex min-h-11 items-center">
@@ -508,6 +637,48 @@ export default function RequirementsPage() {
             service). It is shown on the result card and saved with the trip on the History page,
             where each call is rated against the others. Errors carry no usage.
           </p>
+        </section>
+
+        <section aria-labelledby="agent">
+          <h2 id="agent" className={h2}>
+            The agent
+          </h2>
+          <p className={p}>
+            The agent is a second feature beside Parse. It looks up a rider, checks a vehicle, asks
+            the dispatcher when something is unclear, and proposes a trip that a person then
+            approves. These are the requirements for it, in two groups: how its tools must behave
+            (TC) and how its loop must behave (AL). This page says what the agent must do. For what
+            is built so far, see{" "}
+            <a href={Routes.page("docsAgent")} className="underline underline-offset-4">
+              What is built and what is not yet
+            </a>{" "}
+            in the agent guide.
+          </p>
+          <div className="mt-4 overflow-x-auto">
+            <table className={table}>
+              <caption className="sr-only">Agent requirements</caption>
+              <thead>
+                <tr>
+                  <th scope="col" className={th}>
+                    ID
+                  </th>
+                  <th scope="col" className={th}>
+                    Requirement
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...toolRequirements, ...loopRequirements].map(([id, text]) => (
+                  <tr key={id}>
+                    <th scope="row" className={`${td} font-mono font-normal whitespace-nowrap`}>
+                      {id}
+                    </th>
+                    <td className={td}>{text}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       </main>
     </div>

@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { guardRoute } from "@/lib/api-guard";
 import { HISTORY, HTTP } from "@/lib/config";
 import { historyEnabled } from "@/lib/history";
 import { getPurger } from "@/lib/history-purge";
@@ -26,7 +27,7 @@ function isAuthorized(req: Request): boolean {
  * Daily clean-up, called by the Vercel cron in vercel.json. It reads the request header and the
  * environment, so Next never caches or prerenders it. The delete itself lives in lib/history-purge.ts.
  */
-export async function GET(req: Request) {
+async function handle(req: Request) {
   // The secret comes first: nothing else about this route is revealed to a caller without it.
   if (!isAuthorized(req)) return json({ error: MESSAGES.unauthorized }, HTTP.unauthorized);
   if (!historyEnabled()) return json({ deleted: 0, skipped: true });
@@ -35,8 +36,11 @@ export async function GET(req: Request) {
     const deleted = await getPurger().purgeOlderThan(HISTORY.retentionDays);
     return json({ deleted });
   } catch (err) {
-    // Error name only: driver messages can carry connection details or row content.
+    // Error name only: driver messages can carry connection details or row content. A failed
+    // clean-up is retryable tomorrow, so it is reported as unavailable, never as a 500.
     console.error("history purge failed:", err instanceof Error ? err.name : "unknown error");
-    return json({ error: MESSAGES.purgeFailed }, HTTP.serverError);
+    return json({ error: MESSAGES.purgeFailed, code: "unavailable" }, HTTP.unavailable);
   }
 }
+
+export const GET = guardRoute("history purge", handle);
