@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { axe } from "jest-axe";
-import { HTTP } from "@/lib/config";
+import { AGENT, HTTP } from "@/lib/config";
 import { UsageSchema } from "@/lib/usage";
 import RequirementsPage from "./page";
 
@@ -59,6 +59,49 @@ describe("Requirements page", () => {
       expect(container.querySelector("pre")?.textContent ?? "").toBeDefined();
       expect(container.textContent).toContain(`"${key}"`);
     }
+  });
+
+  it("lists the agent requirements TC-1 to TC-10 and AL-1 to AL-15, each once", () => {
+    render(<RequirementsPage />);
+    expect(screen.getByRole("heading", { level: 2, name: "The agent" })).toBeInTheDocument();
+    const table = screen.getByRole("table", { name: "Agent requirements" });
+    const ids = [
+      ...Array.from({ length: 10 }, (_, i) => `TC-${i + 1}`),
+      ...Array.from({ length: 15 }, (_, i) => `AL-${i + 1}`),
+    ];
+    const found = within(table)
+      .getAllByRole("rowheader")
+      .map((cell) => cell.textContent);
+    expect(found).toEqual(ids);
+    // The ids are not repeated anywhere else on the page.
+    for (const id of ids) {
+      expect(screen.getAllByText(id, { exact: true })).toHaveLength(1);
+    }
+  });
+
+  it("renders the agent run limits from the config", () => {
+    render(<RequirementsPage />);
+    const row = screen.getByRole("rowheader", { name: "AL-3" }).closest("tr") as HTMLElement;
+    const text = row.textContent ?? "";
+    expect(text).toContain(`${AGENT.maxSteps} steps`);
+    expect(text).toContain(`${AGENT.maxRunTokens.toLocaleString("en-US")} tokens`);
+    expect(text).toContain(`${AGENT.maxStepTokens} output tokens`);
+    expect(text).toContain(`${AGENT.deadlineMs / 1000} seconds`);
+  });
+
+  it("links the agent section to the agent guide for what is built, and claims no status", () => {
+    render(<RequirementsPage />);
+    const link = screen.getByRole("link", { name: /what is built and what is not yet/i });
+    expect(link).toHaveAttribute("href", "/docs/agent");
+    expect(screen.queryByRole("columnheader", { name: /status|built|tested/i })).toBeNull();
+    expect(screen.getByRole("link", { name: "The agent" })).toHaveAttribute("href", "#agent");
+  });
+
+  it("does not say the whole page is written from what the app does today", () => {
+    const { container } = render(<RequirementsPage />);
+    const text = container.textContent ?? "";
+    expect(text).not.toMatch(/Written\s+from what the app does today/);
+    expect(text).toMatch(/The agent section lists requirements and does not say which are built/);
   });
 
   it("has no accessibility violations", async () => {

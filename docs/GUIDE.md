@@ -791,7 +791,7 @@ Things I want you to know about, in rough priority order:
    the error is logged on the server (type only).
 2. **No evals yet** (section 8.5). Without them you cannot know how accurate the extraction is.
 3. **The rate limiter is in memory.** On hosting that runs several copies of the server (or serverless),
-   each copy counts separately, so the effective limit is higher. See `docs/SCALING.md` for what is
+   each copy counts separately, so the effective limit is higher. See `docs/PERFORMANCE.md` for what is
    already in place (shared budget, concurrency cap, de-duplication) and what to add for production
    (a shared store, edge rate limiting, a spending cap on your Anthropic key).
 4. **No sign-in.** Anyone who can reach the site can use it (within the rate limit). Add authentication

@@ -21,6 +21,7 @@ const DOC_SECTIONS = [
   { label: COPY.navDocsEval, href: Routes.page("docsEval") },
   { label: COPY.navDocsFaq, href: Routes.page("docsFaq") },
   { label: COPY.navDocsBusiness, href: Routes.page("docsBusiness") },
+  { label: COPY.navDocsPerformance, href: Routes.page("docsPerformance") },
   { label: COPY.navDocsAgents, href: Routes.page("docsAgents") },
   { label: COPY.navDocsAgent, href: Routes.page("docsAgent") },
 ] as const;

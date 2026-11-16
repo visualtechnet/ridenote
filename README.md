@@ -330,7 +330,7 @@ explains each status and each validation code.
 
 ## Limits
 
-All in `lib/config.ts`. The reasoning behind each number is in [docs/SCALING.md](docs/SCALING.md).
+All in `lib/config.ts`. The reasoning behind each number is in [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
 
 | Limit                 | Value                                                                                              |
 | --------------------- | -------------------------------------------------------------------------------------------------- |
@@ -393,12 +393,22 @@ short, once and in order:
    before the usage columns needs `db/migrations/2026-10-28-history-usage.sql` run once instead, **before**
    deploying the code that writes them. A database from before 2026-11-01 also needs
    `db/migrations/2026-11-01-pickup-date.sql` run once, the same way, **before** deploying the code that
-   writes `pickup_date`; it is safe to run twice. Optionally prove the grants with `db/verify.sql`.
+   writes `pickup_date`; it is safe to run twice. A database from before the agent also needs
+   `db/migrations/2026-11-14-agent-approve.sql` run once, as the database owner in the Neon console SQL
+   editor, **before** deploying the agent: it adds a `source` column and a `draft_id` column to the history
+   table, so each saved agent trip records where it came from, and a unique index so that a repeated
+   Approve click saves nothing a second time. Approve cannot save a trip without it. Optionally prove the
+   grants with `db/verify.sql`.
 3. Set each role's password with `alter role`, then build the two connection strings from the owner's pooled
    string (swap user and password, drop `&channel_binding=require`).
 4. Add `HISTORY_DATABASE_URL`, `HISTORY_PURGE_DATABASE_URL` and `CRON_SECRET` in **Settings, Environment
    Variables** (Production only, Sensitive), then redeploy.
 5. Add the Firewall rule on `POST /api/parse` (IP key, 60 s window, limit 3), action Log first, Deny later.
+   Add two more rules the same way for the agent: `POST /api/agent` (IP key, 60 s window, limit 2, which is
+   `AGENT_RATE.runProduction` in `lib/config.ts`) and `POST /api/agent/approve` (IP key, 60 s window,
+   limit 10, which is `AGENT_RATE.approve`), each with action Log first, Deny later. On the Hobby plan a project
+   can have only one rate-limit rule and the parse rule already uses it, so the two agent rules need a plan
+   that allows more. The app's own limits apply either way.
 6. Check **Settings, Cron Jobs** and the logs for the 04:00 purge run.
 
 **Check after each deploy:** from one machine send five quick parses (the example note, Parse, five times
@@ -613,20 +623,21 @@ harness works.
 | [The History design](docs/superpowers/specs/2026-10-27-history-design.md) | Read the approved design of the History feature, with the options weighed                                                  |
 | [The History plan](docs/superpowers/plans/2026-10-27-history.md)          | Read the task-by-task plan that was executed to build it                                                                   |
 | [SECURITY.md](SECURITY.md)                                                | Report a problem, and see what is protected and the known limits                                                           |
-| [docs/SCALING.md](docs/SCALING.md)                                        | Understand cost, limits and abuse protection, and what to add for production                                               |
+| [docs/PERFORMANCE.md](docs/PERFORMANCE.md)                                | Understand cost, limits and abuse protection, and what to add for production (also on the site under Docs, Performance)    |
 
 This repository uses Next.js 16, which differs from older versions. See `AGENTS.md`: read the guides in
 `node_modules/next/dist/docs/` before changing framework-level code.
 
 ## Troubleshooting
 
-| Symptom                                       | Likely cause and fix                                                                                                                               |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "This demo has used up its AI budget"         | The demo's fixed monthly limit is spent. It stays off until the limit renews. Run RideNote yourself with your own key (Quick start).               |
-| "We couldn't parse that note" every time      | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`.                                                              |
-| 429 while testing by hand                     | You passed the per-client limit (3 a minute on the live site, 10 a minute locally). Wait for `Retry-After` seconds.                                |
-| Everyone shares one rate limit locally        | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.                                                                        |
-| `npm run test:e2e` cannot launch a browser    | Run `npx playwright install chromium` once.                                                                                                        |
-| `npm run dev:key` says it only works on a Mac | It uses the macOS Keychain. Use `.env.local` and `npm run dev` instead.                                                                            |
-| History page is empty, or purge does not run  | See the troubleshooting table in [docs/HISTORY-SETUP.md](docs/HISTORY-SETUP.md): usually a variable set for the wrong environment, or no redeploy. |
-| Tests page says it found no test files        | The build must run where the source files exist. See the FAQ.                                                                                      |
+| Symptom                                       | Likely cause and fix                                                                                                                                                                                                                                       |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "This demo has used up its AI budget"         | The demo's fixed monthly limit is spent. It stays off until the limit renews. Run RideNote yourself with your own key (Quick start).                                                                                                                       |
+| "We couldn't parse that note" every time      | Missing or wrong `ANTHROPIC_API_KEY`. The terminal shows `parse failed: <ErrorType>`.                                                                                                                                                                      |
+| 429 while testing by hand                     | You passed the per-client limit (3 a minute on the live site, 10 a minute locally). Wait for `Retry-After` seconds.                                                                                                                                        |
+| Everyone shares one rate limit locally        | Normal in dev: no proxy headers, so all clients look the same. See the FAQ.                                                                                                                                                                                |
+| `npm run test:e2e` cannot launch a browser    | Run `npx playwright install chromium` once.                                                                                                                                                                                                                |
+| `npm run dev:key` says it only works on a Mac | It uses the macOS Keychain. Use `.env.local` and `npm run dev` instead.                                                                                                                                                                                    |
+| History page is empty, or purge does not run  | See the troubleshooting table in [docs/HISTORY-SETUP.md](docs/HISTORY-SETUP.md): usually a variable set for the wrong environment, or no redeploy.                                                                                                         |
+| Agent unavailable                             | `POST /api/agent` or `/api/agent/approve` answers 503 with code `unavailable`. `DRAFT_SIGNING_SECRET` is missing, under 32 characters, or a shared Vercel variable not linked to this project. Add it to Production variables (or link it), then redeploy. |
+| Tests page says it found no test files        | The build must run where the source files exist. See the FAQ.                                                                                                                                                                                              |

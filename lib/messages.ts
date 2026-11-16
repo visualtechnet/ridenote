@@ -138,6 +138,7 @@ export const COPY = {
   navDocsEval: "Eval",
   navDocsFaq: "FAQ",
   navDocsBusiness: "For business users",
+  navDocsPerformance: "Performance",
   navDocsAgents: "Agents",
   navDocsAgent: "How the agent works",
   historyTitle: "History",

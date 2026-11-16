@@ -47,7 +47,7 @@ up its budget. The demo has a small fixed monthly limit and a few requests are e
   AI returns is ever run or shown as HTML, and the card tells the dispatcher to verify before
   dispatching.
 - The rate limiter and budget live in memory, so on a host that runs several instances each has its
-  own counters. The spend limit on the API key is the real ceiling. See `docs/SCALING.md`.
+  own counters. The spend limit on the API key is the real ceiling. See `docs/PERFORMANCE.md`.
 - The Content-Security-Policy allows inline scripts, because the framework needs them and nonces
   conflict with the caching mode used here. Everything shown to a visitor is still escaped.
 - History is public. Its scrubber removes phone numbers and emails but cannot judge a real name or address,

@@ -51,7 +51,7 @@ FAQ #1.)
 **What.** Order checks from cheapest to most expensive and stop at the first failure.
 
 **See.** The API route: rate limit, content type, size, JSON, validation, and only then the paid AI
-call. Junk is refused before it can cost money (`docs/SCALING.md`).
+call. Junk is refused before it can cost money (`docs/PERFORMANCE.md`).
 
 ## 5. Every limit has a reason, and is tested at its edges
 
@@ -94,7 +94,7 @@ and "Missing" rather than inventing a value.
 **What.** Anything that triggers paid work needs limits per client, across everyone, and in
 parallel; a size cap on input and on output; and de-duplication of identical work.
 
-**Why.** Cost and attack surface are the same surface. See `docs/SCALING.md`. Remember that limits
+**Why.** Cost and attack surface are the same surface. See `docs/PERFORMANCE.md`. Remember that limits
 inside the app are not a substitute for protection in front of it.
 
 ## 11. Testing habits
@@ -142,5 +142,5 @@ project runs axe checks in unit tests and in a real browser.
 
 - Run `npm run check` before committing (the pre-commit hook does).
 - Small, reviewable changes; one purpose per commit.
-- Document decisions and their reasons, not only the result (`docs/SCALING.md` explains each limit).
+- Document decisions and their reasons, not only the result (`docs/PERFORMANCE.md` explains each limit).
 - Keep a "Known limits" section honest. Pretending a limitation does not exist helps nobody.

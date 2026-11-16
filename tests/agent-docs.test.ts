@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { AGENT_CASES } from "@/evals/agent-cases";
 import { PRICES_AS_OF } from "@/evals/prices";
-import { AGENT, UPSTREAM } from "@/lib/config";
+import { AGENT, AGENT_RATE, UPSTREAM } from "@/lib/config";
 
 // docs/AGENT.md is read by people who cannot see the code. Every number and name in it must be the
 // one the code uses, or the page is a story.
@@ -102,7 +102,7 @@ describe("docs/AGENT.md", () => {
   it("explains the two kinds of token and the sidebar name", () => {
     expect(doc).toMatch(/unrelated to the signed draft and resume\s+tokens/i);
     expect(doc).toContain("EVAL_MAX_USD=0.5 npm run eval:agent:key");
-    expect(doc).toMatch(/open pull requests/i);
+    expect(doc).not.toMatch(/open pull requests/i);
   });
 
   it("does not bring back three corrected claims", () => {
@@ -121,5 +121,74 @@ describe("docs/AGENT.md", () => {
     expect(doc).toContain("No date in the note, no check and no proposal");
     expect(doc).toContain("a rule in code cannot");
     expect(doc).toContain("Three guards live in the code itself");
+  });
+});
+
+describe("README agent set-up steps", () => {
+  const readme = readFileSync(join(process.cwd(), "README.md"), "utf8");
+  const setup = readFileSync(join(process.cwd(), "docs/HISTORY-SETUP.md"), "utf8");
+
+  it("README tells the owner to run the agent approve migration before using Approve", () => {
+    expect(readme).toContain("2026-11-14-agent-approve.sql");
+    expect(readme).toMatch(/2026-11-14-agent-approve\.sql[^]*before/);
+    expect(setup).toContain("2026-11-14-agent-approve.sql");
+  });
+
+  it("README names a firewall rule for the agent routes with the limits from config", () => {
+    expect(readme).toContain("POST /api/agent");
+    expect(readme).toContain("POST /api/agent/approve");
+    expect(readme).toContain(`limit ${AGENT_RATE.runProduction}`);
+    expect(readme).toContain(`limit ${AGENT_RATE.approve}`);
+    expect(AGENT_RATE.windowMs).toBe(60_000);
+    expect(setup).toContain("/api/agent/approve");
+  });
+
+  it("README troubleshooting explains Agent unavailable and the redeploy", () => {
+    const row = readme.split("\n").find((l) => l.startsWith("| Agent unavailable")) ?? "";
+    expect(row).toContain("503");
+    expect(row).toContain("`unavailable`");
+    expect(row).toContain("`DRAFT_SIGNING_SECRET`");
+    expect(row).toContain(`${AGENT.secretMinLength} characters`);
+    expect(row).toContain("redeploy");
+    expect(row).not.toMatch(/disabled|not switched on|note on the page/);
+  });
+
+  it("README and HISTORY-SETUP say why the agent rules need more than the one Hobby rule", () => {
+    for (const text of [readme, setup]) {
+      expect(text).toMatch(
+        /Hobby plan a project\s+can have only \*{0,2}one\*{0,2} rate-limit rule/,
+      );
+      expect(text).toContain("already uses it");
+    }
+  });
+
+  it("the FAQ mistakes log numbers 1 to 44 with no gap and has the four agent entries", () => {
+    const faq = readFileSync(join(process.cwd(), "docs/FAQ.md"), "utf8");
+    const part2 = faq.slice(faq.indexOf("# Part 2:"));
+    const headings = [...part2.matchAll(/^### (\d+)\. (.+)$/gm)];
+    expect(headings.map((h) => Number(h[1]))).toEqual(Array.from({ length: 44 }, (_, i) => i + 1));
+    const titles = headings.map((h) => h[2]);
+    expect(titles).toContain("The agent assumed today's date when the note had none");
+    expect(titles).toContain(
+      "A search that found no rider counted as a mistake, and the error invited more searching",
+    );
+    expect(titles).toContain("The agent button was on the page while the agent was switched off");
+    expect(titles).toContain("One run of a small model is a sample, not a verdict");
+    const entries = part2.slice(
+      part2.indexOf("### 41."),
+      part2.indexOf("# What these have in common"),
+    );
+    expect(entries).not.toMatch(/PR #\d+|pull request #?\d+/i);
+  });
+
+  it("the status table says the performance docs and eval report are built and lists TC-10 as not built", () => {
+    const rows = doc.split("\n").filter((l) => l.startsWith("|"));
+    const perf = rows.find((l) => l.includes("The performance docs and eval report page")) ?? "";
+    expect(perf).toContain("Built and tested");
+    expect(perf).not.toContain("Not built yet");
+    const tc10 = rows.find((l) => l.includes("TC-10")) ?? "";
+    expect(tc10).toContain("Not built yet");
+    expect(doc).toContain("(/docs/performance)");
+    expect(doc).toContain("(/docs/eval)");
   });
 });

@@ -4,6 +4,7 @@ const PAGES = {
   docsEval: "/docs/eval",
   docsFaq: "/docs/faq",
   docsBusiness: "/docs/business",
+  docsPerformance: "/docs/performance",
   docsAgents: "/docs/agents",
   docsAgent: "/docs/agent",
   docsAgentsDesign: "/docs/agents/design",

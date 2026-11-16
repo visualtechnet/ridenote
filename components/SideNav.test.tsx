@@ -105,12 +105,13 @@ describe("SideNav", () => {
       }
     });
 
-    it("lists Setup, Eval, FAQ, For business users, Agents and How the agent works under Docs on every documentation page", () => {
+    it("lists Setup, Eval, FAQ, For business users, Performance, Agents and How the agent works under Docs on every documentation page", () => {
       for (const page of [
         "docs",
         "docsEval",
         "docsFaq",
         "docsBusiness",
+        "docsPerformance",
         "docsAgents",
         "docsAgent",
         "docsAgentsDesign",
@@ -124,6 +125,7 @@ describe("SideNav", () => {
           [COPY.navDocsEval, Routes.page("docsEval")],
           [COPY.navDocsFaq, Routes.page("docsFaq")],
           [COPY.navDocsBusiness, Routes.page("docsBusiness")],
+          [COPY.navDocsPerformance, Routes.page("docsPerformance")],
           [COPY.navDocsAgents, Routes.page("docsAgents")],
           [COPY.navDocsAgent, Routes.page("docsAgent")],
         ]);
