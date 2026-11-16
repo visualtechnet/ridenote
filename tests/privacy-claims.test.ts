@@ -27,5 +27,6 @@ describe("logging statements", () => {
     const text = readFileSync(join(process.cwd(), file), "utf8").replace(/\s+/g, " ");
     expect(text).not.toMatch(STALE_LOGS);
     expect(text).toMatch(/token counts, stop reason and latency/i);
+    expect(text).toMatch(/agent_tool|one line per tool call/i);
   });
 });

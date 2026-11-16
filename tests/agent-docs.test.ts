@@ -176,14 +176,34 @@ describe("README agent set-up steps", () => {
     expect(entries).not.toMatch(/PR #\d+|pull request #?\d+/i);
   });
 
-  it("the status table says the performance docs and eval report are built and lists TC-10 as not built", () => {
+  it("the status table says the performance docs and eval report are built and TC-10 is built", () => {
     const rows = doc.split("\n").filter((l) => l.startsWith("|"));
     const perf = rows.find((l) => l.includes("The performance docs and eval report page")) ?? "";
     expect(perf).toContain("Built and tested");
     expect(perf).not.toContain("Not built yet");
     const tc10 = rows.find((l) => l.includes("TC-10")) ?? "";
-    expect(tc10).toContain("Not built yet");
+    expect(tc10).toContain("Built and tested");
+    expect(tc10).not.toContain("Not built yet");
+    expect(tc10).toContain("agent_tool");
     expect(doc).toContain("(/docs/performance)");
     expect(doc).toContain("(/docs/eval)");
+  });
+
+  it("the status table says TC-10 per-tool-call logging is built", () => {
+    const rows = doc.split("\n").filter((l) => l.startsWith("|"));
+    const tc10 = rows.find((l) => l.includes("TC-10")) ?? "";
+    expect(tc10).not.toContain("Not built yet");
+    expect(tc10).toContain("agent_tool");
+    // The opening paragraph must not still say the trace line is missing.
+    const opening = doc.slice(0, doc.indexOf("## What this is")).replace(/\s+/g, " ");
+    expect(opening).not.toMatch(/trace line for every tool call/i);
+    expect(opening).toContain("tenth eval case");
+  });
+
+  it("the guide says what an agent log line holds and what it never holds", () => {
+    const text = doc.replace(/\s+/g, " ");
+    expect(text).toContain("agent_tool");
+    expect(text).toMatch(/never holds a tool input, a tool result, an error message, the note/i);
+    expect(text).toContain("[tool]");
   });
 });
