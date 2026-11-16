@@ -318,10 +318,26 @@ describe("POST /api/parse", () => {
       expect(loggedText()).not.toContain("Oak St");
     });
 
-    it("leaves other upstream errors as the generic 502", async () => {
-      mockParse.mockRejectedValue(Object.assign(new Error("bad key"), { status: 401 }));
+    it("leaves an ordinary bad answer as the generic 502", async () => {
+      mockParse.mockRejectedValue(Object.assign(new Error("bad request"), { status: 400 }));
       const res = await POST(request({ note: VALID_NOTE }));
       expect(res.status).toBe(HTTP.badGateway);
+    });
+
+    it("answers a rejected key as 503 unavailable, since the person did nothing wrong", async () => {
+      mockParse.mockRejectedValue(Object.assign(new Error("bad key"), { status: 401 }));
+      const res = await POST(request({ note: VALID_NOTE }));
+      expect(res.status).toBe(HTTP.unavailable);
+      expect(await res.json()).toEqual({ error: expect.any(String), code: "unavailable" });
+      expect(loggedText()).toContain("provider rejected our credentials");
+    });
+
+    it("answers a provider rate limit or overload as busy with a retry hint", async () => {
+      mockParse.mockRejectedValue(Object.assign(new Error("overloaded"), { status: 529 }));
+      const res = await POST(request({ note: VALID_NOTE }));
+      expect(res.status).toBe(HTTP.unavailable);
+      expect(res.headers.get("Retry-After")).toBe("5");
+      expect(await res.json()).toEqual({ error: MESSAGES.busy, code: "busy" });
     });
   });
 

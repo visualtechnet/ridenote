@@ -138,6 +138,36 @@ describe("runResume", () => {
     );
   });
 
+  it("turns an unexpected throw during resume into a generic error, without its message", async () => {
+    const model = scriptedModel([toolReply([{ name: "find_rider", input: { name: "María" } }])]);
+    const events: StreamEvent[] = [];
+    let thrown = false;
+    const { deps: d } = deps({
+      model,
+      emit: (e) => {
+        // The first `ended` throws, as a broken writer would; the fallback must still get through.
+        if (e.type === "ended" && !thrown) {
+          thrown = true;
+          throw new Error("secret detail about the note");
+        }
+        events.push(e);
+      },
+    });
+    await runResume(d, payload, payload.options[0], CLOCK);
+    expect(events.map((e) => e.type)).toEqual(["run_started", "parsed", "step", "error", "ended"]);
+    expect(JSON.stringify(events)).not.toContain("secret detail");
+  });
+
+  it("says unknown for a pickup date or time the signed trip does not hold", () => {
+    const bare: ResumePayload = {
+      ...payload,
+      parsed: makeTrip({ pickup_date: null, pickup_time: null }),
+    };
+    expect(resumeNote(bare, payload.options[0])).toContain(
+      "Pickup date unknown, pickup time unknown.",
+    );
+  });
+
   it("uses the model's reply text without a tool call as a failure", async () => {
     const { deps: d, events } = deps({ model: scriptedModel([textReply("hm")]) });
     await runResume(d, payload, payload.options[0], CLOCK);
