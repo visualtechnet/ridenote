@@ -203,6 +203,21 @@ describe("POST /api/agent", () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
+  it("hands the model an already-aborted signal when the client left before the run began", async () => {
+    answerWith([]);
+    const gone = new Request("http://localhost/api/agent", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-real-ip": `10.9.0.${++ip}` },
+      body: JSON.stringify({ note: NOTE, timeZone: "UTC" }),
+      signal: AbortSignal.abort(),
+    });
+    const res = await POST(gone);
+    await events(res);
+    const signals = mockCreate.mock.calls.map(([, options]) => options?.signal as AbortSignal);
+    expect(signals.length).toBeGreaterThan(0);
+    expect(signals.every((s) => s.aborted)).toBe(true);
+  });
+
   it("answers 503 when the agent's model is one that cannot force a tool", async () => {
     process.env.AGENT_MODEL = "claude-sonnet-5-5";
     try {

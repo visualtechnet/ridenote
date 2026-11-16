@@ -156,7 +156,9 @@ export async function POST(req: Request) {
 
   const encoder = new TextEncoder();
   const abort = new AbortController();
-  req.signal.addEventListener("abort", () => abort.abort(), { once: true });
+  // A client that disconnected while the checks above ran has already fired its abort event.
+  if (req.signal.aborted) abort.abort();
+  else req.signal.addEventListener("abort", () => abort.abort(), { once: true });
   const riders: readonly Rider[] = RIDERS;
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
