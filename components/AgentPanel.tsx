@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { browserTimeZone } from "@/lib/api-client";
 import type { AskOption, MergedTrip, StreamEvent } from "@/lib/stream-events";
 import { validateNote } from "@/lib/validation";
@@ -31,6 +31,9 @@ const REASON_WORDS: Record<string, string> = {
   aborted: "The run was stopped.",
 };
 
+const UNAVAILABLE_NOTICE =
+  "The agent is not switched on for this site yet. The parser above still works.";
+
 const SOURCE_BADGE = { note: "from note", rider_file: "from rider file" } as const;
 
 /** Lines the page could not read become one plain notice, never a crash. */
@@ -53,7 +56,24 @@ export function AgentPanel({ note }: { note: string }) {
   const [ended, setEnded] = useState<Ended | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [approval, setApproval] = useState<Approval>({ phase: "idle" });
+  // False only when the server says so; any doubt leaves the button as it was.
+  const [unavailable, setUnavailable] = useState(false);
   const valid = validateNote(note);
+
+  useEffect(() => {
+    const abort = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch("/api/agent", { signal: abort.signal });
+        if (!res.ok) return;
+        const data = (await res.json()) as { available?: unknown };
+        if (data.available === false && !abort.signal.aborted) setUnavailable(true);
+      } catch {
+        // Offline or unreadable: treat the agent as available.
+      }
+    })();
+    return () => abort.abort();
+  }, []);
 
   async function stream(body: unknown) {
     setRunning(true);
@@ -67,8 +87,9 @@ export function AgentPanel({ note }: { note: string }) {
         body: JSON.stringify(body),
       });
       if (!res.ok || !res.body) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(data.error ?? "The agent could not start. Try again.");
+        const data = (await res.json().catch(() => ({}))) as { error?: string; code?: string };
+        if (res.status === 503 && data.code === "unavailable") setUnavailable(true);
+        else setError(data.error ?? "The agent could not start. Try again.");
         return;
       }
       const reader = res.body.getReader();
@@ -126,13 +147,20 @@ export function AgentPanel({ note }: { note: string }) {
       </p>
       <button
         type="button"
-        disabled={running || !valid.ok}
+        disabled={running || !valid.ok || unavailable}
         onClick={() => stream({ note: valid.ok ? valid.note : "", timeZone: browserTimeZone() })}
         className="caps bg-accent text-accent-ink focus-visible:outline-accent inline-flex min-h-11 w-fit items-center px-4 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
       >
         Plan trip (agent)
       </button>
-      {!valid.ok && <p className="text-sm text-zinc-400">Type a note above first.</p>}
+      {unavailable && (
+        <p role="status" className="text-sm text-zinc-400">
+          {UNAVAILABLE_NOTICE}
+        </p>
+      )}
+      {!valid.ok && !unavailable && (
+        <p className="text-sm text-zinc-400">Type a note above first.</p>
+      )}
       {error && (
         <p role="alert" className="text-sm text-red-300">
           {error}

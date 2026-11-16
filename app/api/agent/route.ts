@@ -93,6 +93,16 @@ function models(clock: Clock): { parse: ServiceDeps["parse"]; model: AgentModel 
   }
 }
 
+/**
+ * Lets the page ask, before anyone presses the button, whether the agent is switched on. It answers
+ * yes or no only: no model call, no budget, gate or rate limit, and nothing about why.
+ */
+async function availability() {
+  const available =
+    signingSecret(process.env).ok && models({ now: new Date(), timeZone: "UTC" }) !== null;
+  return json({ available }, HTTP.ok);
+}
+
 async function handle(req: Request) {
   const key = clientKey(req);
   const rate = key === UNKNOWN_CLIENT ? checkRunUnknownClient(key) : checkRunByClient(key);
@@ -230,4 +240,5 @@ async function handle(req: Request) {
   });
 }
 
+export const GET = guardRoute("agent availability", availability);
 export const POST = guardRoute("agent", handle);
