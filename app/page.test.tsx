@@ -23,7 +23,11 @@ const fetchMock = jest.fn();
 const originalFetch = global.fetch;
 beforeEach(() => {
   fetchMock.mockReset();
-  global.fetch = fetchMock as unknown as typeof fetch;
+  // The agent panel asks GET /api/agent on mount; answer that apart so fetchMock counts parses only.
+  global.fetch = ((url: string, init?: RequestInit) =>
+    url === "/api/agent" && !init?.method
+      ? Promise.resolve(reply({ available: true }, 200))
+      : fetchMock(url, init)) as unknown as typeof fetch;
 });
 afterEach(() => {
   global.fetch = originalFetch;

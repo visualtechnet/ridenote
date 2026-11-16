@@ -1,7 +1,11 @@
+/** Proof that a reservation was taken, so the same units can be given back later. */
+export type Grant = { window: number; units: number };
+
 /**
- * A fixed-window pool of model-call units shared by the agent routes in one instance. A run asks
- * for its worst case up front (every step plus the parse step) and the pool answers yes or no in
- * one synchronous step, so two runs cannot both take the last units.
+ * A fixed-window pool of model-call units. A run asks for its worst case up front and the pool
+ * answers yes or no in one synchronous step, so two runs cannot both take the last units. When a
+ * run finishes early, the unused units go back with `refund`, so a short run does not hold units
+ * it never spent. A refund into a window that has already reset does nothing.
  */
 export function createUnitBudget({
   limit,
@@ -14,18 +18,25 @@ export function createUnitBudget({
 }) {
   let used = 0;
   let resetAt = 0;
+  let window = 0;
 
   return {
-    /** True when `units` were taken; false, taking nothing, when they do not fit this window. */
-    reserve(units: number): boolean {
+    /** A grant when `units` were taken; null, taking nothing, when they do not fit this window. */
+    reserve(units: number): Grant | null {
       const t = now();
       if (t >= resetAt) {
         used = 0;
         resetAt = t + windowMs;
+        window += 1;
       }
-      if (used + units > limit) return false;
+      if (used + units > limit) return null;
       used += units;
-      return true;
+      return { window, units };
+    },
+    /** Gives back `units` of a grant, at most what the grant took and only in the same window. */
+    refund(units: number, grant: Grant): void {
+      if (grant.window !== window || units <= 0) return;
+      used = Math.max(0, used - Math.min(units, grant.units));
     },
     /** Whole seconds until the window resets, at least 1. */
     retryAfterSec(): number {
