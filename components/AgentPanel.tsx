@@ -34,6 +34,8 @@ const REASON_WORDS: Record<string, string> = {
 const UNAVAILABLE_NOTICE =
   "The agent is not switched on for this site yet. The parser above still works.";
 
+const MISSING_ENDED_NOTICE = "The run stopped without an answer. Nothing was booked. Try again.";
+
 const SOURCE_BADGE = { note: "from note", rider_file: "from rider file" } as const;
 
 /** Lines the page could not read become one plain notice, never a crash. */
@@ -95,6 +97,7 @@ export function AgentPanel({ note }: { note: string }) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let pending = "";
+      let sawEnded = false;
       for (;;) {
         const { value, done } = await reader.read();
         if (done) break;
@@ -110,9 +113,14 @@ export function AgentPanel({ note }: { note: string }) {
           }
           const parsed = event as StreamEvent;
           setEvents((list) => [...list, parsed]);
-          if (parsed.type === "ended") setEnded(parsed);
+          if (parsed.type === "ended") {
+            sawEnded = true;
+            setEnded(parsed);
+          }
         }
       }
+      // AL-8: a stream that closes without `ended` is a failed run, never a silent stop.
+      if (!sawEnded) setError(MISSING_ENDED_NOTICE);
     } catch {
       setError("The connection dropped. Try again.");
     } finally {
