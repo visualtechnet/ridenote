@@ -1,0 +1,62 @@
+{
+  "model": "claude-haiku-5-5",
+  "parseModel": "claude-haiku-5-5",
+  "promptVersion": "9b834a77",
+  "date": "2026-11-14",
+  "cases": 2,
+  "passed": 0,
+  "passRate": 0,
+  "calls": 6,
+  "inputTokens": 53655,
+  "outputTokens": 2149,
+  "costUsd": 0.00644,
+  "meanStepsPerRun": 3,
+  "meanLatencyMs": 18456.5,
+  "rows": [
+    {
+      "name": "facts in a draft",
+      "critical": true,
+      "pass": false,
+      "flaky": true,
+      "attempts": 3,
+      "problems": [
+        "draftPickup: expected \"301 Cedar Ct\", got \"Dorothy Nguyen's usual place\"",
+        "pickupSource: expected \"rider_file\", got \"note\""
+      ],
+      "ended": "proposed",
+      "steps": 3,
+      "tools": [
+        "find_rider",
+        "check_vehicle_availability",
+        "propose_trip"
+      ],
+      "checkedVehicle": true,
+      "inputTokens": 27078,
+      "outputTokens": 1467,
+      "cacheRead": 0,
+      "latencyMs": 25342
+    },
+    {
+      "name": "unknown rider",
+      "critical": false,
+      "pass": false,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [
+        "run failed: invalid_tool_input"
+      ],
+      "ended": "failed: invalid_tool_input",
+      "steps": 3,
+      "tools": [
+        "find_rider",
+        "find_rider",
+        "find_rider"
+      ],
+      "checkedVehicle": false,
+      "inputTokens": 26577,
+      "outputTokens": 682,
+      "cacheRead": 0,
+      "latencyMs": 11571
+    }
+  ]
+}
