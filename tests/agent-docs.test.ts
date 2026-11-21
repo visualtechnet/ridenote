@@ -75,7 +75,7 @@ describe("docs/AGENT.md", () => {
     }
   });
 
-  it("says plainly that the route, the page and Approve are not built yet", () => {
+  it("names the live eval commands and says which eval case is not built yet", () => {
     expect(doc).toMatch(/not built yet/i);
     expect(doc).toContain("npm run eval:agent:key");
     expect(doc).toContain("npx jest --config jest.eval.config.mjs evals/parser.eval");

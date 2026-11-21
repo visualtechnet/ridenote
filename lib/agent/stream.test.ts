@@ -23,6 +23,7 @@ describe("stream events", () => {
       calls: [{ name: "find_rider", is_error: false, content: '{"riders":[]}' }],
       inputTokens: 10,
       outputTokens: 5,
+      cacheRead: 0,
       ms: 7,
     });
     expect(JSON.stringify(event)).not.toContain('"Jo"');

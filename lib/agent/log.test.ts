@@ -1,4 +1,4 @@
-import { toolLogLines, toolTraceLines } from "./log";
+import { runLogLine, toolLogLines, toolTraceLines } from "./log";
 import type { StepRecord } from "./types";
 
 const AT = new Date("2026-11-16T12:00:00.000Z");
@@ -96,5 +96,43 @@ describe("toolTraceLines", () => {
       "[tool] two Marias step 2 find_rider ok",
       "[tool] two Marias step 2 unknown error",
     ]);
+  });
+});
+
+describe("runLogLine", () => {
+  const usage = { steps: 3, inputTokens: 900, outputTokens: 60, cacheRead: 400, latencyMs: 2100 };
+
+  it("records how the run ended and what it used, as one JSON line", () => {
+    const line = runLogLine(
+      { status: "failed", reason: "deadline", usage, steps: [] },
+      "run-3",
+      AT,
+    );
+    expect(line).not.toContain("\n");
+    expect(JSON.parse(line)).toEqual({
+      event: "agent_run",
+      runId: "run-3",
+      at: "2026-11-16T12:00:00.000Z",
+      status: "failed",
+      reason: "deadline",
+      steps: 3,
+      inputTokens: 900,
+      outputTokens: 60,
+      cacheRead: 400,
+      latencyMs: 2100,
+    });
+  });
+
+  it("has no reason when the run did not fail, and never carries a draft, question or trip", () => {
+    const end = {
+      status: "needs_info" as const,
+      question: "Which Maria Lopez?",
+      options: [],
+      resume: "secret-token",
+    };
+    const line = runLogLine({ status: "needs_info", end, usage, steps: [] }, "run-4", AT);
+    expect(JSON.parse(line).reason).toBeNull();
+    expect(line).not.toContain("Maria");
+    expect(line).not.toContain("secret-token");
   });
 });

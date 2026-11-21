@@ -48,6 +48,7 @@ export type StreamEvent =
       calls: { name: string; is_error: boolean; content: string }[];
       inputTokens: number;
       outputTokens: number;
+      cacheRead: number;
       ms: number;
     }
   | { type: "error"; code: "parse_failed" | "busy" | "unavailable" }

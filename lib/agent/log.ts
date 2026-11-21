@@ -1,5 +1,5 @@
 import { TOOL_DEFS } from "./tools";
-import type { StepRecord } from "./types";
+import type { RunResult, StepRecord } from "./types";
 
 const KNOWN_TOOLS: ReadonlySet<string> = new Set(TOOL_DEFS.map((def) => def.name));
 
@@ -27,6 +27,26 @@ export function toolLogLines(record: StepRecord, runId: string, at: Date): strin
       ok: !call.is_error,
     }),
   );
+}
+
+/**
+ * One single-line JSON string for a finished run, for the server log (AL-11): how it ended and what
+ * it used. Numbers and fixed words only; the reason is one of our own failure names, never text the
+ * model or the note supplied.
+ */
+export function runLogLine(result: RunResult, runId: string, at: Date): string {
+  return JSON.stringify({
+    event: "agent_run",
+    runId,
+    at: at.toISOString(),
+    status: result.status,
+    reason: result.status === "failed" ? result.reason : null,
+    steps: result.usage.steps,
+    inputTokens: result.usage.inputTokens,
+    outputTokens: result.usage.outputTokens,
+    cacheRead: result.usage.cacheRead,
+    latencyMs: result.usage.latencyMs,
+  });
 }
 
 /** One `[tool]` line per call for the eval script's output, with the same fields and the same mapping. */

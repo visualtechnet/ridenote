@@ -16,6 +16,7 @@ export function stepEvent(record: StepRecord): StreamEvent {
     calls: record.calls.map(({ name, content, is_error }) => ({ name, is_error, content })),
     inputTokens: record.inputTokens,
     outputTokens: record.outputTokens,
+    cacheRead: record.cacheRead,
     ms: record.ms,
   };
 }

@@ -189,7 +189,7 @@ const loopRequirements: readonly (readonly [string, ReactNode])[] = [
   ],
   [
     "AL-15",
-    "Every step of a run is recorded so the run can be replayed: the model’s tool call, the tool result, the tokens and the time. The records hold fixture data only.",
+    "Every step of a run is recorded so the run can be replayed: the model’s tool call, the tool result, the tokens and the time. The records stay in memory and are used by evals and replay tests; nothing saves them.",
   ],
 ];
 

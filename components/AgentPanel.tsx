@@ -321,10 +321,11 @@ function Question({
 }
 
 function Summary({ ended }: { ended: Ended }) {
-  const { steps, inputTokens, outputTokens, latencyMs } = ended.usage;
+  const { steps, inputTokens, outputTokens, cacheRead, latencyMs } = ended.usage;
   return (
     <p className="text-xs text-zinc-400">
       {steps} {steps === 1 ? "step" : "steps"}, {inputTokens + outputTokens} tokens,{" "}
+      {cacheRead > 0 && <>{cacheRead} read from cache, </>}
       {Math.round(latencyMs / 100) / 10} s.
     </p>
   );

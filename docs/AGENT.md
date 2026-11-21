@@ -166,7 +166,7 @@ Counting them is counting money. (Not to be confused with a signed draft or resu
 | Time for the whole run                 | 60 seconds       | A run must not hang. The clock also cancels a model call that is still waiting.                                                                                                            |
 | Failed steps in a row                  | 3 steps in a row | If every call in 3 steps in a row is a mistake, the model is stuck. Stop instead of looping. A search that finds no rider is not a mistake, so it does not count.                          |
 
-The checks happen before each step, so a run can finish the step it is on and then stop. The default
+The step, token and abort checks happen before each step, so a run can finish the step it is on and then stop. The 60-second clock is the exception: it also cancels a model call that is still waiting. The default
 model is `claude-haiku-5-5` (a small, fast, cheap model). It can be changed with the `AGENT_MODEL`
 setting, and if that is unset, the `MODEL` setting is used. A few model families cannot be forced to
 call a tool, and the code refuses them at start-up with a clear message rather than failing on every
@@ -249,8 +249,9 @@ model's free text. But be exact about what it does hold:
 - A tool **result** holds fixture rider data (home addresses and notes from the rider file) and, for a
   proposal, the signed draft with the whole trip.
 
-So a record is not free of personal details. Nothing saves records yet. Anyone who adds a save later
-must clean them first with the project's scrubbing (`lib/scrub.ts`), as History does for trips.
+So a record is not free of personal details. Records live in memory only: the loop returns them to
+its caller, and only the evals and the replay tests use them. Nothing saves them, so a production run
+cannot be replayed later. Anyone who adds a save must clean them first with the project's scrubbing (`lib/scrub.ts`), as History does for trips.
 
 ### The log line for each tool call
 
@@ -270,6 +271,12 @@ is `agent_tool`. It has six fields:
 
 The line never holds a tool input, a tool result, an error message, the note, a rider name or id, or a
 draft. Those are the places where personal details can appear (see the step records above).
+
+When a run finishes, the server also writes one **run line**, with event `agent_run`. It holds the run
+id, the time, how the run ended (`status`, and `reason` when it failed, otherwise `null`), and the
+numbers the page shows: `steps`, `inputTokens`, `outputTokens`, `cacheRead` (input tokens read from
+the prompt cache) and `latencyMs`. It holds no text from the note or the model. A failing log never
+changes how a run ends. The page's summary line also shows the cached tokens when there were any.
 
 The eval script prints the same facts as one `[tool]` line per call, in the form
 `[tool] <case name> step <N> <tool> <ok|error>`. It uses the same four-tool rule.
