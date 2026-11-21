@@ -3,7 +3,7 @@ import type { Clock } from "../clock";
 import type { Extraction } from "../extract";
 import type { AskOption } from "./ask-dispatcher";
 import type { ResumePayload } from "./ask-dispatcher";
-import { toolLogLines } from "./log";
+import { runLogLine, toolLogLines } from "./log";
 import { runAgent } from "./loop";
 import { endedEvent, parsedEvent, stepEvent, type StreamEvent } from "./stream";
 import { withStepTimeout } from "./step-timeout";
@@ -123,6 +123,11 @@ async function finish(deps: ServiceDeps, ctx: ToolContext, knownRiderIds: string
       for (const line of toolLogLines(record, ctx.runId, now())) log(line);
     },
   });
+  try {
+    log(runLogLine(result, ctx.runId, now()));
+  } catch {
+    // Like the per-tool lines, a failing log sink must never change how the run ends.
+  }
   deps.emit(endedEvent(result));
 }
 

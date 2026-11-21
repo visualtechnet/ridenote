@@ -212,19 +212,23 @@ That is expected when it stops to ask a question.
 
 ### The history of the committed runs
 
-Four runs were committed on 2026-11-14, all on the same model and the same prompt version. The
+Eight runs are committed, all from 2026-11-14, all on the same model and the same prompt version. The
 failures below are read from each file's rows.
 
-| Run (file in `evals/agent-results/`)                   | Passed | What failed                                                                                                        | What changed next                                                                                                                                                    |
-| ------------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `2026-11-14-claude-haiku-5-5-after-date-guard.json`    | 8 of 9 | `note and file disagree on mobility`: the run ended `needs_info`, but the case expected `proposed`.                | The case was changed to accept a question about the mobility aid, because asking is a reasonable answer when the note and the rider file disagree.                   |
-| `2026-11-14-claude-haiku-5-5-after-mobility-case.json` | 8 of 9 | `unknown rider`: the run failed with `invalid_tool_input`.                                                         | A search that finds nobody is now marked as expected, so it no longer counts toward the three-mistakes stop, and the error text no longer invites respelling.        |
-| `2026-11-14-claude-haiku-5-5-after-no-match-rule.json` | 8 of 9 | `facts in a draft`: the draft pickup came from the note text ("Dorothy Nguyen's usual place"), not the rider file. | Nothing in the agent code. The parse step sometimes reads that phrase as the pickup instead of leaving it for the rider file, and it did not happen on the next run. |
-| `2026-11-14-claude-haiku-5-5-final-pre-merge.json`     | 9 of 9 | Nothing.                                                                                                           | This is the report run above.                                                                                                                                        |
+| Run (file in `evals/agent-results/`)                   | Passed | What failed                                                                                                                                                                                                                          | What changed next                                                                                                                                                    |
+| ------------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `2026-11-14-claude-haiku-5-5-before-guard.json`        | 7 of 9 | `no date`: the run ended `proposed`, but the case expected `needs_info` (the model assumed today's date). `note and file disagree on mobility`: ended `needs_info`, but the case expected `proposed`.                                | The date guard: with no date there is no vehicle check and no proposal.                                                                                              |
+| `2026-11-14-claude-haiku-5-5-after-date-guard.json`    | 8 of 9 | `note and file disagree on mobility`: the run ended `needs_info`, but the case expected `proposed`.                                                                                                                                  | The case was changed to accept a question about the mobility aid, because asking is a reasonable answer when the note and the rider file disagree.                   |
+| `2026-11-14-claude-haiku-5-5-after-mobility-case.json` | 8 of 9 | `unknown rider`: the run failed with `invalid_tool_input`.                                                                                                                                                                           | A search that finds nobody is now marked as expected, so it no longer counts toward the three-mistakes stop, and the error text no longer invites respelling.        |
+| `2026-11-14-claude-haiku-5-5-after-no-match-rule.json` | 8 of 9 | `facts in a draft`: the draft pickup came from the note text ("Dorothy Nguyen's usual place"), not the rider file.                                                                                                                   | Nothing in the agent code. The parse step sometimes reads that phrase as the pickup instead of leaving it for the rider file, and it did not happen on the next run. |
+| `2026-11-14-claude-haiku-5-5-final-pre-merge.json`     | 9 of 9 | Nothing.                                                                                                                                                                                                                             | This is the report run above.                                                                                                                                        |
+| `2026-11-14-claude-haiku-5-5.json`                     | 9 of 9 | Nothing.                                                                                                                                                                                                                             | Another clean run on the same prompt version, for about 2.1 cents.                                                                                                   |
+| `2026-11-14-claude-haiku-5-5-replay1.json`             | 1 of 2 | Only two cases were run. `unknown rider` failed all 3 attempts: the run failed with `invalid_tool_input`. `facts in a draft` passed.                                                                                                 | Not investigated yet.                                                                                                                                                |
+| `2026-11-14-claude-haiku-5-5-replay2.json`             | 0 of 2 | `facts in a draft` was flaky and failed: the draft pickup was "Dorothy Nguyen's usual place" (from the note) instead of "301 Cedar Ct" (from the rider file). `unknown rider` failed all 3 attempts again with `invalid_tool_input`. | Not investigated yet.                                                                                                                                                |
 
 The very first live run passed 7 of 9 for about $0.023 (`no date` failed 3 of 3 because the model
 assumed today's date, and `note and file disagree on mobility` failed, and the date guard then fixed
-the first of these), but its results file was not kept in the repository, so it cannot be checked here.
+the first of these). Its file is `2026-11-14-claude-haiku-5-5-before-guard.json`.
 
 ### What this does not show
 
@@ -234,6 +238,10 @@ the first of these), but its results file was not kept in the repository, so it 
   The cases know what the builders had already seen go wrong.
 - A different single case failed in each of the three runs before the last one, so one run says
   little about how reliable the agent is. A single run is a sample, not a verdict.
+- The two `replay` runs re-ran only `facts in a draft` and `unknown rider`. `unknown rider` failed all
+  three attempts in both, after passing in both 9 of 9 runs, and `facts in a draft` passed once and
+  failed once. The cause has not been found, so treat the 9 of 9 as a result that can be reproduced
+  some of the time, not every time.
 - `facts in a draft` is intermittent in the parse step, so it can fail again with no change to the
   agent.
 

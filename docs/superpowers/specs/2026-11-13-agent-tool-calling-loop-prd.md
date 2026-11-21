@@ -120,23 +120,23 @@ Each requirement has an ID so tests and the Requirements page can cite it.
 
 ### Agent loop (week 5)
 
-| ID    | Requirement                                                                                                                                          | Lesson item      |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| AL-1  | The loop appends the model's full `content` and then one user message that answers every `tool_use` block.                                           | Core concepts    |
-| AL-2  | A run ends only through an ending tool or a named limit. Loose text is never shown as an answer.                                                     | Check yourself 3 |
-| AL-3  | Limits: 6 steps, 20,000 tokens per run, 400 output tokens per step, 60 s per run. All in `lib/config.ts`.                                            | Safety           |
-| AL-4  | Every `stop_reason` is handled by name: `tool_use`, `end_turn`, `max_tokens`, `refusal`, and anything unknown.                                       | Design gap 1     |
-| AL-5  | The run's budget is reserved before the first paid call, so a run is never cut off half-way for budget.                                              | Design           |
-| AL-6  | Agent runs use their own concurrency gate and cannot slow Parse.                                                                                     | Design           |
-| AL-7  | The loop stops calling the model when the client disconnects.                                                                                        | Design           |
-| AL-8  | Every stream ends with an `ended` event carrying `status`, `reason` and usage. A stream without one is shown as failed.                              | Design           |
-| AL-9  | Only a person's Approve click saves a trip. Approve verifies the signature, expiry and schema, and a replay does nothing.                            | Exercise 6       |
-| AL-10 | The page shows each step as it happens, in an `aria-live="polite"` list.                                                                             | Exercise 6       |
-| AL-11 | Each run reports steps, input, output and cached tokens, latency and how it ended.                                                                   | "Write down"     |
-| AL-12 | Live agent evals grade the path (tools, order, safety). The five critical cases must pass 3 runs out of 3.                                           | Lesson 3         |
-| AL-13 | Nothing regresses: `npm run check`, the browser tests and the parser eval floor (90%, criticals 100%) stay green.                                    | Design           |
-| AL-14 | `docs/AGENT.md` answers the six "Check yourself" questions, and the eval report records steps, cost and failures per case.                           | Check yourself   |
-| AL-15 | Every step of a run is recorded so the run can be replayed: the model's tool call, the tool result, tokens and time. Records hold fixture data only. | Todoist, week 5  |
+| ID    | Requirement                                                                                                                                                                                             | Lesson item      |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| AL-1  | The loop appends the model's full `content` and then one user message that answers every `tool_use` block.                                                                                              | Core concepts    |
+| AL-2  | A run ends only through an ending tool or a named limit. Loose text is never shown as an answer.                                                                                                        | Check yourself 3 |
+| AL-3  | Limits: 6 steps, 20,000 tokens per run, 400 output tokens per step, 60 s per run. All in `lib/config.ts`.                                                                                               | Safety           |
+| AL-4  | Every `stop_reason` is handled by name: `tool_use`, `end_turn`, `max_tokens`, `refusal`, and anything unknown.                                                                                          | Design gap 1     |
+| AL-5  | The run's budget is reserved before the first paid call, so a run is never cut off half-way for budget.                                                                                                 | Design           |
+| AL-6  | Agent runs use their own concurrency gate and cannot slow Parse.                                                                                                                                        | Design           |
+| AL-7  | The loop stops calling the model when the client disconnects.                                                                                                                                           | Design           |
+| AL-8  | Every stream ends with an `ended` event carrying `status`, `reason` and usage. A stream without one is shown as failed.                                                                                 | Design           |
+| AL-9  | Only a person's Approve click saves a trip. Approve verifies the signature, expiry and schema, and a replay does nothing.                                                                               | Exercise 6       |
+| AL-10 | The page shows each step as it happens, in an `aria-live="polite"` list.                                                                                                                                | Exercise 6       |
+| AL-11 | Each run reports steps, input, output and cached tokens, latency and how it ended.                                                                                                                      | "Write down"     |
+| AL-12 | Live agent evals grade the path (tools, order, safety). The five critical cases must pass 3 runs out of 3.                                                                                              | Lesson 3         |
+| AL-13 | Nothing regresses: `npm run check`, the browser tests and the parser eval floor (90%, criticals 100%) stay green.                                                                                       | Design           |
+| AL-14 | `docs/AGENT.md` answers the six "Check yourself" questions, and the eval report records steps, cost and failures per case.                                                                              | Check yourself   |
+| AL-15 | Every step of a run is recorded so the run can be replayed: the model's tool call, the tool result, tokens and time. Records stay in memory and are used by evals and replay tests; nothing saves them. | Todoist, week 5  |
 
 ### Tool specifications
 

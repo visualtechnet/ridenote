@@ -99,6 +99,7 @@ describe("AgentPanel", () => {
           calls: [{ name: "find_rider", is_error: false, content: "{}" }],
           inputTokens: 100,
           outputTokens: 20,
+          cacheRead: 0,
           ms: 5,
         },
         proposed,
@@ -163,11 +164,46 @@ describe("AgentPanel", () => {
     expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
   });
 
-  it("names a failure that needs no words for each reason, and a missing one plainly", async () => {
+  it("names an aborted run plainly", async () => {
     mockFetch(run({ type: "ended", status: "failed", reason: "aborted", usage }));
     render(<AgentPanel note={NOTE} />);
     fireEvent.click(screen.getByRole("button", { name: "Plan trip (agent)" }));
     expect(await screen.findByText(/The run was stopped/)).toBeInTheDocument();
+  });
+
+  it("shows how many tokens were read from cache when there were any", async () => {
+    mockFetch(run({ ...proposed, usage: { ...usage, cacheRead: 120 } } as StreamEvent));
+    render(<AgentPanel note={NOTE} />);
+    fireEvent.click(screen.getByRole("button", { name: "Plan trip (agent)" }));
+    expect(
+      await screen.findByText("2 steps, 340 tokens, 120 read from cache, 2.5 s."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a failed run when the stream closes without an ended event", async () => {
+    mockFetch(run({ type: "parsed", trip }));
+    render(<AgentPanel note={NOTE} />);
+    fireEvent.click(screen.getByRole("button", { name: "Plan trip (agent)" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The run stopped without an answer. Nothing was booked.",
+    );
+    expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();
+  });
+
+  it("does not add the missing-ended notice when the run ended", async () => {
+    mockFetch(run(proposed));
+    render(<AgentPanel note={NOTE} />);
+    fireEvent.click(screen.getByRole("button", { name: "Plan trip (agent)" }));
+    expect(await screen.findByRole("button", { name: "Approve" })).toBeInTheDocument();
+    expect(screen.queryByText(/stopped without an answer/)).toBeNull();
+  });
+
+  it("lists the steps in a polite live region named Agent steps", async () => {
+    mockFetch(run({ type: "parsed", trip }, proposed));
+    render(<AgentPanel note={NOTE} />);
+    fireEvent.click(screen.getByRole("button", { name: "Plan trip (agent)" }));
+    const list = await screen.findByRole("list", { name: "Agent steps" });
+    expect(list).toHaveAttribute("aria-live", "polite");
   });
 
   it("shows the server's message when the run cannot start", async () => {
@@ -332,6 +368,7 @@ describe("AgentPanel", () => {
           calls: [],
           inputTokens: 1,
           outputTokens: 1,
+          cacheRead: 0,
           ms: 1,
         },
         {
@@ -341,6 +378,7 @@ describe("AgentPanel", () => {
           calls: [{ name: "find_rider", is_error: true, content: "No rider matches." }],
           inputTokens: 1,
           outputTokens: 1,
+          cacheRead: 0,
           ms: 1,
         },
         {
@@ -350,6 +388,7 @@ describe("AgentPanel", () => {
           calls: [{ name: "mystery_tool", is_error: false, content: "" }],
           inputTokens: 1,
           outputTokens: 1,
+          cacheRead: 0,
           ms: 1,
         },
       ),

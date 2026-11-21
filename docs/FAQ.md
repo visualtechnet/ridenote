@@ -781,7 +781,7 @@ model to ask the dispatcher.
 or call ask_dispatcher". The model kept trying other spellings, and every call was an error. After three
 steps in a row the run stopped as failed, instead of asking the dispatcher.
 
-**Caught by.** The live eval. In the first live run, whose results file was not kept in the repository, this case passed; in a later committed run it failed.
+**Caught by.** The live eval. In the first live run (`evals/agent-results/2026-11-14-claude-haiku-5-5-before-guard.json`) this case passed; in a later run (`...-after-mobility-case.json`) it failed.
 
 **Fix.** Two parts. A search that finds nobody is now marked as an expected result, so it no longer counts
 toward the three-mistakes stop. And the error text now says "Do not search again. Call ask_dispatcher to

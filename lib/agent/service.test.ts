@@ -185,7 +185,7 @@ describe("tool logging", () => {
       },
     ]);
 
-  it("writes one agent_tool line per call to the injected log, in order", async () => {
+  it("writes one agent_tool line per call, then one agent_run line, to the injected log", async () => {
     const lines: string[] = [];
     const { deps: d } = deps({
       model: scriptedModel([
@@ -214,6 +214,14 @@ describe("tool logging", () => {
         tool: "ask_dispatcher",
         ok: true,
       },
+      expect.objectContaining({
+        event: "agent_run",
+        runId: "run-1",
+        at: "2026-11-16T12:00:00.000Z",
+        status: "needs_info",
+        reason: null,
+        steps: 2,
+      }),
     ]);
   });
 
@@ -236,8 +244,9 @@ describe("tool logging", () => {
     try {
       const { deps: d } = deps({ model: scriptedModel([askReply()]), log: undefined });
       await runNote(d, "Maria tomorrow", CLOCK);
-      expect(info).toHaveBeenCalledTimes(1);
+      expect(info).toHaveBeenCalledTimes(2);
       expect(JSON.parse(info.mock.calls[0][0] as string)).toMatchObject({ tool: "ask_dispatcher" });
+      expect(JSON.parse(info.mock.calls[1][0] as string)).toMatchObject({ event: "agent_run" });
     } finally {
       info.mockRestore();
     }

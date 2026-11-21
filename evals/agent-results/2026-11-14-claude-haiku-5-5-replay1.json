@@ -1,0 +1,59 @@
+{
+  "model": "claude-haiku-5-5",
+  "parseModel": "claude-haiku-5-5",
+  "promptVersion": "9b834a77",
+  "date": "2026-11-14",
+  "cases": 2,
+  "passed": 1,
+  "passRate": 0.5,
+  "calls": 6,
+  "inputTokens": 53655,
+  "outputTokens": 2146,
+  "costUsd": 0.0064385,
+  "meanStepsPerRun": 3,
+  "meanLatencyMs": 18135.5,
+  "rows": [
+    {
+      "name": "facts in a draft",
+      "critical": true,
+      "pass": true,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [],
+      "ended": "proposed",
+      "steps": 3,
+      "tools": [
+        "find_rider",
+        "check_vehicle_availability",
+        "propose_trip"
+      ],
+      "checkedVehicle": true,
+      "inputTokens": 27078,
+      "outputTokens": 1475,
+      "cacheRead": 0,
+      "latencyMs": 24479
+    },
+    {
+      "name": "unknown rider",
+      "critical": false,
+      "pass": false,
+      "flaky": false,
+      "attempts": 3,
+      "problems": [
+        "run failed: invalid_tool_input"
+      ],
+      "ended": "failed: invalid_tool_input",
+      "steps": 3,
+      "tools": [
+        "find_rider",
+        "find_rider",
+        "find_rider"
+      ],
+      "checkedVehicle": false,
+      "inputTokens": 26577,
+      "outputTokens": 671,
+      "cacheRead": 0,
+      "latencyMs": 11792
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import { jsonContent } from "../../../tests/model-reply";
 import { toolReply } from "@/lib/agent/test-model";
 import { DEVELOPMENT_SECRET } from "@/lib/agent/secret";
 import { sign } from "@/lib/agent/sign";
+import { POST as parsePOST } from "../parse/route";
 import { GET, POST } from "./route";
 
 const NOTE = "James O'Neil to County Hospital tomorrow at 9am";
@@ -226,6 +227,73 @@ describe("POST /api/agent", () => {
     } finally {
       delete process.env.AGENT_MODEL;
     }
+  });
+
+  it("stops the model call and ends the run when the client leaves while it is streaming", async () => {
+    let agentSignal: AbortSignal | undefined;
+    mockCreate.mockReset();
+    mockCreate.mockImplementation(
+      (params: { tool_choice?: unknown }, options: { signal: AbortSignal }) => {
+        if (!params.tool_choice)
+          return Promise.resolve({
+            content: jsonContent(trip),
+            stop_reason: "end_turn",
+            usage: { input_tokens: 1, output_tokens: 1 },
+          });
+        agentSignal = options.signal;
+        return new Promise((_resolve, reject) =>
+          options.signal.addEventListener("abort", () => reject(new Error("aborted"))),
+        );
+      },
+    );
+    const controller = new AbortController();
+    const req = new Request("http://localhost/api/agent", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-real-ip": `10.9.0.${++ip}` },
+      body: JSON.stringify({ note: NOTE, timeZone: "UTC" }),
+      signal: controller.signal,
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    // Wait until the run is inside its first agent call, then the client goes away.
+    for (let i = 0; i < 50 && !agentSignal; i += 1) await new Promise((r) => setTimeout(r, 10));
+    expect(agentSignal?.aborted).toBe(false);
+    controller.abort();
+    const seen = await events(res);
+    expect(agentSignal?.aborted).toBe(true);
+    expect(seen.at(-1)).toMatchObject({ type: "ended", status: "failed" });
+  });
+
+  it("still serves a parse while every agent run slot is taken (AL-6)", async () => {
+    mockCreate.mockReset();
+    mockCreate.mockImplementation(
+      (params: { tool_choice?: unknown }, options: { signal: AbortSignal }) => {
+        if (!params.tool_choice)
+          return Promise.resolve({
+            content: jsonContent(trip),
+            stop_reason: "end_turn",
+            usage: { input_tokens: 1, output_tokens: 1 },
+          });
+        return new Promise((_resolve, reject) =>
+          options.signal.addEventListener("abort", () => reject(new Error("aborted"))),
+        );
+      },
+    );
+    const held: Response[] = [];
+    for (let i = 0; i < 10; i += 1) held.push(await POST(request({ note: NOTE, timeZone: "UTC" })));
+    expect((await POST(request({ note: NOTE, timeZone: "UTC" }))).status).toBe(503);
+
+    const parse = await parsePOST(
+      new Request("http://localhost/api/parse", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-real-ip": `10.8.0.${++ip}` },
+        body: JSON.stringify({ note: NOTE, timeZone: "UTC" }),
+      }),
+    );
+    expect(parse.status).toBe(200);
+
+    for (const res of held) await res.body?.cancel();
+    await new Promise((resolve) => setTimeout(resolve, 20));
   });
 
   it("answers busy when every run slot is taken, and frees them when the streams are cancelled", async () => {
